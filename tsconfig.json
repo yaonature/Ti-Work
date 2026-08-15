@@ -6,6 +6,21 @@
     "prettier.config.js",
     "vite.config.js"
   ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-electron",
+    "release",
+    "build",
+    ".electron-stage",
+    ".electron-builder-cache",
+    "test-results",
+    ".e2e-hermes",
+    ".runtime",
+    "Ti-Work-Web",
+    "frontend-design",
+    "docs"
+  ],
 
   "compilerOptions": {
     "target": "ES2022",

@@ -2,10 +2,16 @@
 node_modules
 .pnp
 .pnp.js
+.pnpm-store
+.pnpm-cache
+.pnpm-state
+.npm-cache
+.npx-cache
 
 # Build outputs
 dist
 dist-ssr
+dist-electron
 build
 .output
 .vinxi
@@ -40,6 +46,9 @@ Thumbs.db
 # Testing
 coverage
 .nyc_output
+test-results/
+playwright-report/
+.playwright-browsers/
 
 # Temporary files
 *.tmp
@@ -55,6 +64,9 @@ src-tauri/WixTools
 count.txt
 todos.json
 releases/
+.electron-cache/
+.electron-user-data/
+.e2e-hermes/
 
 # Wrangler (Cloudflare Workers)
 .wrangler
@@ -81,6 +93,36 @@ debug-export-*.txt
 
 # Terminal session state
 .terminal-sessions
+
+# 企业版中枢独立仓库（禁止混入开源仓库提交）
+Ti-Work-Web/
+
+# Hermes 引擎研究源码与构建暂存目录
+.research/
+.bootstrap-stage/
+.engine-stage/
+
+# 项目规则文件（本地约定，不纳入仓库跟踪）
+rules/
+
+# IDE 本地配置与自定义技能
+.trae/
+
+# 本地工具与缓存
+.tools/
+.pnpm-store-clean/
+.electron-builder-cache/
+.electron-stage/
+.dbg/
+
+# 临时文件与调试产物
+.tmp-static-server.mjs
+.tmp_fdir_repair/
+debug-*.md
+Microsoft/
+
+# 官网站点独立管理（含大体积安装包，不纳入代码仓库）
+Ti-Work-WebSite/
 
 # Keep these files
 !.github/workflows

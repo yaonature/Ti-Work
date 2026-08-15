@@ -395,6 +395,9 @@ const config = defineConfig(({ mode, command }) => {
         'playwright-extra',
         'puppeteer-extra-plugin-stealth',
       ],
+      // 其余依赖全部内联进 SSR bundle，避免产物依赖开发机 node_modules
+      // 的绝对路径 import（桌面打包后脱离项目目录会双实例/找不到模块）。
+      noExternal: true,
     },
     optimizeDeps: {
       exclude: [

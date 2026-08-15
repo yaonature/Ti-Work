@@ -1,0 +1,14 @@
+allowBuilds:
+  better-sqlite3: true
+  electron-winstaller: true
+  esbuild: true
+  unrs-resolver: true
+  # electron 的 postinstall 负责下载运行时二进制，必须放行
+  electron: true
+# pnpm 11+ 起 storeDir 只能配置在 pnpm-workspace.yaml（.npmrc 不再读取）；
+# 固定到项目内，避免无 home 的 D 盘在盘根自动创建 .pnpm-store
+storeDir: .pnpm-store
+# metadata 缓存同样固定到项目内（默认落 %LOCALAPPDATA%\pnpm-cache 占用 C 盘）
+cacheDir: .pnpm-cache
+# pnpm 状态目录（supply-chain 校验标记等）固定到项目内，避免写 %LOCALAPPDATA%\pnpm-state
+stateDir: .pnpm-state

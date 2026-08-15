@@ -10,11 +10,10 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # Silence deprecation warning
 
 jobs:
-  unit-tests:
-    name: Unit Tests
+  # ── G0 门禁 ② 静态门禁：ti-work-rules（TODO/占位符/mock/硬编码密钥零容忍）
+  lint:
+    name: Static Gate (lint)
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -32,8 +31,46 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run unit tests
+      - name: Run static gate (eslint + ti-work-rules)
+        run: pnpm lint
+
+  # ── G0 门禁 ①③ 契约门禁 + 行为门禁：vitest 全量（含真实 Redis 集成契约测试）
+  unit-tests:
+    name: Contract & Behavior Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit & integration tests
         run: pnpm exec vitest run --reporter=json --outputFile=test-results.json
+        env:
+          TI_WORK_TEST_REDIS_URL: redis://localhost:6379
 
       - name: Update test badge
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -49,10 +86,37 @@ jobs:
           git diff --staged --quiet || git commit -m "ci: update test badge [skip ci]"
           git push
 
+  # ── G0 门禁 ④ 运行门禁：build + 启动 + 健康检查 + 核心 API 冒烟
+  verify-build:
+    name: Verify Build (smoke)
+    runs-on: ubuntu-latest
+    needs: [lint, unit-tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run verify-build (build + boot + API smoke)
+        run: pnpm verify
+        env:
+          NODE_OPTIONS: '--max-old-space-size=2048'
+
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
-    needs: unit-tests
+    needs: verify-build
     steps:
       - uses: actions/checkout@v4
 
