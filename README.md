@@ -452,14 +452,18 @@ Access Hermes Studio from anywhere on your devices — no port forwarding, no VP
 
 ## 🖥️ Native Desktop App
 
-> **Status: Planned** — A native Electron-based desktop app is on the roadmap.
+> **Status: Shipped (v1.20.0)** — Electron shell around the same web backend (PWA 内核 + 壳), packaged via electron-builder.
 
-The desktop app will offer:
+The desktop app offers:
 
-- Native window management and tray icon
+- Native window management and tray icon (常驻托盘，关闭窗口驻留后台)
 - System notifications for agent events and mission completions
 - Auto-launch on startup
+- Automatic update checks against a static manifest (`latest.json`)
+- Backend process lifecycle management: spawn local server, health probe, port conflict fallback
 - Deep OS integration (macOS menu bar, Windows taskbar)
+
+Build with `pnpm electron:build`（产出 exe / dmg / AppImage）；开发运行 `pnpm electron:dev`。打包安装包在真实 Windows/CI 环境验证，沙箱内以真实 Electron 启动冒烟（e2e）覆盖壳层行为。
 
 **In the meantime:** Install Hermes Studio as a PWA (see above) for a near-native desktop experience — it works great.
 
