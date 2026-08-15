@@ -1,5 +1,7 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { getRedisClient, getRedisClientSync } from './redis-client'
+import { getUser, isMultiUserEnabled } from './identity'
+import type { UserRole } from './identity'
 
 const TOKENS_KEY = 'hermes:studio:tokens'
 const TOKEN_USER_KEY = 'hermes:studio:token:user'
@@ -153,10 +155,19 @@ function isLocalRequest(request: Request): boolean {
 /**
  * Check if the request is authenticated.
  * Returns true if:
- * - Password protection is disabled, OR
- * - Request has a valid session token
+ * - Password protection is disabled (single-user open mode), OR
+ * - Request has a valid session token (single-user), OR
+ * - Multi-user mode: request has a valid session token bound to a userId
  */
 export function isAuthenticated(request: Request): boolean {
+  // Multi-user mode: sessions must be bound to a concrete user, otherwise treat as unauthenticated
+  if (isMultiUserEnabled()) {
+    const token = getSessionTokenFromCookie(request.headers.get('cookie'))
+    if (!token) return false
+    if (!isValidSessionToken(token)) return false
+    return getUserIdFromToken(token) !== undefined
+  }
+
   // No password configured? No auth needed
   if (!isPasswordProtectionEnabled()) {
     return true
@@ -183,7 +194,9 @@ export function requireLocalOrAuth(request: Request): boolean {
 
 /**
  * Extract user ID from request.
- * First checks session token mapping, then falls back to HERMES_USER_ID environment variable.
+ * Multi-user mode: ONLY the session-token bound userId (no env fallback —
+ * otherwise any request could impersonate HERMES_USER_ID).
+ * Single-user mode: session token mapping, then HERMES_USER_ID fallback.
  */
 export function getUserIdFromRequest(request: Request): string | undefined {
   const cookieHeader = request.headers.get('cookie')
@@ -194,8 +207,76 @@ export function getUserIdFromRequest(request: Request): string | undefined {
     if (userId) return userId
   }
 
+  if (isMultiUserEnabled()) return undefined
+
   // Fallback for testing/single-user deployments
   return process.env.HERMES_USER_ID
+}
+
+/**
+ * Get the current request user in multi-user mode; returns undefined in single-user mode
+ * (no data isolation enabled). Used to filter data-level resources like local sessions by owner.
+ */
+export function getEffectiveSessionOwner(request: Request): string | undefined {
+  if (!isMultiUserEnabled()) return undefined
+  return getUserIdFromRequest(request)
+}
+
+/**
+ * Resolve the effective role for the request.
+ * Multi-user mode: identity lookup; unknown user → lowest privilege.
+ * Single-user mode: the box owner is super_admin (full access).
+ */
+export function getUserRoleFromRequest(request: Request): UserRole {
+  if (!isMultiUserEnabled()) return 'super_admin'
+
+  const userId = getUserIdFromRequest(request)
+  if (!userId) return 'regular_admin'
+
+  return getUser(userId)?.role ?? 'regular_admin'
+}
+
+/**
+ * Guard: require authentication. Returns a 401 Response when the request is
+ * not authenticated, otherwise null (pass). All API endpoints must use this
+ * instead of returning the raw boolean from isAuthenticated().
+ */
+export function requireAuth(request: Request): Response | null {
+  if (isAuthenticated(request)) return null
+  return Response.json(
+    { ok: false, error: 'Unauthorized' },
+    { status: 401 },
+  )
+}
+
+export type RequiredRole = 'user' | 'admin'
+
+/**
+ * Guard: require authentication + role.
+ *  - 'user': any authenticated user
+ *  - 'admin': super_admin only
+ * Returns a 401/403 Response when access is denied, otherwise null (pass).
+ * Single-user mode: role checks pass for any authenticated request (owner).
+ */
+export function requireRole(
+  request: Request,
+  required: RequiredRole,
+): Response | null {
+  if (!isAuthenticated(request)) {
+    return Response.json(
+      { ok: false, error: 'Unauthorized' },
+      { status: 401 },
+    )
+  }
+  if (!isMultiUserEnabled() || required === 'user') return null
+
+  const role = getUserRoleFromRequest(request)
+  if (role === 'super_admin') return null
+
+  return Response.json(
+    { ok: false, error: 'Forbidden: super_admin required' },
+    { status: 403 },
+  )
 }
 
 /**

@@ -1,7 +1,4 @@
-import { HERMES_API } from './gateway-capabilities'
-
-/** Optional bearer token for authenticated OpenAI-compatible endpoints (e.g. Codex OAuth). */
-const BEARER_TOKEN = process.env.HERMES_API_TOKEN || ''
+import { getHermesApiToken, HERMES_API } from './gateway-capabilities'
 
 /** Cached first available model from /v1/models — used as fallback when no model is specified. */
 let _cachedDefaultModel: string | null = null
@@ -14,7 +11,8 @@ async function getDefaultModel(): Promise<string> {
   }
   try {
     const headers: Record<string, string> = {}
-    if (BEARER_TOKEN) headers['Authorization'] = `Bearer ${BEARER_TOKEN}`
+    const token = getHermesApiToken()
+    if (token) headers['Authorization'] = `Bearer ${token}`
     const res = await fetch(`${HERMES_API}/v1/models`, {
       headers,
       signal: AbortSignal.timeout(3_000),
@@ -51,6 +49,10 @@ export type OpenAIChatOptions = {
   temperature?: number
   signal?: AbortSignal
   sessionId?: string
+  /** 直连降级：自定义 OpenAI 兼容端点（如 https://api.deepseek.com/v1） */
+  baseUrl?: string
+  /** 直连降级：端点使用的 API Key */
+  apiKey?: string
 }
 
 type OpenAIChatRequest = {
@@ -158,14 +160,17 @@ export async function openaiChat(
   options: OpenAIChatOptions = {},
 ): Promise<string | AsyncGenerator<StreamChunkType, void, void>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (BEARER_TOKEN) {
-    headers['Authorization'] = `Bearer ${BEARER_TOKEN}`
+  // 直连降级：使用自定义端点与 Key；否则走本地 Hermes 网关
+  const baseUrl = (options.baseUrl || HERMES_API).replace(/\/+$/, '')
+  const bearerToken = options.apiKey || getHermesApiToken()
+  if (bearerToken) {
+    headers['Authorization'] = `Bearer ${bearerToken}`
   }
-  if (options.sessionId) {
+  if (options.sessionId && !options.baseUrl) {
     headers['X-Hermes-Session-Id'] = options.sessionId
   }
 
-  const response = await fetch(`${HERMES_API}/v1/chat/completions`, {
+  const response = await fetch(`${baseUrl}/v1/chat/completions`, {
     method: 'POST',
     headers,
     body: JSON.stringify(await buildRequestBody(messages, options)),

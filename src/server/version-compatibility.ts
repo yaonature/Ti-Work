@@ -3,7 +3,7 @@
  * Ensures Studio is compatible with the running Hermes gateway version.
  */
 
-import { HERMES_API, BEARER_TOKEN } from './gateway-capabilities'
+import { getHermesApiToken, HERMES_API } from './gateway-capabilities'
 
 export interface VersionInfo {
   version?: string
@@ -23,7 +23,10 @@ const CACHE_TTL_MS = 60_000 // Cache version for 1 minute
  * Tries multiple endpoints for compatibility with different versions.
  */
 async function fetchVersionInfo(): Promise<VersionInfo | null> {
-  const authHeaders = BEARER_TOKEN ? { Authorization: `Bearer ${BEARER_TOKEN}` } : {}
+  const token = getHermesApiToken()
+  const authHeaders: Record<string, string> = token
+    ? { Authorization: `Bearer ${token}` }
+    : {}
 
   // Try different version endpoints for compatibility
   const endpoints = [
@@ -100,9 +103,9 @@ function compareVersions(
  */
 export function checkCompatibility(versionStr: string): {
   compatible: boolean
-  warnings: string[]
+  warnings: Array<string>
 } {
-  const warnings: string[] = []
+  const warnings: Array<string> = []
   const parsed = parseVersion(versionStr)
 
   if (!parsed) {

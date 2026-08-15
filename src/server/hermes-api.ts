@@ -6,16 +6,20 @@
  */
 
 import {
-  BEARER_TOKEN,
   HERMES_API,
   SESSIONS_API_UNAVAILABLE_MESSAGE,
   ensureGatewayProbed,
   getCapabilities,
+  getGatewayOfflineMessage,
+  getHermesApiToken,
+  isGatewayReachable,
   probeGateway,
 } from './gateway-capabilities'
 
-const _authHeaders = (): Record<string, string> =>
-  BEARER_TOKEN ? { Authorization: `Bearer ${BEARER_TOKEN}` } : {}
+const _authHeaders = (): Record<string, string> => {
+  const token = getHermesApiToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
 console.log(`[hermes-api] Configured API: ${HERMES_API}`)
 
@@ -105,6 +109,15 @@ async function hermesDeleteReq(path: string): Promise<void> {
   }
 }
 
+function readListData<T>(payload: unknown): Array<T> {
+  if (Array.isArray(payload)) return payload as Array<T>
+  if (!payload || typeof payload !== 'object') return []
+  const record = payload as Record<string, unknown>
+  if (Array.isArray(record.data)) return record.data as Array<T>
+  if (Array.isArray(record.items)) return record.items as Array<T>
+  return []
+}
+
 // ── Health ────────────────────────────────────────────────────────
 
 export async function checkHealth(): Promise<{ status: string }> {
@@ -117,10 +130,8 @@ export async function listSessions(
   limit = 50,
   offset = 0,
 ): Promise<Array<HermesSession>> {
-  const resp = await hermesGet<{ items: Array<HermesSession>; total: number }>(
-    `/api/sessions?limit=${limit}&offset=${offset}`,
-  )
-  return resp.items
+  const resp = await hermesGet<unknown>(`/api/sessions?limit=${limit}&offset=${offset}`)
+  return readListData<HermesSession>(resp)
 }
 
 export async function getSession(sessionId: string): Promise<HermesSession> {
@@ -160,10 +171,8 @@ export async function deleteSession(sessionId: string): Promise<void> {
 export async function getMessages(
   sessionId: string,
 ): Promise<Array<HermesMessage>> {
-  const resp = await hermesGet<{ items: Array<HermesMessage>; total: number }>(
-    `/api/sessions/${sessionId}/messages`,
-  )
-  return resp.items
+  const resp = await hermesGet<unknown>(`/api/sessions/${sessionId}/messages`)
+  return readListData<HermesMessage>(resp)
 }
 
 export async function searchSessions(
@@ -211,7 +220,7 @@ export function toChatMessage(
       const fn = record.function as Record<string, unknown> | undefined
       const toolCallId =
         record.id || `tc-${Math.random().toString(36).slice(2, 8)}`
-      const toolName = fn?.name || (record.name as string | undefined) || 'tool'
+      const toolName = fn?.name || (record.name) || 'tool'
       const toolArgs = fn?.arguments
       streamToolCallsArr.push({
         id: toolCallId,
@@ -225,7 +234,7 @@ export function toChatMessage(
         name: toolName,
         arguments:
           toolArgs && typeof toolArgs === 'object'
-            ? (toolArgs as Record<string, unknown>)
+            ? (toolArgs)
             : undefined,
         partialJson: typeof toolArgs === 'string' ? toolArgs : undefined,
       })
@@ -447,4 +456,6 @@ export {
   getCapabilities as getGatewayCapabilities,
   HERMES_API,
   SESSIONS_API_UNAVAILABLE_MESSAGE,
+  getGatewayOfflineMessage,
+  isGatewayReachable,
 }

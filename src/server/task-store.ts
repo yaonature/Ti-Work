@@ -8,14 +8,15 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
+import { publishChatEvent } from './chat-event-bus'
+import { publishLineageEvent } from './lineage-store'
 import type {
-  HermesTask,
   CreateTaskInput,
-  UpdateTaskInput,
+  HermesTask,
   TaskColumn,
   TaskSourceType,
+  UpdateTaskInput,
 } from '../types/task'
-import { publishChatEvent } from './chat-event-bus'
 
 const DATA_DIR = join(process.cwd(), '.runtime')
 const TASKS_FILE = join(DATA_DIR, 'tasks.json')
@@ -59,7 +60,7 @@ function scheduleSave(): void {
 
 loadFromDisk()
 
-export function listTasks(filter?: TaskFilter): HermesTask[] {
+export function listTasks(filter?: TaskFilter): Array<HermesTask> {
   let tasks = Object.values(store.tasks)
   if (filter?.column) tasks = tasks.filter((t) => t.column === filter.column)
   if (filter?.assignee) tasks = tasks.filter((t) => t.assignee === filter.assignee)
@@ -94,10 +95,27 @@ export function createTask(input: CreateTaskInput): HermesTask {
   store.tasks[task.id] = task
   saveToDisk()
   publishChatEvent('task.created', { sessionKey: 'all', taskId: task.id, title: task.title, sourceType: task.sourceType })
+  // G3 lineage: task creation event (owner is the creator; real userId in multi-user mode)
+  void publishLineageEvent({
+    type: 'task.created',
+    taskId: task.id,
+    ownerId: task.createdBy,
+    prevTaskId: null,
+    payload: {
+      title: task.title,
+      sourceType: task.sourceType,
+      priority: task.priority,
+      assignee: task.assignee,
+    },
+  })
   return task
 }
 
-export function updateTask(taskId: string, updates: UpdateTaskInput): HermesTask | null {
+export function updateTask(
+  taskId: string,
+  updates: UpdateTaskInput,
+  opts?: { skipLineage?: boolean },
+): HermesTask | null {
   const task = store.tasks[taskId]
   if (!task) return null
   if (updates.title !== undefined) task.title = updates.title.trim()
@@ -110,21 +128,50 @@ export function updateTask(taskId: string, updates: UpdateTaskInput): HermesTask
   if (updates.position !== undefined) task.position = updates.position
   task.updatedAt = Date.now()
   scheduleSave()
+  if (!opts?.skipLineage) {
+    // G3 lineage: task update event (records the changed fields for audit)
+    void publishLineageEvent({
+      type: 'task.updated',
+      taskId,
+      ownerId: task.createdBy,
+      prevTaskId: null,
+      payload: { updates: updates as Record<string, unknown> },
+    })
+  }
   return task
 }
 
 export function moveTask(taskId: string, column: TaskColumn): HermesTask | null {
-  const result = updateTask(taskId, { column })
+  const before = getTask(taskId)?.column
+  // skipLineage: moves are expressed by the task.moved event, avoiding duplication with task.updated
+  const result = updateTask(taskId, { column }, { skipLineage: true })
   if (result) {
     publishChatEvent('task.moved', { sessionKey: 'all', taskId, column })
+    // G3 lineage: task transition event (records column changes for gantt/kanban analysis)
+    void publishLineageEvent({
+      type: 'task.moved',
+      taskId,
+      ownerId: result.createdBy,
+      prevTaskId: null,
+      payload: { column, from: before ?? null },
+    })
   }
   return result
 }
 
 export function deleteTask(taskId: string): boolean {
   if (!store.tasks[taskId]) return false
+  const task = store.tasks[taskId]
   delete store.tasks[taskId]
   saveToDisk()
   publishChatEvent('task.deleted', { sessionKey: 'all', taskId })
+  // G3 lineage: task deletion event
+  void publishLineageEvent({
+    type: 'task.deleted',
+    taskId,
+    ownerId: task.createdBy,
+    prevTaskId: null,
+    payload: { title: task.title },
+  })
   return true
 }

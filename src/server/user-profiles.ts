@@ -9,7 +9,7 @@ export type UserRole = 'super_admin' | 'regular_admin'
 export interface UserProfile {
   userId: string
   role: UserRole
-  profileIds: string[] // Profiles this user can access
+  profileIds: Array<string> // Profiles this user can access
 }
 
 const USERS_KEY = 'hermes:studio:users'
@@ -113,7 +113,7 @@ export function canAccessProfile(userId: string, profileId: string): boolean {
 /**
  * Get all profiles a user can access.
  */
-export function getAccessibleProfiles(userId: string): string[] {
+export function getAccessibleProfiles(userId: string): Array<string> {
   const profile = getUserProfile(userId)
   if (profile.role === 'super_admin') return [] // null = all profiles
   return profile.profileIds

@@ -9,8 +9,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import type { AgentDefinition } from '../types/agent'
 import { AGENT_PERSONAS } from '../lib/agent-personas'
+import type { AgentDefinition } from '../types/agent'
 
 const DATA_DIR = join(process.cwd(), '.runtime')
 const AGENTS_FILE = join(DATA_DIR, 'agent-definitions.json')
@@ -29,7 +29,7 @@ const BUILTIN_SYSTEM_PROMPTS: Record<string, string> = {
   nova: `You are Nova, a Security Specialist agent. Your expertise covers authentication, authorization, encryption, vulnerability assessment, and secure coding practices. When given a task, identify and address security risks, enforce least-privilege principles, and harden the system against threats.`,
 }
 
-export function getBuiltInAgents(): AgentDefinition[] {
+export function getBuiltInAgents(): Array<AgentDefinition> {
   return AGENT_PERSONAS.map((p) => ({
     id: `builtin-${p.name.toLowerCase()}`,
     name: p.name,
@@ -79,7 +79,7 @@ loadFromDisk()
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /** List all agents: built-ins first, then user-created sorted by newest. */
-export function listAgents(): AgentDefinition[] {
+export function listAgents(): Array<AgentDefinition> {
   const custom = Object.values(store.agents).sort((a, b) => b.createdAt - a.createdAt)
   return [...getBuiltInAgents(), ...custom]
 }
@@ -100,7 +100,7 @@ export function createAgent(input: {
   roleLabel: string
   systemPrompt: string
   model: string | null
-  tags: string[]
+  tags: Array<string>
 }): AgentDefinition {
   const id = randomUUID()
   const now = Date.now()
@@ -126,7 +126,7 @@ export function updateAgent(
     roleLabel: string
     systemPrompt: string
     model: string | null
-    tags: string[]
+    tags: Array<string>
   }>,
 ): AgentDefinition | null {
   const existing = store.agents[id]

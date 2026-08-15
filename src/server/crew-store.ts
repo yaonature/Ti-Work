@@ -42,7 +42,7 @@ export interface Crew {
   status: CrewStatus
   createdAt: number
   updatedAt: number
-  members: CrewMember[]
+  members: Array<CrewMember>
 }
 
 type StoreData = { crews: Record<string, Crew> }
@@ -90,7 +90,7 @@ loadFromDisk()
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-export function listCrews(): Crew[] {
+export function listCrews(): Array<Crew> {
   return Object.values(store.crews).sort((a, b) => b.updatedAt - a.updatedAt)
 }
 

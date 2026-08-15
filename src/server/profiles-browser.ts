@@ -62,15 +62,15 @@ function getActiveProfilePath(): string {
 
 function validateProfileName(name: string): string {
   const trimmed = name.trim()
-  if (!trimmed) throw new Error('Profile name is required')
+  if (!trimmed) throw new Error('档案名称必填')
   if (trimmed === 'default')
-    throw new Error('Default profile cannot be modified here')
+    throw new Error('默认档案不可在此处修改')
   if (
     trimmed.includes('/') ||
     trimmed.includes('\\') ||
     trimmed.includes('..')
   ) {
-    throw new Error('Invalid profile name')
+    throw new Error('无效的档案名称')
   }
   return trimmed
 }
@@ -231,7 +231,7 @@ export function readProfile(name: string): ProfileDetail {
     normalized === 'default'
       ? getHermesRoot()
       : path.join(getProfilesRoot(), validateProfileName(normalized))
-  if (!fs.existsSync(profilePath)) throw new Error('Profile not found')
+  if (!fs.existsSync(profilePath)) throw new Error('未找到该档案')
   const configPath = path.join(profilePath, 'config.yaml')
   const envPath = path.join(profilePath, '.env')
   const sessionsDir = path.join(profilePath, 'sessions')
@@ -250,7 +250,7 @@ export function readProfile(name: string): ProfileDetail {
 
 export function setActiveProfile(name: string): void {
   const trimmed = name.trim()
-  if (!trimmed) throw new Error('Profile name is required')
+  if (!trimmed) throw new Error('档案名称必填')
   // "default" means clear the active_profile file (revert to default)
   if (trimmed === 'default') {
     const activePath = getActiveProfilePath()
@@ -259,7 +259,7 @@ export function setActiveProfile(name: string): void {
   }
   const normalized = validateProfileName(trimmed)
   const profilePath = path.join(getProfilesRoot(), normalized)
-  if (!fs.existsSync(profilePath)) throw new Error('Profile not found')
+  if (!fs.existsSync(profilePath)) throw new Error('未找到该档案')
   fs.mkdirSync(getHermesRoot(), { recursive: true })
   fs.writeFileSync(getActiveProfilePath(), `${normalized}\n`, 'utf-8')
 }
@@ -270,7 +270,7 @@ export function createProfile(
 ): ProfileDetail {
   const normalized = validateProfileName(name)
   const profilePath = path.join(getProfilesRoot(), normalized)
-  if (fs.existsSync(profilePath)) throw new Error('Profile already exists')
+  if (fs.existsSync(profilePath)) throw new Error('档案已存在')
   fs.mkdirSync(profilePath, { recursive: true })
 
   const configPath = path.join(profilePath, 'config.yaml')
@@ -318,9 +318,9 @@ export function createProfile(
 export function deleteProfile(name: string): void {
   const normalized = validateProfileName(name)
   if (normalized === getActiveProfileName())
-    throw new Error('Cannot delete the active profile')
+    throw new Error('不能删除当前激活的档案')
   const profilePath = path.join(getProfilesRoot(), normalized)
-  if (!fs.existsSync(profilePath)) throw new Error('Profile not found')
+  if (!fs.existsSync(profilePath)) throw new Error('未找到该档案')
   const trashDir = path.join(getHermesRoot(), 'trash')
   fs.mkdirSync(trashDir, { recursive: true })
   const trashName = `${normalized}-${Date.now()}`
@@ -332,8 +332,8 @@ export function renameProfile(oldName: string, newName: string): ProfileDetail {
   const to = validateProfileName(newName)
   const fromPath = path.join(getProfilesRoot(), from)
   const toPath = path.join(getProfilesRoot(), to)
-  if (!fs.existsSync(fromPath)) throw new Error('Profile not found')
-  if (fs.existsSync(toPath)) throw new Error('Target profile already exists')
+  if (!fs.existsSync(fromPath)) throw new Error('未找到该档案')
+  if (fs.existsSync(toPath)) throw new Error('目标档案已存在')
   fs.renameSync(fromPath, toPath)
   if (getActiveProfileName() === from) {
     fs.writeFileSync(getActiveProfilePath(), `${to}\n`, 'utf-8')

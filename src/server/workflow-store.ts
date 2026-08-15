@@ -9,7 +9,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import type { Workflow, WorkflowTask, WorkflowEdge } from '../types/workflow'
+import type { Workflow, WorkflowEdge, WorkflowTask } from '../types/workflow'
 
 const DATA_DIR = join(process.cwd(), '.runtime')
 const WORKFLOWS_FILE = join(DATA_DIR, 'workflows.json')
@@ -71,7 +71,7 @@ export function getWorkflow(crewId: string): Workflow | null {
 
 export function upsertWorkflow(
   crewId: string,
-  patch: { tasks: WorkflowTask[]; edges: WorkflowEdge[] },
+  patch: { tasks: Array<WorkflowTask>; edges: Array<WorkflowEdge> },
 ): Workflow {
   const existing = store.workflows[crewId]
   const now = Date.now()

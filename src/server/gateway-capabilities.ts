@@ -8,12 +8,21 @@
  *   - Enhanced: Hermes-native extras (sessions, skills, memory, config, jobs)
  */
 
+import { getHermesEnvPath, readEnvValue } from './env-models'
+
 export let HERMES_API = process.env.HERMES_API_URL || 'http://127.0.0.1:8642'
 
 export const HERMES_UPGRADE_INSTRUCTIONS =
   'Update Hermes: cd hermes-agent && git pull && pip install -e . && hermes --gateway'
 
-export const SESSIONS_API_UNAVAILABLE_MESSAGE = `Your Hermes gateway does not support the sessions API. ${HERMES_UPGRADE_INSTRUCTIONS}`
+export const SESSIONS_API_UNAVAILABLE_MESSAGE = `您的 Hermes 网关不支持 sessions API。${HERMES_UPGRADE_INSTRUCTIONS}`
+
+/** 网关完全不可达（未安装 / 未启动 / 端口不通）时的提示，与"版本过旧"区分开。
+ *  注意：本文件会被 client 端（feature-gates）引用，勿在此 import server-only 模块；
+ *  bootstrap 安装状态的感知在 server-only 的调用方（hermes-proxy 路由）完成。 */
+export function getGatewayOfflineMessage(): string {
+  return `无法连接 Hermes 执行引擎网关（${HERMES_API}）。请先安装并启动 Hermes Agent 网关（hermes --gateway，监听 8642/8643 端口）后重试。`
+}
 
 const PROBE_TIMEOUT_MS = 3_000
 const PROBE_TTL_MS = 120_000
@@ -39,6 +48,18 @@ export type EnhancedCapabilities = {
 
 /** Full capabilities — backward compat with existing code */
 export type GatewayCapabilities = CoreCapabilities & EnhancedCapabilities
+
+/**
+ * 网关是否可达（不管版本新旧）。
+ * 任一核心接口有响应即视为可达；全部探测失败说明引擎未安装/未运行。
+ */
+export function isGatewayReachable(): boolean {
+  return (
+    capabilities.health ||
+    capabilities.chatCompletions ||
+    capabilities.models
+  )
+}
 
 export type ChatMode = 'enhanced-hermes' | 'portable' | 'disconnected'
 
@@ -71,8 +92,20 @@ let lastLoggedSummary = ''
 /** Optional bearer token for authenticated endpoints. */
 export const BEARER_TOKEN = process.env.HERMES_API_TOKEN || ''
 
+export function getHermesApiToken(): string {
+  const fromEnv = process.env.HERMES_API_TOKEN?.trim()
+  if (fromEnv) return fromEnv
+
+  const envPath = getHermesEnvPath()
+  // 首装链路里后端会先于 bootstrap 启动；若这里把首次读到的空 token 缓存住，
+  // 后续 .env 写入 API_SERVER_KEY 后，整个进程都会持续拿空 token 请求网关。
+  // 鉴于本地读取 .env 成本很低，这里始终按需读取，保证安装后立即可见。
+  return readEnvValue(envPath, 'API_SERVER_KEY')
+}
+
 function authHeaders(): Record<string, string> {
-  return BEARER_TOKEN ? { Authorization: `Bearer ${BEARER_TOKEN}` } : {}
+  const token = getHermesApiToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 // ── Probing ───────────────────────────────────────────────────────

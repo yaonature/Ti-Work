@@ -16,7 +16,7 @@ const TEMPLATES_FILE = join(DATA_DIR, 'templates.json')
 
 // ─── Built-in templates (hardcoded, never persisted) ─────────────────────────
 
-const BUILT_IN_TEMPLATES: CrewTemplate[] = [
+const BUILT_IN_TEMPLATES: Array<CrewTemplate> = [
   {
     id: 'builtin-research-team',
     name: 'Research Team',
@@ -241,7 +241,7 @@ loadFromDisk()
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /** Returns all templates: built-ins first (declaration order), then user templates newest-first. */
-export function listTemplates(): CrewTemplate[] {
+export function listTemplates(): Array<CrewTemplate> {
   const userTemplates = Object.values(store.templates).sort(
     (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0),
   )
@@ -261,7 +261,7 @@ export function createUserTemplate(input: {
   category: CrewTemplateCategory
   defaultGoal: string
   defaultMembers: Array<{ persona: string; role: CrewTemplate['defaultMembers'][number]['role'] }>
-  tags: string[]
+  tags: Array<string>
   templateType?: CrewTemplate['templateType']
   conductorConfig?: CrewTemplate['conductorConfig']
 }): CrewTemplate {

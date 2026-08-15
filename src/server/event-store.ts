@@ -65,7 +65,7 @@ function getDb(): SqliteDb | null {
     // CJS and ESM contexts. better-sqlite3 is listed in vite.config
     // ssr.external so the bundler leaves this call alone in production builds.
     const Database = _require('better-sqlite3') as typeof import('better-sqlite3')
-    const db = new Database(DB_PATH) as SqliteDb
+    const db = new Database(DB_PATH)
 
     db.pragma('journal_mode = WAL')
     db.pragma('synchronous = NORMAL')
@@ -158,7 +158,7 @@ export function getEventsSince(
   sessionKey: string,
   lastSeq: number,
   limit = 500,
-): StoredEvent[] {
+): Array<StoredEvent> {
   const db = getDb()
   if (!db) return []
 
@@ -171,7 +171,7 @@ export function getEventsSince(
          ORDER BY seq ASC
          LIMIT ?`,
       )
-      .all(sessionKey, lastSeq, limit) as EventRow[]
+      .all(sessionKey, lastSeq, limit) as Array<EventRow>
 
     return rows.map((row) => ({
       seq: row.seq,
@@ -188,7 +188,7 @@ export function getEventsSince(
 
 export interface AuditQuery {
   sessionKey?: string
-  eventTypes?: string[]
+  eventTypes?: Array<string>
   since?: number
   until?: number
   limit?: number
@@ -196,9 +196,9 @@ export interface AuditQuery {
 }
 
 export interface AuditResult {
-  events: StoredEvent[]
+  events: Array<StoredEvent>
   total: number
-  sessions: string[]
+  sessions: Array<string>
 }
 
 /**
@@ -219,8 +219,8 @@ export function queryAuditEvents(query: AuditQuery = {}): AuditResult {
   } = query
 
   try {
-    const conditions: string[] = []
-    const params: (string | number)[] = []
+    const conditions: Array<string> = []
+    const params: Array<string | number> = []
 
     if (sessionKey) {
       conditions.push('session_key = ?')
@@ -252,7 +252,7 @@ export function queryAuditEvents(query: AuditQuery = {}): AuditResult {
          ORDER BY seq DESC
          LIMIT ? OFFSET ?`,
       )
-      .all(...params, limit, offset) as EventRow[]
+      .all(...params, limit, offset) as Array<EventRow>
 
     const sessionRows = db
       .prepare('SELECT DISTINCT session_key FROM events ORDER BY session_key ASC')

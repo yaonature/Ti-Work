@@ -8,7 +8,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { CrewUsage, CostStoreData } from '../types/cost'
+import type { CostStoreData, CrewUsage } from '../types/cost'
 
 const DATA_DIR = join(process.cwd(), '.runtime')
 const COSTS_FILE = join(DATA_DIR, 'costs.json')

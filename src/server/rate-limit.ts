@@ -55,7 +55,7 @@ export function getClientIp(request: Request): string {
  */
 export function rateLimitResponse(): Response {
   return new Response(
-    JSON.stringify({ error: 'Too many requests, please try again later' }),
+    JSON.stringify({ error: '请求过于频繁，请稍后重试' }),
     {
       status: 429,
       headers: { 'Content-Type': 'application/json' },
@@ -77,7 +77,7 @@ export function requireJsonContentType(request: Request): Response | null {
   const ct = request.headers.get('content-type') ?? ''
   if (ct.includes('application/json')) return null
   return new Response(
-    JSON.stringify({ error: 'Content-Type must be application/json' }),
+    JSON.stringify({ error: 'Content-Type 必须为 application/json' }),
     { status: 415, headers: { 'Content-Type': 'application/json' } },
   )
 }
@@ -87,7 +87,7 @@ export function requireJsonContentType(request: Request): Response | null {
  */
 export function safeErrorMessage(err: unknown): string {
   if (process.env.NODE_ENV === 'production') {
-    return 'Internal server error'
+    return '服务器内部错误'
   }
   return err instanceof Error ? err.message : String(err)
 }

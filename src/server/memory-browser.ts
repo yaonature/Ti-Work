@@ -33,13 +33,13 @@ export function getMemoryWorkspaceRoot(): string {
 
 function normalizeRelativeMemoryPath(input: string): string {
   const normalized = input.replace(/\\/g, '/').trim()
-  if (!normalized) throw new Error('Path is required')
+  if (!normalized) throw new Error('路径必填')
   if (normalized.startsWith('/'))
-    throw new Error('Absolute paths are not allowed')
+    throw new Error('不允许使用绝对路径')
   if (normalized.includes('..'))
-    throw new Error('Path traversal is not allowed')
+    throw new Error('不允许路径穿越')
   if (!normalized.toLowerCase().endsWith('.md'))
-    throw new Error('Only Markdown files are allowed')
+    throw new Error('仅允许 Markdown 文件')
   return normalized
 }
 
@@ -51,7 +51,7 @@ export function resolveMemoryFilePath(relativePath: string): {
   const workspaceRoot = getMemoryWorkspaceRoot()
   const fullPath = path.resolve(workspaceRoot, safeRelativePath)
   if (!fullPath.startsWith(workspaceRoot)) {
-    throw new Error('Resolved path is outside workspace')
+    throw new Error('解析后的路径超出工作区')
   }
   return { fullPath, relativePath: safeRelativePath }
 }

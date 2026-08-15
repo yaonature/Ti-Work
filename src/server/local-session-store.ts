@@ -13,6 +13,8 @@ export type LocalSession = {
   id: string
   title: string | null
   model: string | null
+  /** Owning user of the session in multi-user mode (unowned legacy sessions don't appear in any user's list) */
+  ownerId?: string
   createdAt: number
   updatedAt: number
   messageCount: number
@@ -182,23 +184,54 @@ function scheduleSave(): void {
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 
-export function listLocalSessions(): Array<LocalSession> {
-  return Object.values(store.sessions).sort((a, b) => b.updatedAt - a.updatedAt)
+/**
+ * All local sessions, sorted by updatedAt descending.
+ * In multi-user mode, passing ownerId applies data-level isolation (only sessions owned by
+ * that user are returned).
+ */
+export function listLocalSessions(ownerId?: string): Array<LocalSession> {
+  const list = Object.values(store.sessions)
+  const filtered =
+    ownerId && ownerId.length > 0
+      ? list.filter((s) => s.ownerId === ownerId)
+      : list
+  return filtered.sort((a, b) => b.updatedAt - a.updatedAt)
 }
 
 export function getLocalSession(sessionId: string): LocalSession | null {
   return store.sessions[sessionId] ?? null
 }
 
+/** Owning user of the session; returns undefined when unowned (leftover from single-user era) */
+export function getLocalSessionOwner(sessionId: string): string | undefined {
+  return store.sessions[sessionId]?.ownerId
+}
+
+/**
+ * In multi-user mode, verify that the current user is the owner of the session.
+ * Single-user mode (ownerId empty) does not check; in multi-user mode, unowned legacy
+ * sessions are treated as inaccessible.
+ */
+export function canAccessLocalSession(
+  sessionId: string,
+  ownerId?: string,
+): boolean {
+  if (!ownerId || ownerId.length === 0) return true
+  const owner = getLocalSessionOwner(sessionId)
+  return owner !== undefined && owner === ownerId
+}
+
 export function ensureLocalSession(
   sessionId: string,
   model?: string,
+  ownerId?: string,
 ): LocalSession {
   if (!store.sessions[sessionId]) {
     store.sessions[sessionId] = {
       id: sessionId,
       title: null,
       model: model ?? null,
+      ownerId: ownerId && ownerId.length > 0 ? ownerId : undefined,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       messageCount: 0,

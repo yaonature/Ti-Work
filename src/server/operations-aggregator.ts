@@ -5,10 +5,10 @@
  * the Hermes sessions API for conductor workers.
  */
 
-import type { OperationAgent, OperationAgentStatus } from '../types/operation'
 import { listCrews } from './crew-store'
-import type { CrewMemberStatus } from './crew-store'
 import { listSessions } from './hermes-api'
+import type { OperationAgent, OperationAgentStatus } from '../types/operation'
+import type { CrewMemberStatus } from './crew-store'
 
 function crewStatusToOpStatus(status: CrewMemberStatus): OperationAgentStatus {
   switch (status) {
@@ -29,8 +29,8 @@ function sessionStatusToOpStatus(updatedAt: number | undefined | null, totalToke
   return 'unknown'
 }
 
-export async function getOperationsOverview(): Promise<OperationAgent[]> {
-  const agents: OperationAgent[] = []
+export async function getOperationsOverview(): Promise<Array<OperationAgent>> {
+  const agents: Array<OperationAgent> = []
 
   // Crew agents — unchanged
   for (const crew of listCrews()) {
