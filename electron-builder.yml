@@ -1,0 +1,100 @@
+# Ti Work 桌面壳打包配置（electron-builder）
+# 产物：Windows NSIS exe / macOS dmg / Linux AppImage
+# 运行：pnpm electron:build（先 vite build + 编译主进程 + 生成图标）
+
+appId: com.tiwork.app
+productName: Ti Work
+copyright: Copyright (c) 2026 Ti Work
+
+directories:
+  output: release
+  buildResources: build
+
+# beforeBuild 钩子返回 false：声明 node_modules 由外部处理。
+# ① 跳过 installOrRebuild —— 打包不携带 node_modules（files 排除），后端依赖已由
+#    scripts/stage-server-deps.mjs 收进 extraResources（.electron-stage），无需
+#    node-gyp 重建 native 模块（better-sqlite3）。
+# ② 跳过 node_modules 依赖树收集 —— electron-builder 26 的 pnpm collector 会 spawn
+#    `pnpm list --json` 子进程，受限沙箱/CI 中该子进程写 Windows Recent 跳转列表被
+#    拦截导致打包失败；本工程 asar 不需要 node_modules，收集纯属浪费。
+beforeBuild: scripts/electron-before-build.cjs
+
+# 直用本地已解压的 Electron 二进制（scripts/ensure-electron.mjs 保证存在），
+# 跳过 @electron/get 下载——默认缓存 %LOCALAPPDATA%\electron\Cache 在沙箱/CI 不可写。
+electronDist: node_modules/electron/dist
+
+# P0 首装阶段先禁用 asar，确保主进程文件可直接检查与调试；
+# 稳定后如需恢复 asar，必须保留同等验证能力。
+asar: false
+
+# 主进程/预加载单文件 + package.json（main 指向 dist-electron/main.cjs）
+# 本地后端由 extraResources 携带：dist（静态资源+SSR）与 server-entry.js 一并放入
+# resources/app-dist，主进程按 app.isPackaged 解析该路径。
+files:
+  - dist-electron/main.cjs
+  - dist-electron/preload.cjs
+  - package.json
+  - '!node_modules/**'
+
+extraResources:
+  - from: dist
+    to: app-dist/dist
+  - from: server-entry.js
+    to: app-dist/server-entry.js
+  # 后端运行依赖闭包：.electron-stage 内只有 package.json + node_modules。
+  # 注意：electron-builder 的 copy filter（util/filter.js）会硬性排除 from 根级的
+  # node_modules 目录，因此不能整目录拷到 app-dist；node_modules 单独拷到
+  # resources/node_modules —— Node 从 app-dist/dist/server/assets 向上查找依赖时
+  # 恰好命中 app-dist 的上一级 resources/node_modules（createRequire 同样适用）。
+  - from: .electron-stage
+    to: app-dist
+  - from: .electron-stage/node_modules
+    to: node_modules
+  # Hermes 执行引擎运行时（安装包内置引擎 + 自启）。
+  # 由 scripts/stage-hermes-engine.mjs 生成；目录不存在时该条目自动跳过，
+  # 打包产物仍可用（引擎缺失时主进程降级为"依赖外部网关"）。
+  - from: .engine-stage
+    to: engine-runtime
+  # Hermes 执行引擎官方安装器（Windows install.ps1，Stage 协议）。
+  # 由 scripts/stage-hermes-bootstrap.mjs 生成；首启时应用用它离线安装引擎。
+  # 目录不存在时该条目自动跳过，应用改为在线下载官方脚本。
+  - from: .bootstrap-stage
+    to: hermes-bootstrap
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  # 无签名证书：跳过 signtool 签名（保留 rcedit 图标/版本编辑）。
+  # 沙箱/CI 环境下 signtool 触发 Windows Recent 写入会被拦截。
+  signExecutable: false
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  # 安装包/卸载程序图标显式指向多尺寸 ICO（避免依赖 PNG 自动转换）
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: build/icon.png
+  category: public.app-category.business
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  icon: build/icon.png
+  category: Office
+
+publish: null

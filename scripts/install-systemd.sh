@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install-systemd.sh — install Hermes Studio as a systemd user service
+# install-systemd.sh - install Hermes Studio as a systemd user service
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

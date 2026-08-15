@@ -36,14 +36,14 @@ async function generateIcon(size) {
 
   const outputPath = join(outputDir, `hermes-icon-${size}.png`)
   writeFileSync(outputPath, screenshot)
-  console.log(`✓ Generated ${size}x${size} icon`)
+  console.log(`ok Generated ${size}x${size} icon`)
 }
 
 async function main() {
   console.log('Generating PWA icons...')
   await generateIcon(192)
   await generateIcon(512)
-  console.log('✓ All icons generated successfully!')
+  console.log('ok All icons generated successfully!')
 }
 
 main().catch(console.error)
