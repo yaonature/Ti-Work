@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockListSessions = vi.fn().mockResolvedValue([])
 const mockListCrews = vi.fn().mockReturnValue([])
 
 vi.mock('@/server/hermes-api', () => ({
-  listSessions: (...args: unknown[]) => mockListSessions(...args),
+  listSessions: (...args: Array<unknown>) => mockListSessions(...args),
 }))
 
 vi.mock('@/server/crew-store', () => ({
-  listCrews: (...args: unknown[]) => mockListCrews(...args),
+  listCrews: (...args: Array<unknown>) => mockListCrews(...args),
 }))
 
 beforeEach(() => {

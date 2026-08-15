@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import type { SessionUsage } from '@/lib/chart-utils'
 import {
+  CHART_DAYS,
   buildDayBuckets,
   formatTokens,
   progressColor,
-  CHART_DAYS,
 } from '@/lib/chart-utils'
-import type { SessionUsage } from '@/lib/chart-utils'
 
 const NOW = new Date('2026-04-17T12:00:00Z').getTime()
 

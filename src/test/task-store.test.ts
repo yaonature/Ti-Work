@@ -1,23 +1,20 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createTempWorkspaceHarness } from './harness/temp-dir-harness'
 
 vi.mock('@/server/chat-event-bus', () => ({
   publishChatEvent: vi.fn(),
 }))
 
-let tmpDir: string
+let harness: ReturnType<typeof createTempWorkspaceHarness>
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(join(tmpdir(), 'task-store-test-'))
-  vi.spyOn(process, 'cwd').mockReturnValue(tmpDir)
-  vi.resetModules()
+  harness = createTempWorkspaceHarness('task-store-test-')
+  harness.mockCwdAndResetModules()
 })
 
 afterEach(() => {
   vi.restoreAllMocks()
-  rmSync(tmpDir, { recursive: true, force: true })
+  harness.cleanup()
 })
 
 async function getStore() {

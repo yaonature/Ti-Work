@@ -1,4 +1,17 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { makeContractRequest } from './harness/contract-harness'
+
+import {
+  createSessionCookie,
+  generateSessionToken,
+  getSessionTokenFromCookie,
+  isAuthenticated,
+  isPasswordProtectionEnabled,
+  isValidSessionToken,
+  revokeSessionToken,
+  storeSessionToken,
+  verifyPassword,
+} from '@/server/auth-middleware'
 
 // We test the pure, non-Redis-dependent exports directly.
 // Redis interactions are triggered only on module load; we suppress them
@@ -8,18 +21,6 @@ vi.mock('@/server/redis-client', () => ({
   getRedisClient: () => Promise.resolve(null),
   getRedisClientSync: () => null,
 }))
-
-import {
-  generateSessionToken,
-  storeSessionToken,
-  isValidSessionToken,
-  revokeSessionToken,
-  isPasswordProtectionEnabled,
-  verifyPassword,
-  getSessionTokenFromCookie,
-  isAuthenticated,
-  createSessionCookie,
-} from '@/server/auth-middleware'
 
 beforeEach(() => {
   delete process.env.HERMES_PASSWORD
@@ -122,31 +123,25 @@ describe('getSessionTokenFromCookie()', () => {
 })
 
 describe('isAuthenticated()', () => {
-  function makeRequest(cookie?: string): Request {
-    const headers: Record<string, string> = {}
-    if (cookie) headers['cookie'] = cookie
-    return new Request('http://localhost/api/test', { headers })
-  }
-
   it('returns true when no password is configured', () => {
-    expect(isAuthenticated(makeRequest())).toBe(true)
+    expect(isAuthenticated(makeContractRequest(null, { path: '/api/test' }))).toBe(true)
   })
 
   it('returns false when password is set and no cookie provided', () => {
     process.env.HERMES_PASSWORD = 'secret'
-    expect(isAuthenticated(makeRequest())).toBe(false)
+    expect(isAuthenticated(makeContractRequest(null, { path: '/api/test' }))).toBe(false)
   })
 
   it('returns false when password is set and cookie has wrong token', () => {
     process.env.HERMES_PASSWORD = 'secret'
-    expect(isAuthenticated(makeRequest('hermes-auth=bad-token'))).toBe(false)
+    expect(isAuthenticated(makeContractRequest('bad-token', { path: '/api/test' }))).toBe(false)
   })
 
   it('returns true when password is set and cookie has valid token', () => {
     process.env.HERMES_PASSWORD = 'secret'
     const token = generateSessionToken()
     storeSessionToken(token)
-    expect(isAuthenticated(makeRequest(`hermes-auth=${token}`))).toBe(true)
+    expect(isAuthenticated(makeContractRequest(token, { path: '/api/test' }))).toBe(true)
     revokeSessionToken(token)
   })
 })

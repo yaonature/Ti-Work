@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 test.describe('Hermes Studio smoke tests', () => {
   test('homepage loads and shows app shell', async ({ page }) => {
@@ -12,8 +12,9 @@ test.describe('Hermes Studio smoke tests', () => {
 
   test('/api/auth-check returns a JSON response', async ({ request }) => {
     const res = await request.get('/api/auth-check')
-    // Should always return JSON (may be 200 or 401 depending on auth config)
-    expect([200, 401, 403]).toContain(res.status())
+    // Should always return JSON (200 = ok; 401/403 = auth wall;
+    // 503 = gateway degraded, same as /api/ping)
+    expect([200, 401, 403, 503]).toContain(res.status())
     const ct = res.headers()['content-type'] ?? ''
     expect(ct).toContain('application/json')
   })
