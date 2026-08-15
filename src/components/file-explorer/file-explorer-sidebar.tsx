@@ -59,7 +59,7 @@ type PromptState = {
   defaultValue?: string
 }
 
-const DEFAULT_ROOT_LABEL = 'Workspace'
+const DEFAULT_ROOT_LABEL = '工作区'
 
 function isImageFile(fileName: string) {
   const ext = fileName.split('.').pop()?.toLowerCase() || ''
@@ -92,7 +92,7 @@ async function fetchFileTree(profileName?: string): Promise<Array<FileEntry>> {
   const params = new URLSearchParams({ action: 'list' })
   if (profileName) params.set('profile', profileName)
   const res = await fetch(`/api/files?${params.toString()}`)
-  if (!res.ok) throw new Error('Failed to load files')
+  if (!res.ok) throw new Error('加载文件失败')
   const data = (await res.json()) as { entries?: Array<FileEntry> }
   return Array.isArray(data.entries) ? data.entries : []
 }
@@ -224,7 +224,7 @@ export function FileExplorerSidebar({
 
   const handleDelete = useCallback(
     async (entry: FileEntry) => {
-      if (!window.confirm(`Move ${entry.name} to trash?`)) return
+      if (!window.confirm(`确定要将 ${entry.name} 移到回收站吗？`)) return
       await fetch('/api/files', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -415,7 +415,7 @@ export function FileExplorerSidebar({
             size="icon-sm"
             variant="ghost"
             onClick={refresh}
-            title="Refresh"
+            title="刷新"
           >
             <HugeiconsIcon icon={RefreshIcon} size={18} />
           </Button>
@@ -423,7 +423,7 @@ export function FileExplorerSidebar({
             size="icon-sm"
             variant="ghost"
             onClick={() => handleUploadClick('')}
-            title="Upload"
+            title="上传"
           >
             <HugeiconsIcon icon={Upload01Icon} size={18} />
           </Button>
@@ -431,7 +431,7 @@ export function FileExplorerSidebar({
             size="icon-sm"
             variant="ghost"
             onClick={() => openPrompt({ mode: 'new-file', targetPath: '' })}
-            title="New file"
+            title="新建文件"
           >
             <HugeiconsIcon icon={PlusSignIcon} size={18} />
           </Button>
@@ -442,7 +442,7 @@ export function FileExplorerSidebar({
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search files"
+          placeholder="搜索文件"
           className="w-full rounded-md border border-primary-200 bg-primary-50 px-2 py-1 text-sm text-primary-900 placeholder:text-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-300"
         />
       </div>
@@ -450,7 +450,7 @@ export function FileExplorerSidebar({
       <ScrollAreaRoot className="flex-1 min-h-0">
         <ScrollAreaViewport className="px-1">
           {loading ? (
-            <div className="px-3 py-2 text-xs text-primary-500">Loading…</div>
+            <div className="px-3 py-2 text-xs text-primary-500">加载中…</div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center gap-3 px-4 py-8 text-center">
               <div className="flex size-10 items-center justify-center rounded-xl border border-primary-200 bg-primary-100/60">
@@ -463,10 +463,10 @@ export function FileExplorerSidebar({
               </div>
               <div>
                 <p className="text-sm font-medium text-primary-800">
-                  No workspace selected
+                  尚未选择工作区
                 </p>
                 <p className="mt-1 text-xs text-primary-500 text-pretty">
-                  Select a folder to browse and edit files.
+                  请选择一个文件夹以浏览和编辑文件。
                 </p>
               </div>
               <Button
@@ -476,7 +476,7 @@ export function FileExplorerSidebar({
                 className="mt-1"
               >
                 <HugeiconsIcon icon={RefreshIcon} size={16} />
-                Retry
+                重试
               </Button>
             </div>
           ) : entries.length === 0 ? (
@@ -491,10 +491,10 @@ export function FileExplorerSidebar({
               </div>
               <div>
                 <p className="text-sm font-medium text-primary-800">
-                  Workspace is empty
+                  工作区为空
                 </p>
                 <p className="mt-1 text-xs text-primary-500 text-pretty">
-                  Create files or upload content to get started.
+                  新建文件或上传内容后即可开始使用。
                 </p>
               </div>
               <div className="flex gap-2">
@@ -506,7 +506,7 @@ export function FileExplorerSidebar({
                   }
                 >
                   <HugeiconsIcon icon={PlusSignIcon} size={16} />
-                  New file
+                  新建文件
                 </Button>
                 <Button
                   size="sm"
@@ -514,7 +514,7 @@ export function FileExplorerSidebar({
                   onClick={() => handleUploadClick('')}
                 >
                   <HugeiconsIcon icon={Upload01Icon} size={16} />
-                  Upload
+                  上传
                 </Button>
               </div>
             </div>
@@ -553,7 +553,7 @@ export function FileExplorerSidebar({
               setContextMenu(null)
             }}
           >
-            <HugeiconsIcon icon={Pen01Icon} size={16} /> Rename
+            <HugeiconsIcon icon={Pen01Icon} size={16} /> 重命名
           </button>
           {contextMenu.entry.type === 'folder' ? (
             <>
@@ -564,7 +564,7 @@ export function FileExplorerSidebar({
                   setContextMenu(null)
                 }}
               >
-                <HugeiconsIcon icon={PlusSignIcon} size={16} /> New file
+                <HugeiconsIcon icon={PlusSignIcon} size={16} /> 新建文件
               </button>
               <button
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 hover:bg-primary-100"
@@ -573,7 +573,7 @@ export function FileExplorerSidebar({
                   setContextMenu(null)
                 }}
               >
-                <HugeiconsIcon icon={Folder01Icon} size={16} /> New folder
+                <HugeiconsIcon icon={Folder01Icon} size={16} /> 新建文件夹
               </button>
               <button
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 hover:bg-primary-100"
@@ -582,7 +582,7 @@ export function FileExplorerSidebar({
                   setContextMenu(null)
                 }}
               >
-                <HugeiconsIcon icon={Upload01Icon} size={16} /> Upload
+                <HugeiconsIcon icon={Upload01Icon} size={16} /> 上传
               </button>
             </>
           ) : (
@@ -593,7 +593,7 @@ export function FileExplorerSidebar({
                 setContextMenu(null)
               }}
             >
-              <HugeiconsIcon icon={Download01Icon} size={16} /> Download
+              <HugeiconsIcon icon={Download01Icon} size={16} /> 下载
             </button>
           )}
           <button
@@ -603,7 +603,7 @@ export function FileExplorerSidebar({
               setContextMenu(null)
             }}
           >
-            <HugeiconsIcon icon={Delete01Icon} size={16} /> Delete
+            <HugeiconsIcon icon={Delete01Icon} size={16} /> 删除
           </button>
         </div>
       ) : null}
@@ -618,15 +618,15 @@ export function FileExplorerSidebar({
           <div className="p-5 space-y-3">
             <DialogTitle>
               {promptState?.mode === 'rename'
-                ? 'Rename'
+                ? '重命名'
                 : promptState?.mode === 'new-folder'
-                  ? 'New Folder'
-                  : 'New File'}
+                  ? '新建文件夹'
+                  : '新建文件'}
             </DialogTitle>
             <DialogDescription>
               {promptState?.mode === 'rename'
-                ? 'Enter a new name.'
-                : 'Enter a name to create.'}
+                ? '请输入新的名称。'
+                : '请输入要创建的名称。'}
             </DialogDescription>
             <input
               value={promptValue}
@@ -635,8 +635,8 @@ export function FileExplorerSidebar({
               autoFocus
             />
             <div className="flex justify-end gap-2 pt-2">
-              <DialogClose render={<Button variant="outline">Cancel</Button>} />
-              <Button onClick={handlePromptSubmit}>Save</Button>
+              <DialogClose render={<Button variant="outline">取消</Button>} />
+              <Button onClick={handlePromptSubmit}>保存</Button>
             </div>
           </div>
         </DialogContent>
@@ -653,7 +653,7 @@ export function FileExplorerSidebar({
         type="button"
         onClick={onToggle}
         className="sr-only"
-        aria-label="Toggle file explorer"
+        aria-label="切换文件浏览器"
       />
     </aside>
   )

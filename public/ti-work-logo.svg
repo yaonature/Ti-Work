@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <!--
+    Ti Work 品牌标识 —— 扶桑树
+    神话原型：扶桑（东方汤谷神木，金乌栖止之所）。“日出扶桑”，象征新生、晨光与东方。
+    构图：品牌蓝扶桑树承托金色日轮；日轮悬于树冠之上，树冠如碗如臂，托起将升之日。
+  -->
+  <defs>
+    <linearGradient id="fs-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#26262B"/>
+      <stop offset="1" stop-color="#151518"/>
+    </linearGradient>
+    <radialGradient id="fs-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFC964" stop-opacity="0.38"/>
+      <stop offset="0.65" stop-color="#FFC964" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#FFC964" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="fs-sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE38F"/>
+      <stop offset="1" stop-color="#FF9F1C"/>
+    </linearGradient>
+    <linearGradient id="fs-tree" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#0E5BD1"/>
+      <stop offset="1" stop-color="#5CADFF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 底 -->
+  <rect width="256" height="256" rx="56" fill="url(#fs-bg)"/>
+
+  <!-- 日轮辉光 -->
+  <circle cx="128" cy="96" r="80" fill="url(#fs-glow)"/>
+
+  <!-- 树干 -->
+  <path d="M128 240 L128 186" stroke="url(#fs-tree)" stroke-width="15" stroke-linecap="round"/>
+  <!-- 根部 -->
+  <path d="M128 240 C 108 243 94 248 84 254" stroke="url(#fs-tree)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M128 240 C 148 243 162 248 172 254" stroke="url(#fs-tree)" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- 下层枝（最宽） -->
+  <path d="M128 202 C 86 194 54 160 38 110" stroke="url(#fs-tree)" stroke-width="11" stroke-linecap="round"/>
+  <path d="M128 202 C 170 194 202 160 218 110" stroke="url(#fs-tree)" stroke-width="11" stroke-linecap="round"/>
+  <!-- 中层枝 -->
+  <path d="M128 186 C 98 178 70 148 54 98" stroke="url(#fs-tree)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M128 186 C 158 178 186 148 202 98" stroke="url(#fs-tree)" stroke-width="9" stroke-linecap="round"/>
+  <!-- 上层细枝 -->
+  <path d="M128 172 C 110 164 96 152 90 138" stroke="url(#fs-tree)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M128 172 C 146 164 160 152 166 138" stroke="url(#fs-tree)" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- 金乌之日（扶桑之日出） -->
+  <circle cx="128" cy="96" r="32" fill="url(#fs-sun)"/>
+  <circle cx="128" cy="96" r="26" stroke="#FFD97A" stroke-opacity="0.4" stroke-width="2"/>
+</svg>

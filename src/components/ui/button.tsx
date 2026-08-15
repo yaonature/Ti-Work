@@ -9,7 +9,7 @@ import type * as React from 'react'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0] select-none duration-150',
+  'relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 select-none duration-150',
   {
     defaultVariants: {
       size: 'default',
@@ -27,13 +27,13 @@ const buttonVariants = cva(
       },
       variant: {
         default:
-          'bg-primary-950 text-primary-50 hover:bg-primary-900 shadow-sm outline outline-primary-900/10 shadow-2xs',
+          'bg-accent-500 text-white hover:bg-accent-600 shadow-sm outline outline-accent-500/20 shadow-2xs',
         secondary:
-          'bg-primary-50 text-primary-950 hover:bg-primary-200 outline outline-primary-900/10 shadow-2xs',
+          'bg-accent-50 text-accent-700 hover:bg-accent-100 outline outline-accent-500/10 shadow-2xs',
         outline:
-          'border-primary-200 bg-transparent text-primary-900 hover:bg-primary-50 shadow-2xs outline outline-primary-900/10',
+          'border-accent-200 bg-transparent text-accent-800 hover:bg-accent-50 shadow-2xs outline outline-accent-500/10',
         ghost: 'text-primary-900 hover:bg-primary-200 hover:text-primary-950',
-        destructive: 'bg-red-600 text-primary-50 hover:bg-red-700 shadow-sm',
+        destructive: 'bg-red-600 text-white hover:bg-red-700 shadow-sm',
       },
     },
   },

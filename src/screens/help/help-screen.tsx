@@ -59,926 +59,926 @@ export function HelpScreen() {
     <div className="flex h-full flex-col overflow-y-auto" style={{ background: 'var(--theme-bg)' }}>
       <div className="mx-auto w-full max-w-4xl px-6 py-10">
         <h1 style={{ color: 'var(--theme-text)', fontSize: '2.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
-          Hermes Studio Help
+          Ti Work 帮助
         </h1>
         <p style={{ color: 'var(--theme-muted)', fontSize: '1.1rem', marginBottom: '2.5rem' }}>
-          A comprehensive guide to every feature in Hermes Studio. Use the table of contents below to jump to any section.
+          Ti Work 完整用户指南。使用下方的目录跳转到任意章节。
         </p>
 
         {/* Table of Contents */}
         <nav style={{ background: 'var(--theme-card)', border: '1px solid var(--theme-border)', borderRadius: '12px', padding: '1.5rem 2rem', marginBottom: '3rem' }}>
-          <h2 style={{ color: 'var(--theme-text)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Table of Contents</h2>
+          <h2 style={{ color: 'var(--theme-text)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>目录</h2>
           <ol style={{ ...olStyle, columns: 2, columnGap: '2rem' }}>
-            <li><a href="#getting-started" style={tocLinkStyle}>Getting Started</a></li>
-            <li><a href="#chat" style={tocLinkStyle}>Chat</a></li>
-            <li><a href="#crews" style={tocLinkStyle}>Crews (Multi-Agent Teams)</a></li>
-            <li><a href="#conductor" style={tocLinkStyle}>Conductor (Mission Orchestration)</a></li>
-            <li><a href="#tasks" style={tocLinkStyle}>Tasks (Kanban Board)</a></li>
-            <li><a href="#jobs" style={tocLinkStyle}>Jobs (Cron Scheduler)</a></li>
-            <li><a href="#memory" style={tocLinkStyle}>Memory &amp; Knowledge Graph</a></li>
-            <li><a href="#skills" style={tocLinkStyle}>Skills</a></li>
-            <li><a href="#agents" style={tocLinkStyle}>Agents (Custom Personas)</a></li>
-            <li><a href="#files-terminal" style={tocLinkStyle}>Files &amp; Terminal</a></li>
-            <li><a href="#analytics" style={tocLinkStyle}>Analytics &amp; Audit</a></li>
-            <li><a href="#settings" style={tocLinkStyle}>Settings &amp; Configuration</a></li>
-            <li><a href="#keyboard-shortcuts" style={tocLinkStyle}>Keyboard Shortcuts</a></li>
-            <li><a href="#troubleshooting" style={tocLinkStyle}>Troubleshooting</a></li>
+            <li><a href="#getting-started" style={tocLinkStyle}>快速上手</a></li>
+            <li><a href="#chat" style={tocLinkStyle}>会话</a></li>
+            <li><a href="#crews" style={tocLinkStyle}>多智能体团队</a></li>
+            <li><a href="#conductor" style={tocLinkStyle}>任务编排</a></li>
+            <li><a href="#tasks" style={tocLinkStyle}>任务（看板）</a></li>
+            <li><a href="#jobs" style={tocLinkStyle}>定时任务（Cron 调度器）</a></li>
+            <li><a href="#memory" style={tocLinkStyle}>记忆与知识图谱</a></li>
+            <li><a href="#skills" style={tocLinkStyle}>技能</a></li>
+            <li><a href="#agents" style={tocLinkStyle}>智能体（自定义人设）</a></li>
+            <li><a href="#files-terminal" style={tocLinkStyle}>文件与终端</a></li>
+            <li><a href="#analytics" style={tocLinkStyle}>数据分析与审计</a></li>
+            <li><a href="#settings" style={tocLinkStyle}>设置与配置</a></li>
+            <li><a href="#keyboard-shortcuts" style={tocLinkStyle}>键盘快捷键</a></li>
+            <li><a href="#troubleshooting" style={tocLinkStyle}>故障排查</a></li>
           </ol>
         </nav>
 
         {/* Section 1: Getting Started */}
         <section id="getting-started" style={sectionStyle}>
-          <h2 style={h2Style}>1. Getting Started</h2>
+          <h2 style={h2Style}>1. 快速上手</h2>
 
-          <h3 style={h3Style}>Connecting to Hermes Gateway</h3>
+          <h3 style={h3Style}>连接 Hermes 执行引擎（网关）</h3>
           <p style={pStyle}>
-            Hermes Studio communicates with your AI agents through the Hermes Gateway server. Before you can use any features, you need to establish a connection.
+            Ti Work 通过 Hermes 执行引擎（网关）服务器与您的 AI 智能体通信。在使用任何功能之前，您需要先建立连接。
           </p>
           <ol style={olStyle}>
-            <li>Open the Settings screen by clicking the gear icon in the sidebar or pressing <kbd style={kbdStyle}>Ctrl+,</kbd>.</li>
-            <li>In the Connection section, enter your Gateway URL (e.g., <code>http://localhost:3001</code> or your remote server address).</li>
-            <li>If your gateway requires an API key, enter it in the API Key field.</li>
-            <li>Click <strong>Test Connection</strong> to verify connectivity.</li>
-            <li>A green indicator in the top bar confirms a successful connection.</li>
+            <li>点击侧边栏中的齿轮图标打开<strong>设置</strong>页面，或按 <kbd style={kbdStyle}>Ctrl+,</kbd>。</li>
+            <li>在<strong>连接</strong>部分，输入您的网关地址（例如 <code>http://localhost:3001</code> 或您的远程服务器地址）。</li>
+            <li>如果您的网关需要 API 密钥，请在<strong>API 密钥</strong>字段中填写。</li>
+            <li>点击<strong>测试连接</strong>以验证连通性。</li>
+            <li>顶部状态栏中的绿色指示灯表示连接成功。</li>
           </ol>
           <div style={tipStyle}>
-            <strong>Tip:</strong> If you are running Hermes Gateway locally, the default URL is usually <code>http://localhost:3001</code>. The connection status indicator in the top navigation bar shows green when connected and red when disconnected.
+            <strong>提示：</strong>如果您在本地运行 Hermes 执行引擎（网关），默认地址通常为 <code>http://localhost:3001</code>。顶部导航栏中的连接状态指示灯在已连接时显示绿色，断开时显示红色。
           </div>
 
-          <h3 style={h3Style}>First-time Setup</h3>
+          <h3 style={h3Style}>首次设置</h3>
           <p style={pStyle}>
-            When you first launch Hermes Studio, a setup wizard may appear to guide you through initial configuration. If it does not appear, follow these steps:
+            首次启动 Ti Work 时，可能会出现设置向导引导您完成初始配置。如果向导未出现，请按照以下步骤操作：
           </p>
           <ol style={olStyle}>
-            <li>Configure your gateway connection (see above).</li>
-            <li>Navigate to Settings and choose your preferred theme and accent color under Appearance.</li>
-            <li>Optionally set up your identity files (SOUL.md and persona.md) under the Identity section to personalize your AI interactions.</li>
-            <li>Browse the Skills registry and install any skills your workflow requires.</li>
+            <li>配置您的网关连接（参见上文）。</li>
+            <li>进入<strong>设置</strong>，在<strong>外观</strong>下选择您偏好的主题和强调色。</li>
+            <li>可选：在<strong>身份</strong>部分设置您的身份文件（SOUL.md 和 persona.md），以个性化您的 AI 交互。</li>
+            <li>浏览技能注册表，安装您的工作流所需的技能。</li>
           </ol>
 
-          <h3 style={h3Style}>Navigation Overview</h3>
+          <h3 style={h3Style}>导航概览</h3>
           <p style={pStyle}>
-            The left sidebar is your primary navigation. Each icon represents a major feature area:
+            左侧边栏是您的主要导航区域。每个图标代表一个主要功能区域：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Chat</strong> - Direct conversations with your AI agent</li>
-            <li><strong>Crews</strong> - Multi-agent team management</li>
-            <li><strong>Conductor</strong> - Mission orchestration and monitoring</li>
-            <li><strong>Tasks</strong> - Kanban-style task board</li>
-            <li><strong>Jobs</strong> - Scheduled/cron job management</li>
-            <li><strong>Memory</strong> - Knowledge graph and memory files</li>
-            <li><strong>Skills</strong> - Skill registry and management</li>
-            <li><strong>Agents</strong> - Custom agent personas</li>
-            <li><strong>Files</strong> - File browser and editor</li>
-            <li><strong>Terminal</strong> - Integrated terminal</li>
-            <li><strong>Analytics</strong> - Usage analytics and audit logs</li>
-            <li><strong>Settings</strong> - App configuration</li>
+            <li><strong>会话</strong> - 直接与您的 AI 智能体对话</li>
+            <li><strong>多智能体团队</strong> - 多智能体团队管理</li>
+            <li><strong>任务编排</strong> - 任务调度与监控</li>
+            <li><strong>任务</strong> - 看板式任务面板</li>
+            <li><strong>定时任务</strong> - Cron 定时任务管理</li>
+            <li><strong>记忆</strong> - 知识图谱与记忆文件</li>
+            <li><strong>技能</strong> - 技能注册表与管理</li>
+            <li><strong>智能体</strong> - 自定义智能体人设</li>
+            <li><strong>文件</strong> - 文件浏览器与编辑器</li>
+            <li><strong>终端</strong> - 集成终端</li>
+            <li><strong>数据分析</strong> - 使用分析与审计日志</li>
+            <li><strong>设置</strong> - 应用程序配置</li>
           </ul>
           <p style={pStyle}>
-            The sidebar can be collapsed by clicking the hamburger menu icon at the top. On smaller screens, it collapses automatically.
+            您可以点击顶部的汉堡菜单图标收起侧边栏。在较小屏幕上，侧边栏会自动收起。
           </p>
         </section>
 
         {/* Section 2: Chat */}
         <section id="chat" style={sectionStyle}>
-          <h2 style={h2Style}>2. Chat</h2>
+          <h2 style={h2Style}>2. 会话</h2>
 
-          <h3 style={h3Style}>Starting a Conversation</h3>
+          <h3 style={h3Style}>开始对话</h3>
           <p style={pStyle}>
-            The Chat screen is your primary interface for interacting with the AI agent. To start a new conversation:
+            会话页面是与 AI 智能体交互的主要界面。要开始新的对话：
           </p>
           <ol style={olStyle}>
-            <li>Click the <strong>Chat</strong> icon in the sidebar to open the chat screen.</li>
-            <li>Type your message in the input field at the bottom of the screen.</li>
-            <li>Press <kbd style={kbdStyle}>Enter</kbd> to send your message, or <kbd style={kbdStyle}>Shift+Enter</kbd> for a new line without sending.</li>
-            <li>The AI will begin streaming its response in real-time.</li>
+            <li>点击侧边栏中的<strong>会话</strong>图标打开会话页面。</li>
+            <li>在页面底部的输入框中输入您的消息。</li>
+            <li>按 <kbd style={kbdStyle}>Enter</kbd> 发送消息，或按 <kbd style={kbdStyle}>Shift+Enter</kbd> 插入换行而不发送。</li>
+            <li>AI 将实时开始流式输出回复。</li>
           </ol>
 
-          <h3 style={h3Style}>Managing Sessions</h3>
+          <h3 style={h3Style}>管理会话</h3>
           <p style={pStyle}>
-            Each conversation exists within a session. You can manage sessions using the session panel:
+            每段对话都存在于一个会话中。您可以使用会话面板管理会话：
           </p>
           <ul style={ulStyle}>
-            <li>Click the <strong>+</strong> button in the sessions sidebar to create a new session.</li>
-            <li>Click on any existing session in the list to switch to it.</li>
-            <li>Right-click a session to rename or delete it.</li>
-            <li>Sessions persist across app restarts so you can continue conversations later.</li>
+            <li>点击会话侧边栏中的<strong>+</strong>按钮创建新会话。</li>
+            <li>点击列表中的任意现有会话即可切换。</li>
+            <li>右键点击会话可重命名或删除。</li>
+            <li>会话在应用重启后仍然保留，因此您可以稍后继续对话。</li>
           </ul>
 
-          <h3 style={h3Style}>Approvals (Approve / Deny / Always-Allow)</h3>
+          <h3 style={h3Style}>审批（批准 / 拒绝 / 始终允许）</h3>
           <p style={pStyle}>
-            When the AI wants to perform an action that requires permission (like running a command, writing a file, or accessing a resource), an approval prompt appears:
+            当 AI 想要执行需要权限的操作（例如运行命令、写入文件或访问资源）时，会出现审批提示：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Approve</strong> - Allow this specific action once.</li>
-            <li><strong>Deny</strong> - Reject this action. The AI will be informed and may suggest an alternative.</li>
-            <li><strong>Always Allow</strong> - Approve this type of action permanently for the current session. The permission is remembered so you won't be asked again for the same tool or pattern.</li>
+            <li><strong>批准</strong> - 仅允许这一次具体操作。</li>
+            <li><strong>拒绝</strong> - 拒绝该操作。AI 将收到通知，并可能提出替代方案。</li>
+            <li><strong>始终允许</strong> - 在当前会话中永久批准此类操作。该权限会被记住，因此系统不会再就相同的工具或模式询问您。</li>
           </ul>
           <div style={noteStyle}>
-            <strong>Note:</strong> You can review and manage always-allow permissions in Settings under Permissions &amp; Security.
+            <strong>注意：</strong>您可以在<strong>设置</strong>中的<strong>权限与安全</strong>下查看和管理始终允许的权限。
           </div>
 
-          <h3 style={h3Style}>File Attachments</h3>
+          <h3 style={h3Style}>文件附件</h3>
           <p style={pStyle}>
-            You can attach files to your messages for the AI to analyze or work with:
+            您可以在消息中附加文件供 AI 分析或处理：
           </p>
           <ol style={olStyle}>
-            <li>Click the paperclip icon next to the message input.</li>
-            <li>Select one or more files from the file picker dialog.</li>
-            <li>Attached files appear as chips above the input field. Click the X on a chip to remove it.</li>
-            <li>Send your message as normal - the AI will have access to the file contents.</li>
+            <li>点击消息输入框旁边的回形针图标。</li>
+            <li>在文件选择对话框中选中一个或多个文件。</li>
+            <li>附加的文件会以标签形式显示在输入框上方。点击标签上的 X 可将其移除。</li>
+            <li>照常发送消息 - AI 将能够访问文件内容。</li>
           </ol>
 
-          <h3 style={h3Style}>Streaming Responses</h3>
+          <h3 style={h3Style}>流式输出</h3>
           <p style={pStyle}>
-            Responses stream in token-by-token for a real-time experience. While a response is streaming:
+            回复会逐字流式输出，带来实时体验。在回复流式输出期间：
           </p>
           <ul style={ulStyle}>
-            <li>You can click the <strong>Stop</strong> button to halt generation at any point.</li>
-            <li>Tool calls and their results appear inline as collapsible blocks.</li>
-            <li>Code blocks are syntax-highlighted and include a copy button.</li>
-            <li>Markdown formatting (headings, lists, tables, links) renders automatically.</li>
+            <li>您可以随时点击<strong>停止</strong>按钮终止生成。</li>
+            <li>工具调用及其结果以可折叠的内联块形式显示。</li>
+            <li>代码块带有语法高亮，并包含复制按钮。</li>
+            <li>富文本格式（标题、列表、表格、链接）会自动渲染。</li>
           </ul>
         </section>
 
         {/* Section 3: Crews */}
         <section id="crews" style={sectionStyle}>
-          <h2 style={h2Style}>3. Crews (Multi-Agent Teams)</h2>
+          <h2 style={h2Style}>3. 多智能体团队</h2>
 
-          <h3 style={h3Style}>Creating a Crew</h3>
+          <h3 style={h3Style}>创建团队</h3>
           <p style={pStyle}>
-            Crews let you organize multiple AI agents into a team that can collaborate on complex tasks. To create a new crew:
+            团队让您可以将多个 AI 智能体组织成一个团队，共同处理复杂任务。要创建新团队：
           </p>
           <ol style={olStyle}>
-            <li>Navigate to the <strong>Crews</strong> screen from the sidebar.</li>
-            <li>Click the <strong>+ New Crew</strong> button in the top-right corner.</li>
-            <li>Enter a name and optional description for your crew.</li>
-            <li>Choose whether to start from scratch or use a template.</li>
-            <li>Click <strong>Create</strong> to finalize.</li>
+            <li>从侧边栏进入<strong>多智能体团队</strong>页面。</li>
+            <li>点击右上角的<strong>+ 新建团队</strong>按钮。</li>
+            <li>为团队输入名称和可选描述。</li>
+            <li>选择从头开始创建还是使用模板。</li>
+            <li>点击<strong>创建</strong>完成。</li>
           </ol>
 
-          <h3 style={h3Style}>Adding Members</h3>
+          <h3 style={h3Style}>添加成员</h3>
           <p style={pStyle}>
-            After creating a crew, you need to add agent members who will participate:
+            创建团队后，您需要添加将参与协作的智能体成员：
           </p>
           <ol style={olStyle}>
-            <li>Open your crew by clicking on it in the crew list.</li>
-            <li>Click <strong>Add Member</strong> in the members panel.</li>
-            <li>Select an agent from your available agents, or create a new one inline.</li>
-            <li>Assign a role to the member (e.g., Researcher, Developer, Reviewer).</li>
-            <li>Optionally set specific instructions that override the agent's default prompt for this crew context.</li>
+            <li>在团队列表中点击您的团队以打开。</li>
+            <li>在成员面板中点击<strong>添加成员</strong>。</li>
+            <li>选择可用的智能体之一，或就地创建新智能体。</li>
+            <li>为成员分配角色（例如研究员、开发者、审查者）。</li>
+            <li>可选：设置特定指令，以在该团队上下文中覆盖智能体的默认提示词。</li>
           </ol>
 
-          <h3 style={h3Style}>Using Templates</h3>
+          <h3 style={h3Style}>使用模板</h3>
           <p style={pStyle}>
-            Templates provide pre-configured crew setups for common workflows:
+            模板为常见工作流提供预配置的团队设置：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Research Team</strong> - A crew configured for deep research with specialized researcher and summarizer agents.</li>
-            <li><strong>Development Team</strong> - Includes architect, developer, and code reviewer agents.</li>
-            <li><strong>Content Team</strong> - Writer, editor, and fact-checker agents for content creation.</li>
+            <li><strong>研究团队</strong> - 专为深度研究配置的团队，包含专职研究员和总结智能体。</li>
+            <li><strong>开发团队</strong> - 包含架构师、开发者和代码审查智能体。</li>
+            <li><strong>内容团队</strong> - 用于内容创作的写作、编辑和事实核查智能体。</li>
           </ul>
           <p style={pStyle}>
-            Select a template during crew creation to pre-populate the crew with appropriate members and settings.
+            创建团队时选择模板，可自动填充合适的成员和设置。
           </p>
 
-          <h3 style={h3Style}>Dispatching Tasks</h3>
+          <h3 style={h3Style}>派发任务</h3>
           <p style={pStyle}>
-            Once your crew is set up, you can dispatch tasks to it:
+            团队设置完成后，您可以向其派发任务：
           </p>
           <ol style={olStyle}>
-            <li>Open the crew detail view.</li>
-            <li>Click <strong>Dispatch Task</strong> or use the input field at the bottom.</li>
-            <li>Describe what you want the crew to accomplish.</li>
-            <li>The task will be distributed among crew members according to their roles and the workflow configuration.</li>
+            <li>打开团队详情视图。</li>
+            <li>点击<strong>派发任务</strong>，或使用底部的输入框。</li>
+            <li>描述您希望团队完成的目标。</li>
+            <li>任务将根据成员的角色和工作流配置分发给团队成员。</li>
           </ol>
 
-          <h3 style={h3Style}>Cloning Crews</h3>
+          <h3 style={h3Style}>克隆团队</h3>
           <p style={pStyle}>
-            To duplicate an existing crew with all its configuration:
+            要复制现有团队及其全部配置：
           </p>
           <ol style={olStyle}>
-            <li>Right-click the crew in the list or click the three-dot menu on the crew card.</li>
-            <li>Select <strong>Clone Crew</strong>.</li>
-            <li>A new crew is created with the same members, roles, and settings. You can rename it and modify as needed.</li>
+            <li>右键点击列表中的团队，或点击团队卡片上的三点菜单。</li>
+            <li>选择<strong>克隆团队</strong>。</li>
+            <li>系统会创建具有相同成员、角色和设置的新团队。您可以根据需要重命名和修改它。</li>
           </ol>
 
-          <h3 style={h3Style}>Workflow Builder (DAG Editor)</h3>
+          <h3 style={h3Style}>工作流构建器（DAG 编辑器）</h3>
           <p style={pStyle}>
-            The workflow builder lets you define how tasks flow between crew members using a visual directed acyclic graph (DAG):
+            工作流构建器让您可以使用可视化有向无环图（DAG）定义任务在团队成员之间的流转方式：
           </p>
           <ol style={olStyle}>
-            <li>Open a crew and switch to the <strong>Workflow</strong> tab.</li>
-            <li>Each crew member appears as a node on the canvas.</li>
-            <li>Drag connections between nodes to define task flow (who passes work to whom).</li>
-            <li>Click a connection to configure conditions or transformations.</li>
-            <li>Use the toolbar to add decision nodes, parallel branches, or merge points.</li>
-            <li>Save your workflow with the <strong>Save</strong> button or <kbd style={kbdStyle}>Ctrl+S</kbd>.</li>
+            <li>打开团队并切换到<strong>工作流</strong>标签页。</li>
+            <li>每个团队成员以画布上的节点形式显示。</li>
+            <li>在节点之间拖拽连线以定义任务流转（谁将工作交接给谁）。</li>
+            <li>点击连线可配置条件或转换。</li>
+            <li>使用工具栏添加决策节点、并行分支或汇合点。</li>
+            <li>使用<strong>保存</strong>按钮或按 <kbd style={kbdStyle}>Ctrl+S</kbd> 保存您的工作流。</li>
           </ol>
           <div style={tipStyle}>
-            <strong>Tip:</strong> You can zoom and pan the canvas using scroll and drag. Double-click a node to edit its properties.
+            <strong>提示：</strong>您可以使用滚轮缩放画布并拖拽平移。双击节点可编辑其属性。
           </div>
 
-          <h3 style={h3Style}>Monitoring Crew Operations</h3>
+          <h3 style={h3Style}>监控团队运行</h3>
           <p style={pStyle}>
-            While a crew is working, you can monitor progress:
+            团队工作时，您可以监控其进度：
           </p>
           <ul style={ulStyle}>
-            <li>The crew card shows a live status indicator (idle, working, completed, errored).</li>
-            <li>Click into the crew to see each member's current activity.</li>
-            <li>A timeline view shows the sequence of actions and handoffs between members.</li>
-            <li>Output from each member is displayed in their respective panel.</li>
+            <li>团队卡片显示实时状态指示（空闲、工作中、已完成、错误）。</li>
+            <li>点击进入团队可查看每个成员的当前活动。</li>
+            <li>时间线视图显示成员之间的操作序列和交接过程。</li>
+            <li>每个成员的输出显示在各自的面板中。</li>
           </ul>
         </section>
 
         {/* Section 4: Conductor */}
         <section id="conductor" style={sectionStyle}>
-          <h2 style={h2Style}>4. Conductor (Mission Orchestration)</h2>
+          <h2 style={h2Style}>4. 任务编排</h2>
 
-          <h3 style={h3Style}>Starting a Mission</h3>
+          <h3 style={h3Style}>启动任务</h3>
           <p style={pStyle}>
-            The Conductor is your command center for orchestrating complex, multi-step missions. To start a new mission:
+            任务编排是您编排复杂多步骤任务的指挥中心。要启动新任务：
           </p>
           <ol style={olStyle}>
-            <li>Navigate to the <strong>Conductor</strong> screen from the sidebar.</li>
-            <li>Type your mission objective in the main input field. Be as specific as possible about what you want to accomplish.</li>
-            <li>Click <strong>Start Mission</strong> or press <kbd style={kbdStyle}>Ctrl+Enter</kbd>.</li>
-            <li>The Conductor will analyze your objective, create a plan, and begin dispatching workers.</li>
+            <li>从侧边栏进入<strong>任务编排</strong>页面。</li>
+            <li>在主输入框中输入您的任务目标。请尽可能具体地描述您希望达成的结果。</li>
+            <li>点击<strong>启动任务</strong>或按 <kbd style={kbdStyle}>Ctrl+Enter</kbd>。</li>
+            <li>任务编排将分析您的目标、制定计划并开始派发执行器。</li>
           </ol>
 
-          <h3 style={h3Style}>Quick Actions (Research / Build / Review / Deploy)</h3>
+          <h3 style={h3Style}>快捷操作（研究 / 构建 / 审查 / 部署）</h3>
           <p style={pStyle}>
-            For common mission types, use the quick action buttons below the input:
+            对于常见任务类型，可使用输入框下方的快捷操作按钮：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Research</strong> - Launches a research-focused mission with agents configured for information gathering and synthesis.</li>
-            <li><strong>Build</strong> - Creates a development mission with code-writing workers and automated testing.</li>
-            <li><strong>Review</strong> - Starts a code review mission that examines your repository for issues, improvements, and best practices.</li>
-            <li><strong>Deploy</strong> - Initiates a deployment pipeline mission with pre-deployment checks and rollout steps.</li>
+            <li><strong>研究</strong> - 使用专注于信息收集与综合的智能体启动研究类任务。</li>
+            <li><strong>构建</strong> - 创建包含代码编写执行器和自动化测试的开发任务。</li>
+            <li><strong>审查</strong> - 启动代码审查任务，检查您的代码库中的问题、改进点和最佳实践。</li>
+            <li><strong>部署</strong> - 启动包含部署前检查和发布步骤的部署流水线任务。</li>
           </ul>
           <p style={pStyle}>
-            Each quick action pre-configures the appropriate model, worker count, and supervision settings for that task type.
+            每个快捷操作都会为该任务类型预配置合适的模型、执行器数量和监督设置。
           </p>
 
-          <h3 style={h3Style}>Settings (Models, Parallel Workers, Supervised Mode)</h3>
+          <h3 style={h3Style}>设置（模型、并行执行器、监督模式）</h3>
           <p style={pStyle}>
-            Before starting a mission, configure its parameters by clicking the gear icon next to the input:
+            启动任务前，点击输入框旁边的齿轮图标配置其参数：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Model</strong> - Choose which AI model powers the mission (e.g., Claude Opus, Claude Sonnet). More capable models handle complex reasoning better but cost more.</li>
-            <li><strong>Parallel Workers</strong> - Set how many agents work simultaneously (1-8). More workers speed up execution but increase cost.</li>
-            <li><strong>Supervised Mode</strong> - When enabled, the Conductor pauses before each major action and asks for your approval. Disable for fully autonomous operation.</li>
+            <li><strong>模型</strong> - 选择驱动任务的 AI 模型（例如 Claude Opus、Claude Sonnet）。更强大的模型能更好地处理复杂推理，但成本更高。</li>
+            <li><strong>并行执行器</strong> - 设置同时工作的智能体数量（1-8）。执行器越多执行越快，但成本也越高。</li>
+            <li><strong>监督模式</strong> - 启用后，任务编排会在每次重大操作前暂停并请求您的批准。关闭后则完全自主运行。</li>
           </ul>
 
-          <h3 style={h3Style}>The Office View (3 Layouts)</h3>
+          <h3 style={h3Style}>办公室视图（3 种布局）</h3>
           <p style={pStyle}>
-            The Office View is an animated visualization of your active mission. It shows workers as animated characters sitting at desks, working on their assigned subtasks. You can switch between three layouts:
+            办公室视图是活动任务的动态可视化界面。它将会话中的执行器显示为坐在办公桌前处理各自子任务的动画角色。您可以在三种布局之间切换：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Grid Layout</strong> - Workers arranged in a grid pattern. Best for seeing many workers at once. Each worker occupies a cell showing their avatar, current task summary, and status indicator.</li>
-            <li><strong>Row Layout</strong> - Workers displayed in horizontal rows with more detail visible per worker. Shows expanded task descriptions and recent output snippets.</li>
-            <li><strong>Focus Layout</strong> - Highlights one worker at a time in a large central view with full output streaming. Other workers appear as small thumbnails on the side. Click a thumbnail to focus on a different worker.</li>
+            <li><strong>网格布局</strong> - 执行器以网格排列。适合同时查看多个执行器。每个执行器占据一个单元格，显示其头像、当前任务摘要和状态指示。</li>
+            <li><strong>行布局</strong> - 执行器以水平行显示，每个执行器显示更多细节。展示展开的任务描述和最近的输出片段。</li>
+            <li><strong>聚焦布局</strong> - 在大型中央视图中突出显示一个执行器，显示完整流式输出。其他执行器以缩略图形式显示在侧边。点击缩略图可聚焦到其他执行器。</li>
           </ul>
           <p style={pStyle}>
-            Switch layouts using the layout toggle buttons in the top-right corner of the Office View. Workers are animated: they show a typing animation when actively generating, a thinking animation when processing, and an idle state when waiting for input.
+            使用办公室视图右上角的布局切换按钮。执行器带有动画：积极生成时显示打字动画，处理中显示思考动画，等待输入时显示空闲状态。
           </p>
 
-          <h3 style={h3Style}>Monitoring Workers</h3>
+          <h3 style={h3Style}>监控执行器</h3>
           <p style={pStyle}>
-            Each worker in the Office View displays:
+            办公室视图中的每个执行器都显示：
           </p>
           <ul style={ulStyle}>
-            <li>A colored status ring: blue (working), green (completed subtask), yellow (waiting for approval), red (error).</li>
-            <li>The current subtask being worked on as a title above the worker.</li>
-            <li>A progress indicator showing how far through the subtask they are.</li>
-            <li>Click any worker to expand their detail panel and see full streaming output.</li>
+            <li>彩色状态环：蓝色（工作中）、绿色（子任务完成）、黄色（等待批准）、红色（错误）。</li>
+            <li>当前正在处理的子任务，以标题形式显示在执行器上方。</li>
+            <li>显示其子任务完成进度的进度指示器。</li>
+            <li>点击任意执行器可展开其详情面板并查看完整流式输出。</li>
           </ul>
 
-          <h3 style={h3Style}>Pause / Resume / Abort</h3>
+          <h3 style={h3Style}>暂停 / 恢复 / 中止</h3>
           <p style={pStyle}>
-            Control a running mission with the transport controls in the top bar:
+            使用顶部工具栏中的传输控制按钮控制正在运行的任务：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Pause</strong> - Temporarily halts all workers. They finish their current token generation but don't start new subtasks. Click <strong>Resume</strong> to continue.</li>
-            <li><strong>Resume</strong> - Resumes a paused mission from where it left off.</li>
-            <li><strong>Abort</strong> - Permanently stops the mission. All workers are terminated. This cannot be undone, but you can start a new mission with the same objective.</li>
+            <li><strong>暂停</strong> - 暂时停止所有执行器。它们会完成当前的令牌生成，但不会开始新的子任务。点击<strong>恢复</strong>继续。</li>
+            <li><strong>恢复</strong> - 从暂停位置继续任务。</li>
+            <li><strong>中止</strong> - 永久停止任务。所有执行器将被终止。此操作无法撤销，但您可以启动一个具有相同目标的新任务。</li>
           </ul>
 
-          <h3 style={h3Style}>Mission History and Cost Tracking</h3>
+          <h3 style={h3Style}>任务历史与成本跟踪</h3>
           <p style={pStyle}>
-            All completed and aborted missions are saved in your mission history:
+            所有已完成和中止的任务都会保存到您的任务历史中：
           </p>
           <ul style={ulStyle}>
-            <li>Click the <strong>History</strong> tab to view past missions.</li>
-            <li>Each entry shows the objective, status, duration, and total cost.</li>
-            <li>Cost is broken down by model usage (input tokens, output tokens) per worker.</li>
-            <li>Click a historical mission to review its full output and timeline.</li>
+            <li>点击<strong>历史</strong>标签页查看过往任务。</li>
+            <li>每条记录显示目标、状态、时长和总成本。</li>
+            <li>成本按执行器的模型使用量（输入令牌、输出令牌）细分。</li>
+            <li>点击历史任务可查看其完整输出和时间线。</li>
           </ul>
         </section>
 
         {/* Section 5: Tasks */}
         <section id="tasks" style={sectionStyle}>
-          <h2 style={h2Style}>5. Tasks (Kanban Board)</h2>
+          <h2 style={h2Style}>5. 任务（看板）</h2>
 
-          <h3 style={h3Style}>Creating Tasks</h3>
+          <h3 style={h3Style}>创建任务</h3>
           <p style={pStyle}>
-            The Tasks screen presents a Kanban board for organizing work items. To create a new task:
+            任务页面提供用于组织工作项的看板。要创建新任务：
           </p>
           <ol style={olStyle}>
-            <li>Navigate to the <strong>Tasks</strong> screen from the sidebar.</li>
-            <li>Click the <strong>+</strong> button at the top of any column (Backlog, In Progress, Review, Done).</li>
-            <li>Enter a title for the task.</li>
-            <li>Optionally add a description, set priority, add tags, and assign to an agent or crew.</li>
-            <li>Click <strong>Create</strong> or press <kbd style={kbdStyle}>Enter</kbd> to add the task to that column.</li>
+            <li>从侧边栏进入<strong>任务</strong>页面。</li>
+            <li>点击任意列顶部的<strong>+</strong>按钮（待办、进行中、审查、已完成）。</li>
+            <li>输入任务标题。</li>
+            <li>可选：添加描述、设置优先级、添加标签，并将其分配给智能体或团队。</li>
+            <li>点击<strong>创建</strong>或按 <kbd style={kbdStyle}>Enter</kbd> 将任务添加到该列。</li>
           </ol>
 
-          <h3 style={h3Style}>Drag-and-Drop Between Columns</h3>
+          <h3 style={h3Style}>跨列拖放</h3>
           <p style={pStyle}>
-            Move tasks between columns by clicking and dragging:
+            通过点击和拖拽在列之间移动任务：
           </p>
           <ol style={olStyle}>
-            <li>Click and hold a task card.</li>
-            <li>Drag it to the desired column.</li>
-            <li>Release to drop it in place. The task's status updates automatically.</li>
-            <li>You can also reorder tasks within a column by dragging them up or down.</li>
+            <li>点击并按住任务卡片。</li>
+            <li>将其拖到目标列。</li>
+            <li>松开即可放下。任务状态会自动更新。</li>
+            <li>您还可以通过上下拖拽在列内重新排列任务。</li>
           </ol>
 
-          <h3 style={h3Style}>Priority, Tags, and Assignees</h3>
+          <h3 style={h3Style}>优先级、标签与负责人</h3>
           <p style={pStyle}>
-            Each task can be enriched with metadata:
+            每个任务都可以附加元数据：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Priority</strong> - Click the flag icon to cycle through priorities: None, Low, Medium, High, Critical. High and Critical tasks are visually highlighted.</li>
-            <li><strong>Tags</strong> - Add colored labels to categorize tasks (e.g., "bug", "feature", "docs"). Click the tag icon to add or create tags.</li>
-            <li><strong>Assignees</strong> - Assign tasks to specific agents or crews. Click the avatar icon and select from available agents.</li>
+            <li><strong>优先级</strong> - 点击旗帜图标循环切换优先级：无、低、中、高、紧急。高和紧急任务会获得视觉强调。</li>
+            <li><strong>标签</strong> - 添加彩色标签以分类任务（例如“bug”、“feature”、“docs”）。点击标签图标添加或创建标签。</li>
+            <li><strong>负责人</strong> - 将任务分配给特定智能体或团队。点击头像图标并从可用智能体中选择。</li>
           </ul>
 
-          <h3 style={h3Style}>Cross-linking with Crews / Conductor</h3>
+          <h3 style={h3Style}>关联团队 / 任务编排</h3>
           <p style={pStyle}>
-            Tasks can be linked to crew operations or conductor missions:
+            任务可以关联到团队运行或编排运行：
           </p>
           <ul style={ulStyle}>
-            <li>When a Conductor mission creates subtasks, they automatically appear on the Kanban board with a link back to the mission.</li>
-            <li>You can manually link a task to a crew by clicking <strong>Link to Crew</strong> in the task detail view.</li>
-            <li>Linked tasks show status updates from the associated crew or mission.</li>
+            <li>当任务编排创建子任务时，它们会自动出现在看板上，并带有指向该次运行的链接。</li>
+            <li>您可以在任务详情视图中点击<strong>关联团队</strong>手动将任务关联到团队。</li>
+            <li>已关联的任务会显示来自所关联团队或运行的实时状态更新。</li>
           </ul>
         </section>
 
         {/* Section 6: Jobs */}
         <section id="jobs" style={sectionStyle}>
-          <h2 style={h2Style}>6. Jobs (Cron Scheduler)</h2>
+          <h2 style={h2Style}>6. 定时任务（Cron 调度器）</h2>
 
-          <h3 style={h3Style}>Creating Scheduled Jobs</h3>
+          <h3 style={h3Style}>创建定时任务</h3>
           <p style={pStyle}>
-            Jobs let you schedule recurring AI tasks on a cron schedule. To create a new job:
+            定时任务让您可以在 Cron 计划上调度周期性 AI 任务。要创建新的定时任务：
           </p>
           <ol style={olStyle}>
-            <li>Navigate to the <strong>Jobs</strong> screen from the sidebar.</li>
-            <li>Click <strong>+ New Job</strong> in the top-right corner.</li>
-            <li>Enter a name and description for the job.</li>
-            <li>Define the prompt or task the AI should execute on each run.</li>
-            <li>Set the schedule (see below).</li>
-            <li>Configure delivery channels for output.</li>
-            <li>Click <strong>Create Job</strong> to save.</li>
+            <li>从侧边栏进入<strong>定时任务</strong>页面。</li>
+            <li>点击右上角的<strong>+ 新建定时任务</strong>。</li>
+            <li>输入任务的名称和描述。</li>
+            <li>定义 AI 每次运行时应执行的提示词或任务。</li>
+            <li>设置计划（见下文）。</li>
+            <li>配置输出的投递渠道。</li>
+            <li>点击<strong>创建定时任务</strong>保存。</li>
           </ol>
 
-          <h3 style={h3Style}>Schedule Presets and Custom Cron</h3>
+          <h3 style={h3Style}>计划预设与自定义 Cron</h3>
           <p style={pStyle}>
-            Choose from common presets or write a custom cron expression:
+            从常见预设中选择，或编写自定义 Cron 表达式：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Every hour</strong> - Runs at the top of each hour.</li>
-            <li><strong>Every day at 9am</strong> - Daily morning execution.</li>
-            <li><strong>Every Monday</strong> - Weekly on Monday at midnight.</li>
-            <li><strong>Custom</strong> - Enter any valid cron expression (e.g., <code>*/15 * * * *</code> for every 15 minutes).</li>
+            <li><strong>每小时</strong> - 每个整点运行。</li>
+            <li><strong>每天早上 9 点</strong> - 每天早晨运行。</li>
+            <li><strong>每周一</strong> - 每周一零点运行。</li>
+            <li><strong>自定义</strong> - 输入任意有效的 Cron 表达式（例如 <code>*/15 * * * *</code> 表示每 15 分钟运行一次）。</li>
           </ul>
           <p style={pStyle}>
-            The schedule preview below the input shows the next 5 planned execution times so you can verify your schedule is correct.
+            输入框下方的计划预览会显示接下来 5 次计划运行时间，方便您确认计划是否正确。
           </p>
 
-          <h3 style={h3Style}>Delivery Channels</h3>
+          <h3 style={h3Style}>投递渠道</h3>
           <p style={pStyle}>
-            Configure where job output is sent after each run:
+            配置每次运行后任务输出的去向：
           </p>
           <ul style={ulStyle}>
-            <li><strong>In-App</strong> - Results appear in the Jobs screen run history (always enabled).</li>
-            <li><strong>Telegram</strong> - Send results to a Telegram chat or group.</li>
-            <li><strong>Discord</strong> - Post results to a Discord channel via webhook.</li>
-            <li><strong>Slack</strong> - Send to a Slack channel.</li>
-            <li><strong>Email</strong> - Email the results to specified addresses.</li>
+            <li><strong>应用内</strong> - 结果显示在定时任务页面的运行历史中（始终启用）。</li>
+            <li><strong>Telegram</strong> - 将结果发送到 Telegram 聊天或群组。</li>
+            <li><strong>Discord</strong> - 通过 webhook 将结果发布到 Discord 频道。</li>
+            <li><strong>Slack</strong> - 将结果发送到 Slack 频道。</li>
+            <li><strong>电子邮件</strong> - 将结果发送到指定邮箱地址。</li>
           </ul>
 
-          <h3 style={h3Style}>Triggering Jobs Manually</h3>
+          <h3 style={h3Style}>手动运行任务</h3>
           <p style={pStyle}>
-            You don't have to wait for the schedule to test a job:
+            您不必等到计划时间才能测试任务：
           </p>
           <ol style={olStyle}>
-            <li>Find the job in the jobs list.</li>
-            <li>Click the <strong>Run Now</strong> button (play icon) on the job card.</li>
-            <li>The job executes immediately and results appear in the run history.</li>
+            <li>在任务列表中找到该任务。</li>
+            <li>点击任务卡片上的<strong>立即运行</strong>按钮（播放图标）。</li>
+            <li>任务会立即执行，结果将出现在运行历史中。</li>
           </ol>
 
-          <h3 style={h3Style}>Monitoring Run History</h3>
+          <h3 style={h3Style}>监控运行历史</h3>
           <p style={pStyle}>
-            Each job tracks its execution history:
+            每个任务都会保留其执行记录：
           </p>
           <ul style={ulStyle}>
-            <li>Click on a job to see its detail view with the full run history.</li>
-            <li>Each run shows: timestamp, duration, status (success/failure), and output.</li>
-            <li>Failed runs display error details so you can diagnose issues.</li>
-            <li>Use the <strong>Clear History</strong> button to remove old runs if the list gets long.</li>
+            <li>点击任务可查看包含完整运行历史的详情视图。</li>
+            <li>每次运行显示：时间戳、时长、状态（成功/失败）和输出。</li>
+            <li>失败的运行会显示错误详情，方便您诊断问题。</li>
+            <li>如果列表过长，可使用<strong>清除历史</strong>按钮移除旧记录。</li>
           </ul>
         </section>
 
         {/* Section 7: Memory */}
         <section id="memory" style={sectionStyle}>
-          <h2 style={h2Style}>7. Memory &amp; Knowledge Graph</h2>
+          <h2 style={h2Style}>7. 记忆与知识图谱</h2>
 
-          <h3 style={h3Style}>Browsing Memory Files</h3>
+          <h3 style={h3Style}>浏览记忆文件</h3>
           <p style={pStyle}>
-            The Memory screen gives you access to the AI's persistent memory stored as structured files:
+            记忆页面让您可以访问 AI 的持久记忆，它以结构化文件的形式存储：
           </p>
           <ol style={olStyle}>
-            <li>Navigate to the <strong>Memory</strong> screen from the sidebar.</li>
-            <li>The file tree on the left shows all memory files organized by category.</li>
-            <li>Click any file to view its contents in the main panel.</li>
-            <li>Memory files are typically Markdown documents containing facts, preferences, and learned context.</li>
+            <li>从侧边栏进入<strong>记忆</strong>页面。</li>
+            <li>左侧的文件树按类别显示所有记忆文件。</li>
+            <li>点击任意文件可在主面板中查看其内容。</li>
+            <li>记忆文件通常是包含事实、偏好和学习到的上下文的结构化文档。</li>
           </ol>
 
-          <h3 style={h3Style}>The Knowledge Graph Visualization</h3>
+          <h3 style={h3Style}>知识图谱可视化</h3>
           <p style={pStyle}>
-            Switch to the <strong>Graph</strong> tab to see an interactive visualization of how memory entries are connected:
+            切换到<strong>图谱</strong>标签页，查看记忆条目之间关系的交互式可视化：
           </p>
           <ul style={ulStyle}>
-            <li>Nodes represent individual memory entries or concepts.</li>
-            <li>Edges show relationships between entries (references, dependencies, categories).</li>
-            <li>Hover over a node to see a preview of its content.</li>
-            <li>Click a node to open the full entry in the detail panel.</li>
-            <li>Use scroll to zoom in/out and drag to pan the graph.</li>
-            <li>The graph auto-layouts using a force-directed algorithm but you can drag nodes to reposition them.</li>
+            <li>节点代表单个记忆条目或概念。</li>
+            <li>边显示条目之间的关系（引用、依赖、类别）。</li>
+            <li>悬停在节点上可预览其内容。</li>
+            <li>点击节点可在详情面板中打开完整条目。</li>
+            <li>使用滚轮缩放，拖拽平移图谱。</li>
+            <li>图谱使用力导向算法自动布局，但您可以拖拽节点重新定位。</li>
           </ul>
 
-          <h3 style={h3Style}>Searching Entries</h3>
+          <h3 style={h3Style}>搜索条目</h3>
           <p style={pStyle}>
-            Use the search bar at the top of the Memory screen to find specific entries:
+            使用记忆页面顶部的搜索栏查找特定条目：
           </p>
           <ul style={ulStyle}>
-            <li>Type keywords to filter the file list and highlight matching entries.</li>
-            <li>Search looks at file names, content, and tags.</li>
-            <li>Results update in real-time as you type.</li>
+            <li>输入关键字可过滤文件列表并高亮匹配条目。</li>
+            <li>搜索覆盖文件名、内容和标签。</li>
+            <li>结果随输入实时更新。</li>
           </ul>
 
-          <h3 style={h3Style}>Editing Memory</h3>
+          <h3 style={h3Style}>编辑记忆</h3>
           <p style={pStyle}>
-            You can manually edit memory entries to correct or augment the AI's knowledge:
+            您可以手动编辑记忆条目，以纠正或补充 AI 的知识：
           </p>
           <ol style={olStyle}>
-            <li>Open a memory file by clicking it in the tree.</li>
-            <li>Click the <strong>Edit</strong> button (pencil icon) to enter editing mode.</li>
-            <li>Modify the Markdown content as needed.</li>
-            <li>Click <strong>Save</strong> or press <kbd style={kbdStyle}>Ctrl+S</kbd> to persist your changes.</li>
+            <li>在树中点击记忆文件将其打开。</li>
+            <li>点击<strong>编辑</strong>按钮（铅笔图标）进入编辑模式。</li>
+            <li>根据需要修改文档内容。</li>
+            <li>点击<strong>保存</strong>或按 <kbd style={kbdStyle}>Ctrl+S</kbd> 持久化您的更改。</li>
           </ol>
           <div style={tipStyle}>
-            <strong>Tip:</strong> Changes to memory files take effect immediately. The AI will use updated information in subsequent conversations.
+            <strong>提示：</strong>对记忆文件的更改会立即生效。AI 将在后续对话中使用更新后的信息。
           </div>
         </section>
 
         {/* Section 8: Skills */}
         <section id="skills" style={sectionStyle}>
-          <h2 style={h2Style}>8. Skills</h2>
+          <h2 style={h2Style}>8. 技能</h2>
 
-          <h3 style={h3Style}>Browsing the Skill Registry</h3>
+          <h3 style={h3Style}>浏览技能注册表</h3>
           <p style={pStyle}>
-            Skills are modular capabilities that extend what the AI can do. To browse available skills:
+            技能是扩展 AI 能力的模块化功能。要浏览可用技能：
           </p>
           <ol style={olStyle}>
-            <li>Navigate to the <strong>Skills</strong> screen from the sidebar.</li>
-            <li>The registry shows all available skills as cards with their name, description, and status.</li>
-            <li>Use the search bar to filter skills by name or category.</li>
-            <li>Click a skill card to see full details including documentation and configuration options.</li>
+            <li>从侧边栏进入<strong>技能</strong>页面。</li>
+            <li>注册表以卡片形式显示所有可用技能，包含名称、描述和状态。</li>
+            <li>使用搜索栏按名称或类别过滤技能。</li>
+            <li>点击技能卡片可查看完整详情，包括文档和配置选项。</li>
           </ol>
 
-          <h3 style={h3Style}>Installing Skills</h3>
+          <h3 style={h3Style}>安装技能</h3>
           <p style={pStyle}>
-            To add a new skill to your setup:
+            要向您的环境添加新技能：
           </p>
           <ol style={olStyle}>
-            <li>Find the skill you want in the registry.</li>
-            <li>Click the <strong>Install</strong> button on the skill card.</li>
-            <li>If the skill requires configuration (API keys, parameters), a configuration form appears. Fill in the required fields.</li>
-            <li>Click <strong>Confirm</strong> to complete installation.</li>
-            <li>The skill is now available for use in conversations, crews, and missions.</li>
+            <li>在注册表中找到您想要的技能。</li>
+            <li>点击技能卡片上的<strong>安装</strong>按钮。</li>
+            <li>如果技能需要配置（API 密钥、参数），会出现配置表单。填写必填字段。</li>
+            <li>点击<strong>确认</strong>完成安装。</li>
+            <li>该技能现在可用于会话、团队和任务中。</li>
           </ol>
 
-          <h3 style={h3Style}>Enabling / Disabling Skills</h3>
+          <h3 style={h3Style}>启用 / 禁用技能</h3>
           <p style={pStyle}>
-            You can temporarily disable a skill without uninstalling it:
+            您可以在不卸载的情况下暂时禁用技能：
           </p>
           <ul style={ulStyle}>
-            <li>Toggle the switch on any installed skill card to enable or disable it.</li>
-            <li>Disabled skills remain configured but are not available to the AI.</li>
-            <li>This is useful for troubleshooting or temporarily limiting the AI's capabilities.</li>
+            <li>切换任意已安装技能卡片上的开关以启用或禁用。</li>
+            <li>禁用的技能会保留其配置，但不会提供给 AI 使用。</li>
+            <li>这对于故障排查或临时限制 AI 能力非常有用。</li>
           </ul>
         </section>
 
         {/* Section 9: Agents */}
         <section id="agents" style={sectionStyle}>
-          <h2 style={h2Style}>9. Agents (Custom Personas)</h2>
+          <h2 style={h2Style}>9. 智能体（自定义人设）</h2>
 
-          <h3 style={h3Style}>Creating Custom Agents</h3>
+          <h3 style={h3Style}>创建自定义智能体</h3>
           <p style={pStyle}>
-            Agents are custom AI personas with specific behaviors and expertise. To create one:
+            智能体是具有特定行为和专长的自定义 AI 人设。要创建一个：
           </p>
           <ol style={olStyle}>
-            <li>Navigate to the <strong>Agents</strong> screen from the sidebar.</li>
-            <li>Click <strong>+ New Agent</strong> in the top-right.</li>
-            <li>Enter a name for the agent (e.g., "Code Reviewer", "Technical Writer").</li>
-            <li>Write a system prompt that defines the agent's personality, expertise, and behavior rules.</li>
-            <li>Customize the appearance (emoji avatar and accent color).</li>
-            <li>Click <strong>Create</strong> to save the agent.</li>
+            <li>从侧边栏进入<strong>智能体</strong>页面。</li>
+            <li>点击右上角的<strong>+ 新建智能体</strong>。</li>
+            <li>为智能体输入名称（例如“代码审查员”、“技术文档撰写者”）。</li>
+            <li>编写定义智能体个性、专长和行为规则的系统提示词。</li>
+            <li>自定义外观（Emoji 头像和强调色）。</li>
+            <li>点击<strong>创建</strong>保存智能体。</li>
           </ol>
 
-          <h3 style={h3Style}>Emoji and Color Customization</h3>
+          <h3 style={h3Style}>Emoji 与颜色自定义</h3>
           <p style={pStyle}>
-            Make your agents visually distinct:
+            让您的智能体在外观上与众不同：
           </p>
           <ul style={ulStyle}>
-            <li>Click the emoji picker to choose an avatar emoji that represents the agent's role.</li>
-            <li>Select an accent color from the color palette. This color is used in the agent's chat bubbles, crew member indicators, and Conductor worker rings.</li>
-            <li>Both emoji and color appear wherever the agent is referenced throughout the app.</li>
+            <li>点击 Emoji 选择器，选择代表智能体角色的头像 Emoji。</li>
+            <li>从调色板中选择强调色。该颜色用于智能体的会话气泡、团队成员指示器和编排执行器光晕。</li>
+            <li>Emoji 和颜色会出现在应用中引用该智能体的所有位置。</li>
           </ul>
 
-          <h3 style={h3Style}>System Prompts</h3>
+          <h3 style={h3Style}>系统提示词</h3>
           <p style={pStyle}>
-            The system prompt is the core of an agent's identity. Write it to define:
+            系统提示词是智能体身份的核心。编写它来定义：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Role</strong> - What the agent is (e.g., "You are a senior backend engineer specializing in distributed systems").</li>
-            <li><strong>Behavior</strong> - How the agent should respond (e.g., "Always suggest tests for code changes").</li>
-            <li><strong>Constraints</strong> - What the agent should avoid (e.g., "Never modify production configuration files").</li>
-            <li><strong>Tone</strong> - The communication style (e.g., "Be concise and direct. Use bullet points.").</li>
+            <li><strong>角色</strong> - 智能体是什么（例如“您是一名专注于分布式系统的高级后端工程师”）。</li>
+            <li><strong>行为</strong> - 智能体应如何响应（例如“始终为代码更改建议测试”）。</li>
+            <li><strong>约束</strong> - 智能体应避免什么（例如“切勿修改生产配置文件”）。</li>
+            <li><strong>语气</strong> - 沟通风格（例如“简洁直接，使用项目符号”）。</li>
           </ul>
 
-          <h3 style={h3Style}>Using Agents in Crews</h3>
+          <h3 style={h3Style}>在团队中使用智能体</h3>
           <p style={pStyle}>
-            Once created, agents can be assigned to crews:
+            创建完成后，智能体可以分配到团队中：
           </p>
           <ul style={ulStyle}>
-            <li>When adding members to a crew, your custom agents appear in the agent selection dropdown.</li>
-            <li>Each agent brings its system prompt and personality to the crew context.</li>
-            <li>You can override specific instructions per-crew without changing the agent's base configuration.</li>
+            <li>向团队添加成员时，您的自定义智能体会出现在智能体选择下拉列表中。</li>
+            <li>每个智能体都会将其系统提示词和个性带入团队上下文。</li>
+            <li>您可以在不更改智能体基础配置的情况下，按团队覆盖特定指令。</li>
           </ul>
         </section>
 
         {/* Section 10: Files & Terminal */}
         <section id="files-terminal" style={sectionStyle}>
-          <h2 style={h2Style}>10. Files &amp; Terminal</h2>
+          <h2 style={h2Style}>10. 文件与终端</h2>
 
-          <h3 style={h3Style}>File Browser Navigation</h3>
+          <h3 style={h3Style}>文件浏览器导航</h3>
           <p style={pStyle}>
-            The Files screen provides a full file browser for navigating your project:
+            文件页面提供用于浏览您项目的完整文件浏览器：
           </p>
           <ul style={ulStyle}>
-            <li>The left panel shows a file tree. Click folders to expand/collapse them.</li>
-            <li>Click a file to open it in the editor panel on the right.</li>
-            <li>Right-click files or folders for a context menu with options: Rename, Delete, Copy Path, New File, New Folder.</li>
-            <li>Use the breadcrumb path at the top to navigate up the directory tree.</li>
+            <li>左侧面板显示文件树。点击文件夹可展开/收起。</li>
+            <li>点击文件可在右侧的编辑器面板中打开。</li>
+            <li>右键点击文件或文件夹会显示上下文菜单，包含以下选项：重命名、删除、复制路径、新建文件、新建文件夹。</li>
+            <li>使用顶部的面包屑路径在目录树中向上导航。</li>
           </ul>
 
-          <h3 style={h3Style}>Editing Files (Monaco Editor)</h3>
+          <h3 style={h3Style}>编辑文件（内置代码编辑器）</h3>
           <p style={pStyle}>
-            Files open in an integrated Monaco editor (the same editor that powers VS Code):
+            文件在内置代码编辑器中打开，提供现代化的编辑体验：
           </p>
           <ul style={ulStyle}>
-            <li>Full syntax highlighting for all major languages.</li>
-            <li>IntelliSense-style autocomplete where language servers are available.</li>
-            <li>Find and replace with <kbd style={kbdStyle}>Ctrl+F</kbd> and <kbd style={kbdStyle}>Ctrl+H</kbd>.</li>
-            <li>Save files with <kbd style={kbdStyle}>Ctrl+S</kbd>. Unsaved changes are indicated by a dot on the file tab.</li>
-            <li>Multiple files can be open in tabs simultaneously.</li>
+            <li>支持所有主流语言的完整语法高亮。</li>
+            <li>在语言服务器可用时提供 IntelliSense 式自动补全。</li>
+            <li>使用 <kbd style={kbdStyle}>Ctrl+F</kbd> 和 <kbd style={kbdStyle}>Ctrl+H</kbd> 查找和替换。</li>
+            <li>使用 <kbd style={kbdStyle}>Ctrl+S</kbd> 保存文件。未保存的更改会以文件标签页上的圆点标示。</li>
+            <li>可以在标签页中同时打开多个文件。</li>
           </ul>
 
-          <h3 style={h3Style}>Terminal Usage</h3>
+          <h3 style={h3Style}>使用终端</h3>
           <p style={pStyle}>
-            The integrated terminal gives you a shell directly within Hermes Studio:
+            集成终端为您提供 Ti Work 内部的 shell 环境：
           </p>
           <ol style={olStyle}>
-            <li>Navigate to the <strong>Terminal</strong> screen from the sidebar, or press <kbd style={kbdStyle}>Ctrl+`</kbd> to toggle it as a bottom panel.</li>
-            <li>The terminal opens in your project's working directory.</li>
-            <li>Run any shell command as you would in a regular terminal.</li>
-            <li>Multiple terminal tabs are supported - click <strong>+</strong> to create a new tab.</li>
+            <li>从侧边栏进入<strong>终端</strong>页面，或按 <kbd style={kbdStyle}>Ctrl+`</kbd> 将其作为底部面板切换显示。</li>
+            <li>终端会在您项目的工作目录中打开。</li>
+            <li>像在普通终端中一样运行任意 shell 命令。</li>
+            <li>支持多个终端标签页 - 点击<strong>+</strong>创建新标签页。</li>
           </ol>
           <div style={noteStyle}>
-            <strong>Note:</strong> The terminal is connected to the same system where your Hermes Gateway runs. Commands execute on that machine.
+            <strong>注意：</strong>终端连接到运行 Hermes 执行引擎（网关）的同一系统。命令会在该机器上执行。
           </div>
         </section>
 
         {/* Section 11: Analytics & Audit */}
         <section id="analytics" style={sectionStyle}>
-          <h2 style={h2Style}>11. Analytics &amp; Audit</h2>
+          <h2 style={h2Style}>11. 数据分析与审计</h2>
 
-          <h3 style={h3Style}>Event Analytics Dashboard</h3>
+          <h3 style={h3Style}>事件分析仪表盘</h3>
           <p style={pStyle}>
-            The Analytics screen provides insights into your AI usage patterns:
+            数据分析页面提供对您 AI 使用模式的洞察：
           </p>
           <ul style={ulStyle}>
-            <li>View charts showing messages sent, tokens used, and costs over time.</li>
-            <li>Filter by date range using the date picker in the top bar.</li>
-            <li>Break down usage by agent, model, or session.</li>
-            <li>Export data as CSV for further analysis.</li>
+            <li>查看显示消息数量、令牌使用量和成本随时间变化的图表。</li>
+            <li>使用顶栏中的日期选择器按日期范围过滤。</li>
+            <li>按智能体、模型或会话细分使用量。</li>
+            <li>将数据导出为电子表格文件以进行进一步分析。</li>
           </ul>
 
-          <h3 style={h3Style}>Session History</h3>
+          <h3 style={h3Style}>会话历史</h3>
           <p style={pStyle}>
-            Review all past chat sessions:
+            查看您所有的过往会话：
           </p>
           <ul style={ulStyle}>
-            <li>Each session shows its start time, message count, and token usage.</li>
-            <li>Click a session to view the full conversation transcript.</li>
-            <li>Use the search to find sessions by content or date.</li>
+            <li>每个会话显示其开始时间、消息数量和令牌使用量。</li>
+            <li>点击会话可查看完整对话记录。</li>
+            <li>使用搜索按内容或日期查找会话。</li>
           </ul>
 
-          <h3 style={h3Style}>Audit Trail</h3>
+          <h3 style={h3Style}>审计追踪</h3>
           <p style={pStyle}>
-            The audit trail logs every significant action the AI has taken:
+            审计追踪记录 AI 执行的每一项重要操作：
           </p>
           <ul style={ulStyle}>
-            <li>File modifications, command executions, and API calls are all recorded.</li>
-            <li>Each entry includes a timestamp, action type, details, and which agent performed it.</li>
-            <li>Filter by action type or severity level.</li>
-            <li>This is essential for accountability in supervised environments.</li>
+            <li>文件修改、命令执行和 API 调用都会被记录。</li>
+            <li>每条记录包含时间戳、操作类型、详情以及执行该操作的智能体。</li>
+            <li>按操作类型或严重级别过滤。</li>
+            <li>这对于受监督环境中的责任追溯至关重要。</li>
           </ul>
 
-          <h3 style={h3Style}>Logs Viewer</h3>
+          <h3 style={h3Style}>日志查看器</h3>
           <p style={pStyle}>
-            Access raw system logs for debugging and monitoring:
+            访问原始系统日志以进行调试和监控：
           </p>
           <ul style={ulStyle}>
-            <li>Click the <strong>Logs</strong> tab within Analytics.</li>
-            <li>Logs stream in real-time with color-coded severity (info, warning, error).</li>
-            <li>Use the filter bar to search for specific log entries.</li>
-            <li>Click <strong>Pause</strong> to freeze the log stream for easier reading.</li>
+            <li>点击数据分析中的<strong>日志</strong>标签页。</li>
+            <li>日志实时流式输出，并带有按严重级别着色的标记（信息、警告、错误）。</li>
+            <li>使用过滤栏搜索特定日志条目。</li>
+            <li>点击<strong>暂停</strong>冻结日志流，便于阅读。</li>
           </ul>
         </section>
 
         {/* Section 12: Settings */}
         <section id="settings" style={sectionStyle}>
-          <h2 style={h2Style}>12. Settings &amp; Configuration</h2>
+          <h2 style={h2Style}>12. 设置与配置</h2>
 
-          <h3 style={h3Style}>Connection Settings</h3>
+          <h3 style={h3Style}>连接设置</h3>
           <p style={pStyle}>
-            Configure how Hermes Studio connects to your gateway:
+            配置 Ti Work 如何连接到您的网关：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Gateway URL</strong> - The HTTP address of your Hermes Gateway server.</li>
-            <li><strong>API Key</strong> - Authentication key for secured gateways.</li>
-            <li><strong>Reconnect Interval</strong> - How often to retry if the connection drops (default: 5 seconds).</li>
-            <li><strong>WebSocket</strong> - Enable/disable WebSocket for real-time streaming (recommended: enabled).</li>
+            <li><strong>网关地址</strong> - 您的 Hermes 执行引擎（网关）服务器的 HTTP 地址。</li>
+            <li><strong>API 密钥</strong> - 受保护网关的认证密钥。</li>
+            <li><strong>重连间隔</strong> - 连接断开时的重试频率（默认：5 秒）。</li>
+            <li><strong>实时连接</strong> - 启用/禁用用于实时流式输出的实时连接通道（建议：启用）。</li>
           </ul>
 
-          <h3 style={h3Style}>Appearance (Themes, Accent Colors)</h3>
+          <h3 style={h3Style}>外观（主题、强调色）</h3>
           <p style={pStyle}>
-            Customize the visual appearance of Hermes Studio:
+            自定义 Ti Work 的视觉效果：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Theme</strong> - Choose from available dark themes. The app is designed as dark-mode only for optimal readability during extended use.</li>
-            <li><strong>Accent Color</strong> - Pick a primary accent color that highlights interactive elements, buttons, and active states throughout the UI.</li>
-            <li><strong>Font Size</strong> - Adjust the base font size for readability.</li>
-            <li>Changes apply immediately with no restart required.</li>
+            <li><strong>主题</strong> - 从可用的深色主题中选择。应用设计为仅深色模式，以在长时间会话中获得最佳可读性。</li>
+            <li><strong>强调色</strong> - 选择用于高亮交互元素、按钮和界面中激活状态的主强调色。</li>
+            <li><strong>字体大小</strong> - 调整基础字体大小以获得更好的可读性。</li>
+            <li>更改无需重启即可立即生效。</li>
           </ul>
 
-          <h3 style={h3Style}>Integrations (Telegram, Discord, Slack, etc.)</h3>
+          <h3 style={h3Style}>集成（消息平台等）</h3>
           <p style={pStyle}>
-            Connect external services for notifications and delivery:
+            连接外部服务以接收通知和投递：
           </p>
           <ol style={olStyle}>
-            <li>Go to Settings and open the <strong>Integrations</strong> tab.</li>
-            <li>Click <strong>Add Integration</strong> and select the service.</li>
-            <li>Follow the service-specific setup (e.g., paste a bot token for Telegram, a webhook URL for Discord).</li>
-            <li>Test the integration with the <strong>Send Test</strong> button.</li>
-            <li>Once configured, these integrations are available as delivery channels in Jobs and notifications.</li>
+            <li>进入<strong>设置</strong>并打开<strong>集成</strong>标签页。</li>
+            <li>点击<strong>添加集成</strong>并选择服务。</li>
+            <li>按照特定于服务的设置进行操作（例如为 Telegram 粘贴机器人令牌、为 Discord 提供 webhook 地址）。</li>
+            <li>使用<strong>发送测试</strong>按钮测试集成。</li>
+            <li>配置完成后，这些集成可用作定时任务的投递渠道和通知。</li>
           </ol>
 
-          <h3 style={h3Style}>MCP Servers</h3>
+          <h3 style={h3Style}>MCP 服务</h3>
           <p style={pStyle}>
-            Manage Model Context Protocol (MCP) server connections:
+            管理模型上下文协议（MCP）服务器连接：
           </p>
           <ul style={ulStyle}>
-            <li>MCP servers provide additional tools and capabilities to the AI.</li>
-            <li>Click <strong>Add MCP Server</strong> to register a new server by URL.</li>
-            <li>Each server shows its available tools and connection status.</li>
-            <li>Toggle servers on/off to control which tools are available.</li>
+            <li>MCP 服务器为 AI 提供额外的工具和能力。</li>
+            <li>点击<strong>添加 MCP 服务器</strong>按地址注册新服务器。</li>
+            <li>每个服务器显示其可用工具和连接状态。</li>
+            <li>切换服务器的开关以控制哪些工具可用。</li>
           </ul>
 
-          <h3 style={h3Style}>Permissions &amp; Security</h3>
+          <h3 style={h3Style}>权限与安全</h3>
           <p style={pStyle}>
-            Control what the AI is allowed to do:
+            控制 AI 被允许执行的操作：
           </p>
           <ul style={ulStyle}>
-            <li><strong>Auto-approved paths</strong> - File paths where the AI can read/write without asking permission.</li>
-            <li><strong>Blocked commands</strong> - Shell commands the AI is never allowed to run.</li>
-            <li><strong>Always-allow rules</strong> - Review and revoke previously granted always-allow permissions from chat.</li>
-            <li><strong>Supervised mode default</strong> - Set whether new missions start in supervised mode by default.</li>
+            <li><strong>自动批准的路径</strong> - AI 无需询问即可读写这些文件路径。</li>
+            <li><strong>阻止的命令</strong> - AI 永远不允许运行的 shell 命令。</li>
+            <li><strong>始终允许规则</strong> - 查看和撤销会话期间授予的始终允许权限。</li>
+            <li><strong>默认监督模式</strong> - 设置新任务是否默认以监督模式启动。</li>
           </ul>
 
-          <h3 style={h3Style}>Identity Files (SOUL.md, persona.md)</h3>
+          <h3 style={h3Style}>身份文件（SOUL.md、persona.md）</h3>
           <p style={pStyle}>
-            Identity files shape the AI's core personality across all interactions:
+            身份文件塑造 AI 在所有交互中的核心个性：
           </p>
           <ul style={ulStyle}>
-            <li><strong>SOUL.md</strong> - Defines the AI's fundamental values, communication style, and behavioral principles. This is the deepest layer of personality.</li>
-            <li><strong>persona.md</strong> - A more surface-level personality file that defines tone, preferences, and interaction patterns.</li>
-            <li>Edit these files in the Identity section of Settings or directly via the Files screen.</li>
-            <li>Changes take effect in new conversations; existing sessions keep their original context.</li>
+            <li><strong>SOUL.md</strong> - 定义 AI 的基本价值观、沟通风格和行为准则。这是最深层的个性层。</li>
+            <li><strong>persona.md</strong> - 更表层的身份文件，定义语气、偏好和交互模式。</li>
+            <li>可以在设置的<strong>身份</strong>部分编辑这些文件，或直接通过文件页面编辑。</li>
+            <li>更改在新会话中生效；现有会话保留其原始上下文。</li>
           </ul>
 
-          <h3 style={h3Style}>Systemd Auto-start</h3>
+          <h3 style={h3Style}>Systemd 自启动</h3>
           <p style={pStyle}>
-            Configure Hermes Gateway to start automatically with your system:
+            配置 Hermes 执行引擎（网关）随系统自动启动：
           </p>
           <ol style={olStyle}>
-            <li>In Settings, find the <strong>System</strong> section.</li>
-            <li>Click <strong>Install Systemd Service</strong>.</li>
-            <li>The app generates a systemd unit file and installs it for your user.</li>
-            <li>Use the <strong>Enable</strong> toggle to control whether it starts on boot.</li>
-            <li>The <strong>Status</strong> indicator shows whether the service is currently active.</li>
+            <li>在<strong>设置</strong>中找到<strong>系统</strong>部分。</li>
+            <li>点击<strong>安装 Systemd 服务</strong>。</li>
+            <li>应用会生成系统服务单元文件并为您安装。</li>
+            <li>使用<strong>启用</strong>开关控制是否随开机启动。</li>
+            <li><strong>状态</strong>指示器显示服务当前是否处于活动状态。</li>
           </ol>
         </section>
 
         {/* Section 13: Keyboard Shortcuts */}
         <section id="keyboard-shortcuts" style={sectionStyle}>
-          <h2 style={h2Style}>13. Keyboard Shortcuts</h2>
+          <h2 style={h2Style}>13. 键盘快捷键</h2>
           <p style={pStyle}>
-            Hermes Studio supports keyboard shortcuts for quick navigation and common actions. Below is the full reference:
+            Ti Work 支持用于快速导航和常见操作的键盘快捷键。以下是完整参考：
           </p>
 
-          <h3 style={h3Style}>Global Navigation</h3>
+          <h3 style={h3Style}>全局导航</h3>
           <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={thStyle}>Shortcut</th>
-                <th style={thStyle}>Action</th>
+                <th style={thStyle}>快捷键</th>
+                <th style={thStyle}>操作</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>1</kbd></td>
-                <td style={tdStyle}>Go to Chat</td>
+                <td style={tdStyle}>前往会话</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>2</kbd></td>
-                <td style={tdStyle}>Go to Crews</td>
+                <td style={tdStyle}>前往多智能体团队</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>3</kbd></td>
-                <td style={tdStyle}>Go to Conductor</td>
+                <td style={tdStyle}>前往任务编排</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>4</kbd></td>
-                <td style={tdStyle}>Go to Tasks</td>
+                <td style={tdStyle}>前往任务</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>5</kbd></td>
-                <td style={tdStyle}>Go to Jobs</td>
+                <td style={tdStyle}>前往定时任务</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>6</kbd></td>
-                <td style={tdStyle}>Go to Memory</td>
+                <td style={tdStyle}>前往记忆</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>7</kbd></td>
-                <td style={tdStyle}>Go to Files</td>
+                <td style={tdStyle}>前往文件</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>,</kbd></td>
-                <td style={tdStyle}>Open Settings</td>
+                <td style={tdStyle}>打开设置</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>K</kbd></td>
-                <td style={tdStyle}>Open Command Palette</td>
+                <td style={tdStyle}>打开命令面板</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>B</kbd></td>
-                <td style={tdStyle}>Toggle Sidebar</td>
+                <td style={tdStyle}>切换侧边栏</td>
               </tr>
             </tbody>
           </table>
 
-          <h3 style={h3Style}>Chat</h3>
+          <h3 style={h3Style}>会话</h3>
           <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={thStyle}>Shortcut</th>
-                <th style={thStyle}>Action</th>
+                <th style={thStyle}>快捷键</th>
+                <th style={thStyle}>操作</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Enter</kbd></td>
-                <td style={tdStyle}>Send message</td>
+                <td style={tdStyle}>发送消息</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Shift</kbd> + <kbd style={kbdStyle}>Enter</kbd></td>
-                <td style={tdStyle}>New line in message</td>
+                <td style={tdStyle}>在消息中插入换行</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>N</kbd></td>
-                <td style={tdStyle}>New session</td>
+                <td style={tdStyle}>新建会话</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Escape</kbd></td>
-                <td style={tdStyle}>Stop streaming response</td>
+                <td style={tdStyle}>停止流式输出</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>L</kbd></td>
-                <td style={tdStyle}>Clear chat display</td>
+                <td style={tdStyle}>清空会话显示</td>
               </tr>
             </tbody>
           </table>
 
-          <h3 style={h3Style}>Editor</h3>
+          <h3 style={h3Style}>编辑器</h3>
           <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={thStyle}>Shortcut</th>
-                <th style={thStyle}>Action</th>
+                <th style={thStyle}>快捷键</th>
+                <th style={thStyle}>操作</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>S</kbd></td>
-                <td style={tdStyle}>Save file</td>
+                <td style={tdStyle}>保存文件</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>F</kbd></td>
-                <td style={tdStyle}>Find in file</td>
+                <td style={tdStyle}>在文件中查找</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>H</kbd></td>
-                <td style={tdStyle}>Find and replace</td>
+                <td style={tdStyle}>查找并替换</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>Z</kbd></td>
-                <td style={tdStyle}>Undo</td>
+                <td style={tdStyle}>撤销</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>Shift</kbd> + <kbd style={kbdStyle}>Z</kbd></td>
-                <td style={tdStyle}>Redo</td>
+                <td style={tdStyle}>重做</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>W</kbd></td>
-                <td style={tdStyle}>Close current tab</td>
+                <td style={tdStyle}>关闭当前标签页</td>
               </tr>
             </tbody>
           </table>
 
-          <h3 style={h3Style}>Conductor</h3>
+          <h3 style={h3Style}>任务编排</h3>
           <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={thStyle}>Shortcut</th>
-                <th style={thStyle}>Action</th>
+                <th style={thStyle}>快捷键</th>
+                <th style={thStyle}>操作</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>Enter</kbd></td>
-                <td style={tdStyle}>Start mission</td>
+                <td style={tdStyle}>启动任务</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Space</kbd></td>
-                <td style={tdStyle}>Pause / Resume mission</td>
+                <td style={tdStyle}>暂停 / 恢复任务</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>.</kbd></td>
-                <td style={tdStyle}>Abort mission</td>
+                <td style={tdStyle}>中止任务</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>1</kbd> / <kbd style={kbdStyle}>2</kbd> / <kbd style={kbdStyle}>3</kbd></td>
-                <td style={tdStyle}>Switch Office View layout (Grid / Row / Focus)</td>
+                <td style={tdStyle}>切换办公室视图布局（网格 / 行 / 聚焦）</td>
               </tr>
             </tbody>
           </table>
 
-          <h3 style={h3Style}>Terminal</h3>
+          <h3 style={h3Style}>终端</h3>
           <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={thStyle}>Shortcut</th>
-                <th style={thStyle}>Action</th>
+                <th style={thStyle}>快捷键</th>
+                <th style={thStyle}>操作</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>`</kbd></td>
-                <td style={tdStyle}>Toggle terminal panel</td>
+                <td style={tdStyle}>切换终端面板</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>Shift</kbd> + <kbd style={kbdStyle}>T</kbd></td>
-                <td style={tdStyle}>New terminal tab</td>
+                <td style={tdStyle}>新建终端标签页</td>
               </tr>
               <tr>
                 <td style={tdStyle}><kbd style={kbdStyle}>Ctrl</kbd> + <kbd style={kbdStyle}>C</kbd></td>
-                <td style={tdStyle}>Interrupt running command</td>
+                <td style={tdStyle}>中断正在运行的命令</td>
               </tr>
             </tbody>
           </table>
@@ -986,61 +986,61 @@ export function HelpScreen() {
 
         {/* Section 14: Troubleshooting */}
         <section id="troubleshooting" style={{ paddingBottom: '2rem', marginBottom: '2rem' }}>
-          <h2 style={h2Style}>14. Troubleshooting</h2>
+          <h2 style={h2Style}>14. 故障排查</h2>
 
-          <h3 style={h3Style}>Connection Issues</h3>
+          <h3 style={h3Style}>连接问题</h3>
           <p style={pStyle}>
-            If the connection indicator shows red or you see "Disconnected" messages:
+            如果连接指示灯为红色，或您看到“已断开”消息：
           </p>
           <ol style={olStyle}>
-            <li>Verify your Gateway URL is correct in Settings (check for typos, correct port number).</li>
-            <li>Ensure the Hermes Gateway server is running. If you installed it as a systemd service, check with: <code>systemctl --user status hermes-gateway</code>.</li>
-            <li>Check that no firewall is blocking the connection port.</li>
-            <li>If using a remote server, ensure your network can reach it (try pinging the host).</li>
-            <li>Try the <strong>Test Connection</strong> button in Settings - it provides specific error messages.</li>
+            <li>在<strong>设置</strong>中检查您的网关地址（确认没有拼写错误且端口号正确）。</li>
+            <li>确保 Hermes 执行引擎（网关）服务器正在运行。如果您将其安装为系统服务，请使用 <code>systemctl --user status hermes-gateway</code> 检查。</li>
+            <li>检查防火墙是否阻止了连接端口。</li>
+            <li>如果您使用远程服务器，请确保您的网络可以访问它（尝试 ping 该主机）。</li>
+            <li>尝试<strong>设置</strong>中的<strong>测试连接</strong>按钮 - 它会提供具体的错误消息。</li>
           </ol>
 
-          <h3 style={h3Style}>Gateway Not Responding</h3>
+          <h3 style={h3Style}>网关无响应</h3>
           <p style={pStyle}>
-            If the gateway is reachable but not responding to requests:
+            如果网关可以访问但不对请求做出响应：
           </p>
           <ul style={ulStyle}>
-            <li>Check the gateway's own logs for errors (usually in the terminal where it's running or via <code>journalctl --user -u hermes-gateway</code>).</li>
-            <li>Verify your API key is correct and has not expired.</li>
-            <li>Restart the gateway service and try again.</li>
-            <li>Ensure the AI provider (Anthropic, etc.) API keys configured in the gateway are valid.</li>
+            <li>检查网关自身的日志以查找错误（通常在其运行的终端中，或通过 <code>journalctl --user -u hermes-gateway</code>）。</li>
+            <li>确认您的 API 密钥正确且未过期。</li>
+            <li>重启网关服务并重试。</li>
+            <li>确保网关中配置的 AI 服务提供方（例如 Anthropic）的 API 密钥有效。</li>
           </ul>
 
-          <h3 style={h3Style}>Features Showing as Unavailable</h3>
+          <h3 style={h3Style}>功能显示为不可用</h3>
           <p style={pStyle}>
-            If certain features appear grayed out or show "unavailable":
+            如果某些功能显示为灰色或显示“不可用”：
           </p>
           <ul style={ulStyle}>
-            <li>Some features require specific gateway capabilities. Update your Hermes Gateway to the latest version.</li>
-            <li>Check that required skills are installed and enabled in the Skills screen.</li>
-            <li>Verify your gateway's configuration includes the necessary modules (e.g., the conductor module for missions).</li>
-            <li>Ensure your connection has the appropriate permissions. Some gateways restrict features by API key scope.</li>
+            <li>某些功能需要特定的网关能力。请将您的 Hermes 执行引擎（网关）更新到最新版本。</li>
+            <li>检查<strong>技能</strong>页面中所需技能是否已安装并启用。</li>
+            <li>确认网关的配置包含必要的模块（例如用于任务的编排模块）。</li>
+            <li>确保您的连接具有相应的权限。某些网关会按 API 密钥划分功能范围。</li>
           </ul>
 
-          <h3 style={h3Style}>Rate Limits</h3>
+          <h3 style={h3Style}>速率限制</h3>
           <p style={pStyle}>
-            If you encounter rate limit errors:
+            如果您遇到速率限制错误：
           </p>
           <ul style={ulStyle}>
-            <li>Rate limits come from the underlying AI provider (e.g., Anthropic's API limits).</li>
-            <li>Reduce the number of parallel workers in Conductor missions.</li>
-            <li>Space out rapid-fire chat messages.</li>
-            <li>Consider using a lower-tier model for less critical tasks to preserve quota for important work.</li>
-            <li>Check your AI provider's dashboard to see your current usage and limits.</li>
-            <li>If you consistently hit limits, contact your AI provider about upgrading your tier.</li>
+            <li>速率限制来自底层 AI 服务提供方（例如 Anthropic 的 API 限制）。</li>
+            <li>减少任务编排中的并行执行器数量。</li>
+            <li>降低连续会话消息的频率。</li>
+            <li>考虑为不太关键的任务使用低层级模型，以将配额保留给重要工作。</li>
+            <li>在您的 AI 服务提供方控制台中查看当前使用量和限制。</li>
+            <li>如果您经常触达限制，请联系您的 AI 服务提供方以升级层级。</li>
           </ul>
           <div style={tipStyle}>
-            <strong>Tip:</strong> The Analytics screen shows your token usage over time, which can help you identify usage patterns and plan accordingly.
+            <strong>提示：</strong>数据分析页面会显示您的令牌使用量随时间的变化，这可以帮助您识别使用模式并相应地进行规划。
           </div>
         </section>
 
         <footer style={{ textAlign: 'center', padding: '2rem 0', borderTop: '1px solid var(--theme-border-subtle)', color: 'var(--theme-muted)', fontSize: '0.85rem' }}>
-          <p>Hermes Studio Help - Last updated April 2026</p>
+          <p>Ti Work 帮助 - 最后更新于 2026 年 4 月</p>
         </footer>
       </div>
     </div>

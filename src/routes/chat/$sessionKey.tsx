@@ -3,6 +3,7 @@ import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { moveHistoryMessages } from '../../screens/chat/chat-queries'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 const ChatScreen = lazy(async () => {
   const module = await import('../../screens/chat/chat-screen')
@@ -17,21 +18,23 @@ export const Route = createFileRoute('/chat/$sessionKey')({
     return (
       <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-primary-50">
         <div className="max-w-md">
-          <div className="mb-4 text-5xl">💬</div>
+          <div className="mb-4 text-5xl">
+            <EmojiIcon emoji="💬" size={48} />
+          </div>
           <h2 className="text-xl font-semibold text-primary-900 mb-3">
-            Chat Error
+            会话加载失败
           </h2>
           <p className="text-sm text-primary-600 mb-6">
             {error instanceof Error
               ? error.message
-              : 'Failed to load chat session'}
+              : '加载会话失败'}
           </p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={reset}
               className="px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors"
             >
-              Try Again
+              重试
             </button>
             <button
               onClick={() => {
@@ -40,7 +43,7 @@ export const Route = createFileRoute('/chat/$sessionKey')({
               }}
               className="px-4 py-2 border border-primary-300 text-primary-700 rounded-lg hover:bg-primary-100 transition-colors"
             >
-              Return to Main
+              返回主页
             </button>
           </div>
         </div>
@@ -113,7 +116,7 @@ function ChatRoute() {
   if (!mounted) {
     return (
       <div className="flex h-full items-center justify-center text-primary-400">
-        Loading chat…
+        正在加载会话…
       </div>
     )
   }
@@ -123,7 +126,7 @@ function ChatRoute() {
       <Suspense
         fallback={
           <div className="flex h-full items-center justify-center text-primary-400">
-            Loading chat…
+            正在加载会话…
           </div>
         }
       >

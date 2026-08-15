@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 type ToastType = 'info' | 'success' | 'warning' | 'error'
 
@@ -85,7 +86,9 @@ export function Toaster() {
             typeStyles[t.type],
           )}
         >
-          <span className="text-base">{t.icon ?? defaultIcons[t.type]}</span>
+          <span className="flex shrink-0 items-center text-white">
+            <EmojiIcon emoji={t.icon ?? defaultIcons[t.type]} size={16} />
+          </span>
           <span className="min-w-0 break-words">{t.message}</span>
           <button
             type="button"
@@ -93,8 +96,9 @@ export function Toaster() {
               setToasts((prev) => prev.filter((x) => x.id !== t.id))
             }
             className="ml-2 shrink-0 rounded-full p-0.5 opacity-70 transition-opacity hover:opacity-100"
+            aria-label="关闭"
           >
-            ✕
+            <EmojiIcon emoji="✕" size={14} />
           </button>
         </div>
       ))}

@@ -22,18 +22,18 @@ const PLATFORM_NAMES: Record<string, string> = {
 }
 
 export function formatSessionKey(key: string): string {
-  if (!key) return 'Unknown'
+  if (!key) return '未知'
 
   const parts = key.split(':')
 
   // agent:main:main → Main
-  if (key === 'agent:main:main') return 'Main'
+  if (key === 'agent:main:main') return '主会话'
 
   // agent:main:cron:UUID → Cron Task
-  if (parts.length >= 3 && parts[2] === 'cron') return 'Cron Task'
+  if (parts.length >= 3 && parts[2] === 'cron') return '定时任务'
 
   // agent:main:subagent:UUID → Sub-agent
-  if (parts.length >= 3 && parts[2] === 'subagent') return 'Sub-agent'
+  if (parts.length >= 3 && parts[2] === 'subagent') return '子智能体'
 
   // agent:main:direct:PLATFORM:ID → Platform name
   if (parts.length >= 4 && parts[2] === 'direct') {

@@ -56,11 +56,11 @@ export type MissionHistoryEntry = {
   status: 'completed' | 'failed'
   projectPath: string | null
   outputPath?: string | null
-  workerSummary?: string[]
+  workerSummary?: Array<string>
   outputText?: string
   streamText?: string
   completeSummary?: string
-  workerDetails?: MissionHistoryWorkerDetail[]
+  workerDetails?: Array<MissionHistoryWorkerDetail>
   error?: string | null
 }
 
@@ -80,13 +80,13 @@ export type PersistedMission = {
   pausedElapsedMs: number
   accumulatedPausedMs: number
   pauseStartedAt: string | null
-  workerKeys: string[]
-  workerLabels: string[]
+  workerKeys: Array<string>
+  workerLabels: Array<string>
   workerOutputs: Record<string, string>
   streamText: string
   planText: string
   completedAt: string | null
-  tasks: ConductorTask[]
+  tasks: Array<ConductorTask>
 }
 
 /** Default settings — empty model strings = Hermes default */

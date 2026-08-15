@@ -19,10 +19,10 @@ import {
 import { CreateJobDialog } from './create-job-dialog'
 import { EditJobDialog } from './edit-job-dialog'
 import type { HermesJob, RunEvent } from '@/lib/jobs-api'
+import type { Status } from '@/components/ds'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
-import { StatusBadge, EmptyState } from '@/components/ds'
-import type { Status } from '@/components/ds'
+import { EmptyState, StatusBadge } from '@/components/ds'
 import {
   createJob,
   deleteJob,
@@ -43,10 +43,10 @@ function formatNextRun(nextRun?: string | null): string {
     const d = new Date(nextRun)
     const now = new Date()
     const diffMs = d.getTime() - now.getTime()
-    if (diffMs < 0) return 'overdue'
-    if (diffMs < 60_000) return 'in < 1m'
-    if (diffMs < 3_600_000) return `in ${Math.round(diffMs / 60_000)}m`
-    if (diffMs < 86_400_000) return `in ${Math.round(diffMs / 3_600_000)}h`
+    if (diffMs < 0) return '已逾期'
+    if (diffMs < 60_000) return '1 分钟内'
+    if (diffMs < 3_600_000) return `约 ${Math.round(diffMs / 60_000)} 分钟后`
+    if (diffMs < 86_400_000) return `约 ${Math.round(diffMs / 3_600_000)} 小时后`
     return d.toLocaleDateString()
   } catch {
     return nextRun
@@ -54,7 +54,7 @@ function formatNextRun(nextRun?: string | null): string {
 }
 
 function formatRunTimestamp(value?: string | null): string {
-  if (!value) return 'Never run'
+  if (!value) return '从未运行'
   try {
     return new Date(value).toLocaleString()
   } catch {
@@ -74,24 +74,24 @@ function getLastRunStatus(job: HermesJob): {
 } {
   if (!job.last_run_at) {
     return {
-      label: 'Never run',
+      label: '从未运行',
       color: 'var(--theme-muted)',
     }
   }
   if (job.last_run_success === true) {
     return {
-      label: 'Last run succeeded',
+      label: '上次运行成功',
       color: 'var(--theme-success)',
     }
   }
   if (job.last_run_success === false) {
     return {
-      label: 'Last run failed',
+      label: '上次运行失败',
       color: 'var(--theme-danger)',
     }
   }
   return {
-    label: 'Last run unknown',
+    label: '上次运行状态未知',
     color: 'var(--theme-muted)',
   }
 }
@@ -101,19 +101,19 @@ function statusForEvent(ev: RunEvent): { status: Status; label: string } {
     case 'tool.started':
     case 'tool.calling':
     case 'tool.pending':
-      return { status: 'pending', label: `${ev.name ?? 'tool'}…` }
+      return { status: 'pending', label: `${ev.name ?? '工具'}…` }
     case 'tool.running':
-      return { status: 'running', label: `${ev.name ?? 'tool'} running…` }
+      return { status: 'running', label: `${ev.name ?? '工具'}运行中…` }
     case 'tool.completed':
-      return { status: 'success', label: ev.name ?? 'tool' }
+      return { status: 'success', label: ev.name ?? '工具' }
     case 'tool.failed':
-      return { status: 'error', label: `${ev.name ?? 'tool'} failed` }
+      return { status: 'error', label: `${ev.name ?? '工具'}失败` }
     case 'reasoning.available':
-      return { status: 'running', label: 'reasoning…' }
+      return { status: 'running', label: '推理中…' }
     case 'run.completed':
-      return { status: 'success', label: 'Run complete' }
+      return { status: 'success', label: '运行完成' }
     case 'run.failed':
-      return { status: 'error', label: `Run failed${ev.error ? `: ${ev.error}` : ''}` }
+      return { status: 'error', label: `运行失败${ev.error ? `：${ev.error}` : ''}` }
     default:
       return { status: 'pending', label: ev.event }
   }
@@ -220,23 +220,23 @@ function JobCard({
               }}
             />
             <h3 className="truncate text-sm font-medium text-[var(--theme-text)]">
-              {job.name || '(unnamed)'}
+              {job.name || '（未命名）'}
             </h3>
           </div>
           <p className="mb-2 line-clamp-2 text-xs text-[var(--theme-muted)]">
             {job.prompt}
           </p>
           <div className="mb-2 flex flex-wrap items-center gap-3 text-[10px] text-[var(--theme-muted)]">
-            <span>{job.schedule_display || 'custom'}</span>
+            <span>{job.schedule_display || '自定义'}</span>
             <span>·</span>
-            <span>Next: {formatNextRun(job.next_run_at)}</span>
+            <span>下次运行：{formatNextRun(job.next_run_at)}</span>
             <span>·</span>
-            <span>Last: {formatRunTimestamp(job.last_run_at)}</span>
+            <span>上次运行：{formatRunTimestamp(job.last_run_at)}</span>
             {job.skills && job.skills.length > 0 && (
               <>
                 <span>·</span>
                 <span>
-                  {job.skills.length} skill{job.skills.length !== 1 ? 's' : ''}
+                  {job.skills.length} 个技能
                 </span>
               </>
             )}
@@ -249,7 +249,7 @@ function JobCard({
             <span>{lastRunStatus.label}</span>
             {(job.delivery_failures ?? 0) > 0 && (
               <span className="inline-flex items-center gap-0.5 rounded-full bg-red-500/15 px-1.5 py-0.5 text-[10px] font-medium text-red-500">
-                {job.delivery_failures} delivery {job.delivery_failures === 1 ? 'failure' : 'failures'}
+                {job.delivery_failures} 次投递失败
               </span>
             )}
           </div>
@@ -270,7 +270,7 @@ function JobCard({
             }}
             disabled={activeRunId !== null}
             className="rounded-lg p-1.5 transition-colors hover:bg-[var(--theme-hover)] disabled:opacity-40"
-            title={activeRunId ? 'Run in progress…' : 'Run now (live)'}
+            title={activeRunId ? '运行中…' : '立即运行（实时）'}
           >
             <HugeiconsIcon
               icon={PlayIcon}
@@ -281,7 +281,7 @@ function JobCard({
           <button
             onClick={() => (isPaused ? onResume(job.id) : onPause(job.id))}
             className="rounded-lg p-1.5 transition-colors hover:bg-[var(--theme-hover)]"
-            title={isPaused ? 'Resume' : 'Pause'}
+            title={isPaused ? '恢复' : '暂停'}
           >
             <HugeiconsIcon
               icon={isPaused ? PlayIcon : PauseIcon}
@@ -292,7 +292,7 @@ function JobCard({
           <button
             onClick={() => onEdit(job)}
             className="rounded-lg p-1.5 transition-colors hover:bg-[var(--theme-hover)]"
-            title="Edit"
+            title="编辑"
           >
             <HugeiconsIcon
               icon={PencilEdit02Icon}
@@ -303,7 +303,7 @@ function JobCard({
           <button
             onClick={() => setExpanded((current) => !current)}
             className="rounded-lg p-1.5 transition-colors hover:bg-[var(--theme-hover)]"
-            title={expanded ? 'Hide run history' : 'Show run history'}
+            title={expanded ? '隐藏运行历史' : '显示运行历史'}
           >
             <HugeiconsIcon
               icon={expanded ? ArrowUp01Icon : ArrowDown01Icon}
@@ -314,7 +314,7 @@ function JobCard({
           <button
             onClick={() => onDelete(job.id)}
             className="rounded-lg p-1.5 transition-colors hover:bg-[var(--theme-hover)]"
-            title="Delete"
+            title="删除"
           >
             <HugeiconsIcon
               icon={Delete01Icon}
@@ -339,18 +339,18 @@ function JobCard({
                 <>
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs font-medium text-[var(--theme-text)]">
-                      Live run
+                      实时运行
                     </p>
                     <span className="inline-flex items-center gap-1 text-[10px] text-[var(--theme-accent)]">
                       <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--theme-accent)]" />
-                      in progress
+                      进行中
                     </span>
                   </div>
                   <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-3">
                     <div className="space-y-1">
                       {liveLog.length === 0 && (
                         <p className="text-[11px] text-[var(--theme-muted)]">
-                          Starting…
+                          启动中…
                         </p>
                       )}
                       {liveLog.map((entry) => {
@@ -374,19 +374,19 @@ function JobCard({
                 <>
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs font-medium text-[var(--theme-text)]">
-                      Run history
+                      运行历史
                     </p>
                     <p className="text-[10px] text-[var(--theme-muted)]">
-                      Showing recent outputs
+                      显示最近的输出
                     </p>
                   </div>
                   {outputQuery.isLoading ? (
                     <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-3 text-xs text-[var(--theme-muted)]">
-                      Loading outputs...
+                      加载输出中…
                     </div>
                   ) : outputQuery.isError ? (
                     <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-3 text-xs text-[var(--theme-muted)]">
-                      Failed to load outputs.
+                      加载输出失败。
                     </div>
                   ) : outputQuery.data && outputQuery.data.length > 0 ? (
                     <div className="space-y-2">
@@ -401,7 +401,7 @@ function JobCard({
                           </div>
                           <p className="text-xs leading-5 text-[var(--theme-text)]">
                             {getOutputPreview(output.content) ||
-                              'No output content'}
+                              '无输出内容'}
                           </p>
                         </div>
                       ))}
@@ -409,8 +409,8 @@ function JobCard({
                   ) : (
                     <EmptyState
                       icon={<HugeiconsIcon icon={Clock01Icon} size={28} />}
-                      title="No run outputs yet"
-                      description="Trigger this job to see run history here."
+                      title="还没有运行输出"
+                      description="触发此定时任务即可在此查看其运行历史。"
                     />
                   )}
                 </>
@@ -439,39 +439,39 @@ export function JobsScreen() {
     mutationFn: pauseJob,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
-      toast('Job paused')
+      toast('定时任务已暂停')
     },
   })
   const resumeMutation = useMutation({
     mutationFn: resumeJob,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
-      toast('Job resumed')
+      toast('定时任务已恢复')
     },
   })
   const triggerMutation = useMutation({
     mutationFn: triggerJob,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
-      toast('Job triggered')
+      toast('定时任务已触发')
     },
   })
   const deleteMutation = useMutation({
     mutationFn: deleteJob,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
-      toast('Job deleted')
+      toast('定时任务已删除')
     },
   })
   const createMutation = useMutation({
     mutationFn: createJob,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
-      toast('Job created')
+      toast('定时任务已创建')
       setShowCreate(false)
     },
     onError: (error) => {
-      toast(error instanceof Error ? error.message : 'Failed to create job', {
+      toast(error instanceof Error ? error.message : '创建定时任务失败', {
         type: 'error',
       })
     },
@@ -490,11 +490,11 @@ export function JobsScreen() {
     }) => updateJob(payload.jobId, payload.updates),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
-      toast('Job updated')
+      toast('定时任务已更新')
       setEditingJob(null)
     },
     onError: (error) => {
-      toast(error instanceof Error ? error.message : 'Failed to update job', {
+      toast(error instanceof Error ? error.message : '更新定时任务失败', {
         type: 'error',
       })
     },
@@ -536,7 +536,7 @@ export function JobsScreen() {
             className="text-[var(--theme-accent)]"
           />
           <h1 className="text-base font-semibold text-[var(--theme-text)]">
-            Jobs
+            定时任务
           </h1>
           {jobsQuery.data && (
             <span className="ml-1 text-xs text-[var(--theme-muted)]">
@@ -550,7 +550,7 @@ export function JobsScreen() {
               void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
             }
             className="rounded-lg p-1.5 transition-colors hover:bg-[var(--theme-hover)]"
-            title="Refresh"
+            title="刷新"
           >
             <HugeiconsIcon
               icon={RefreshIcon}
@@ -564,7 +564,7 @@ export function JobsScreen() {
             style={{ background: 'var(--theme-accent)' }}
           >
             <HugeiconsIcon icon={Add01Icon} size={14} />
-            New Job
+            新建定时任务
           </button>
         </div>
       </div>
@@ -578,7 +578,7 @@ export function JobsScreen() {
           />
           <input
             type="text"
-            placeholder="Search jobs..."
+            placeholder="搜索定时任务…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-input)] py-1.5 pl-8 pr-3 text-xs text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-accent)]"
@@ -589,23 +589,23 @@ export function JobsScreen() {
       <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
         {jobsQuery.isLoading ? (
           <div className="flex items-center justify-center py-12 text-sm text-[var(--theme-muted)]">
-            Loading jobs...
+            加载定时任务中…
           </div>
         ) : jobsQuery.isError ? (
           <div
             className="flex items-center justify-center py-12 text-sm"
             style={{ color: 'var(--theme-danger)' }}
           >
-            Failed to load jobs:{' '}
+            加载定时任务失败：{' '}
             {jobsQuery.error instanceof Error
               ? jobsQuery.error.message
-              : 'Unknown error'}
+              : '未知错误'}
           </div>
         ) : filteredJobs.length === 0 ? (
           <EmptyState
             icon={<HugeiconsIcon icon={Clock01Icon} size={40} />}
-            title="No scheduled jobs"
-            description="Create one to get started"
+            title="没有定时任务"
+            description="创建一个以开始使用"
           />
         ) : (
           <AnimatePresence mode="popLayout">
@@ -621,7 +621,7 @@ export function JobsScreen() {
                   void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
                 }
                 onDelete={(id) => {
-                  if (confirm(`Delete job "${job.name}"?`)) {
+                  if (confirm(`确定要删除定时任务"${job.name}"吗？`)) {
                     deleteMutation.mutate(id)
                   }
                 }}

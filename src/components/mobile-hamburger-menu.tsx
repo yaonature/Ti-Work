@@ -25,49 +25,49 @@ import {
 const NAV_ITEMS = [
   {
     id: 'chat',
-    label: 'Chat',
+    label: '会话',
     icon: Chat01Icon,
     to: '/chat/main',
     match: (p: string) => p.startsWith('/chat') || p === '/new' || p === '/',
   },
   {
     id: 'dashboard',
-    label: 'Dashboard',
+    label: '工作台',
     icon: DashboardSquare01Icon,
     to: '/dashboard',
     match: (p: string) => p.startsWith('/dashboard'),
   },
   {
     id: 'terminal',
-    label: 'Terminal',
+    label: '终端',
     icon: CommandLineIcon,
     to: '/terminal',
     match: (p: string) => p.startsWith('/terminal'),
   },
   {
     id: 'jobs',
-    label: 'Jobs',
+    label: '任务',
     icon: Clock01Icon,
     to: '/jobs',
     match: (p: string) => p.startsWith('/jobs'),
   },
   {
     id: 'memory',
-    label: 'Memory',
+    label: '记忆',
     icon: BrainIcon,
     to: '/memory',
     match: (p: string) => p.startsWith('/memory'),
   },
   {
     id: 'skills',
-    label: 'Skills',
+    label: '技能',
     icon: PuzzleIcon,
     to: '/skills',
     match: (p: string) => p.startsWith('/skills'),
   },
   {
     id: 'profiles',
-    label: 'Profiles',
+    label: '用户档案',
     icon: UserGroupIcon,
     to: '/profiles',
     match: (p: string) => p.startsWith('/profiles'),
@@ -88,7 +88,7 @@ export function HamburgerTrigger({ className }: { className?: string }) {
   return (
     <button
       type="button"
-      aria-label="Open navigation menu"
+      aria-label="打开导航菜单"
       onClick={openHamburgerMenu}
       className={cn(
         'flex items-center justify-center size-9 rounded-xl',
@@ -173,8 +173,8 @@ export function MobileHamburgerMenu() {
         >
           <div className="flex items-center gap-2.5">
             <img
-              src="/hermes-avatar.webp"
-              alt="Hermes"
+              src="/ti-work-logo.svg"
+              alt="Ti Work"
               className="size-8 rounded-xl shrink-0"
             />
             <div className="flex flex-col leading-tight">
@@ -188,13 +188,13 @@ export function MobileHamburgerMenu() {
                 className="text-[11px]"
                 style={{ color: 'var(--color-muted, #888)' }}
               >
-                Workspace
+                工作区
               </span>
             </div>
           </div>
           <button
             type="button"
-            aria-label="Close menu"
+            aria-label="关闭菜单"
             onClick={() => setOpen(false)}
             className="flex items-center justify-center size-8 rounded-full active:scale-90 transition-all"
             style={{ color: 'var(--color-muted, #888)' }}
@@ -280,7 +280,7 @@ export function MobileHamburgerMenu() {
               type="button"
               onClick={() => handleNav('/settings')}
               className="flex items-center justify-center size-9 rounded-xl active:bg-white/10 transition-colors"
-              aria-label="Settings"
+              aria-label="设置"
               style={{ color: 'var(--color-ink-muted, #888)' }}
             >
               <HugeiconsIcon
@@ -297,7 +297,7 @@ export function MobileHamburgerMenu() {
                 setTheme(getTheme())
               }}
               className="flex items-center justify-center size-9 rounded-xl active:bg-white/10 transition-colors"
-              aria-label="Toggle theme"
+              aria-label="切换主题"
               style={{ color: 'var(--color-ink-muted, #888)' }}
             >
               <svg

@@ -29,7 +29,7 @@ type ExportMenuProps = {
 const formats: Array<{ format: ExportFormat; label: string; ext: string }> = [
   { format: 'markdown', label: 'Markdown', ext: '.md' },
   { format: 'json', label: 'JSON', ext: '.json' },
-  { format: 'text', label: 'Plain Text', ext: '.txt' },
+  { format: 'text', label: '纯文本', ext: '.txt' },
 ]
 
 export function ExportMenu({ onExport, disabled }: ExportMenuProps) {
@@ -53,7 +53,7 @@ export function ExportMenu({ onExport, disabled }: ExportMenuProps) {
                 className={cn(
                   buttonVariants({ size: 'icon-sm', variant: 'ghost' }),
                 )}
-                aria-label="Download conversation"
+                aria-label="下载对话"
                 aria-disabled={disabled ? true : undefined}
               >
                 <HugeiconsIcon
@@ -64,7 +64,7 @@ export function ExportMenu({ onExport, disabled }: ExportMenuProps) {
               </MenuTrigger>
             }
           />
-          <TooltipContent side="top">Download</TooltipContent>
+          <TooltipContent side="top">下载</TooltipContent>
         </TooltipRoot>
       </TooltipProvider>
       <MenuContent side="bottom" align="end">

@@ -35,9 +35,9 @@ function detectProvider(model: string): string {
   if (m.includes('minimax')) return 'minimax'
   if (m.includes('mistral') || m.includes('devstral')) return 'mistral'
   if (m.includes('deepseek')) return 'deepseek'
+  if (m.includes('qwen') || m.includes('dashscope')) return 'qwen'
   if (
     m.includes('ollama') ||
-    m.includes('qwen') ||
     m.includes('llama') ||
     m.includes('pc1') ||
     m.includes('pc2')
@@ -67,6 +67,7 @@ export function ProviderModelIcon({
     minimax: `${cdnBase}/minimax.png`,
     mistral: `${cdnBase}/mistral.png`,
     deepseek: `${cdnBase}/deepseek.png`,
+    qwen: `${cdnBase}/qwen.png`,
     ollama: `${cdnBase}/ollama.png`,
     openrouter: `${cdnBase}/openrouter.png`,
     nvidia: `${cdnBase}/nvidia.png`,

@@ -3,26 +3,27 @@
 import { useEffect, useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
+import { EmojiIcon } from '@/components/emoji-icon'
 import type { AgentDefinition, CreateAgentInput } from '@/types/agent'
 import { cn } from '@/lib/utils'
 
 const COLOR_OPTIONS = [
-  { value: 'text-blue-400', label: 'Blue', swatch: '#60a5fa' },
-  { value: 'text-purple-400', label: 'Purple', swatch: '#c084fc' },
-  { value: 'text-orange-400', label: 'Orange', swatch: '#fb923c' },
-  { value: 'text-emerald-400', label: 'Emerald', swatch: '#34d399' },
-  { value: 'text-amber-400', label: 'Amber', swatch: '#fbbf24' },
-  { value: 'text-cyan-400', label: 'Cyan', swatch: '#22d3ee' },
-  { value: 'text-yellow-400', label: 'Yellow', swatch: '#facc15' },
-  { value: 'text-red-400', label: 'Red', swatch: '#f87171' },
-  { value: 'text-pink-400', label: 'Pink', swatch: '#f472b6' },
-  { value: 'text-indigo-400', label: 'Indigo', swatch: '#818cf8' },
-  { value: 'text-teal-400', label: 'Teal', swatch: '#2dd4bf' },
-  { value: 'text-lime-400', label: 'Lime', swatch: '#a3e635' },
-  { value: 'text-rose-400', label: 'Rose', swatch: '#fb7185' },
-  { value: 'text-violet-400', label: 'Violet', swatch: '#a78bfa' },
-  { value: 'text-sky-400', label: 'Sky', swatch: '#38bdf8' },
-  { value: 'text-green-400', label: 'Green', swatch: '#4ade80' },
+  { value: 'text-blue-400', label: '蓝色', swatch: '#60a5fa' },
+  { value: 'text-purple-400', label: '紫色', swatch: '#c084fc' },
+  { value: 'text-orange-400', label: '橙色', swatch: '#fb923c' },
+  { value: 'text-emerald-400', label: '翠绿', swatch: '#34d399' },
+  { value: 'text-amber-400', label: '琥珀', swatch: '#fbbf24' },
+  { value: 'text-cyan-400', label: '青色', swatch: '#22d3ee' },
+  { value: 'text-yellow-400', label: '黄色', swatch: '#facc15' },
+  { value: 'text-red-400', label: '红色', swatch: '#f87171' },
+  { value: 'text-pink-400', label: '粉色', swatch: '#f472b6' },
+  { value: 'text-indigo-400', label: '靛蓝', swatch: '#818cf8' },
+  { value: 'text-teal-400', label: '蓝绿', swatch: '#2dd4bf' },
+  { value: 'text-lime-400', label: '青柠', swatch: '#a3e635' },
+  { value: 'text-rose-400', label: '玫瑰', swatch: '#fb7185' },
+  { value: 'text-violet-400', label: '紫罗兰', swatch: '#a78bfa' },
+  { value: 'text-sky-400', label: '天蓝', swatch: '#38bdf8' },
+  { value: 'text-green-400', label: '绿色', swatch: '#4ade80' },
 ]
 
 const COMMON_EMOJIS = [
@@ -107,16 +108,16 @@ export function AgentEditorDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50"
         onClick={() => onOpenChange(false)}
       />
 
       {/* Dialog */}
-      <div className="relative z-10 w-full max-w-xl rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="relative z-10 w-full max-w-xl rounded-[20px] border border-[var(--theme-border)] bg-[var(--theme-panel)] shadow-[var(--theme-shadow-3)] flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-6 py-4 shrink-0">
           <h2 className="text-base font-semibold text-[var(--theme-text)]">
-            {isEditing ? 'Edit Agent' : 'Create Agent'}
+            {isEditing ? '编辑智能体' : '创建智能体'}
           </h2>
           <button
             onClick={() => onOpenChange(false)}
@@ -136,9 +137,9 @@ export function AgentEditorDialog({
                 type="button"
                 onClick={() => setShowEmojiPicker((v) => !v)}
                 className="flex h-[38px] w-[38px] items-center justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] text-xl hover:bg-[var(--theme-hover)] transition-colors"
-                title="Choose emoji"
+                title="选择表情"
               >
-                {form.emoji}
+                <EmojiIcon emoji={form.emoji} size={20} />
               </button>
               {showEmojiPicker && (
                 <div className="absolute left-0 top-10 z-10 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-2 shadow-xl">
@@ -156,7 +157,7 @@ export function AgentEditorDialog({
                           form.emoji === emoji && 'bg-[var(--theme-hover)]',
                         )}
                       >
-                        {emoji}
+                        <EmojiIcon emoji={emoji} size={16} />
                       </button>
                     ))}
                   </div>
@@ -170,7 +171,7 @@ export function AgentEditorDialog({
                 type="text"
                 value={form.name}
                 onChange={(e) => set('name', e.target.value)}
-                placeholder="Agent name"
+                placeholder="智能体名称"
                 required
                 maxLength={40}
                 className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
@@ -182,7 +183,7 @@ export function AgentEditorDialog({
               <button
                 type="button"
                 className="flex h-[38px] w-[38px] items-center justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] hover:bg-[var(--theme-hover)] transition-colors"
-                title="Color"
+                title="颜色"
               >
                 <span
                   className="h-4 w-4 rounded-full border border-white/20"
@@ -215,13 +216,13 @@ export function AgentEditorDialog({
           {/* Role label */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-[var(--theme-muted)]">
-              Role / Title
+              角色 / 头衔
             </label>
             <input
               type="text"
               value={form.roleLabel}
               onChange={(e) => set('roleLabel', e.target.value)}
-              placeholder="e.g. Data Scientist, Legal Analyst"
+              placeholder="例如：数据科学家、法务分析师"
               maxLength={60}
               className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
             />
@@ -230,14 +231,14 @@ export function AgentEditorDialog({
           {/* System prompt */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-[var(--theme-muted)]">
-              System Prompt
-              <span className="ml-1.5 font-normal opacity-60">(defines behaviour)</span>
+              系统提示词
+              <span className="ml-1.5 font-normal opacity-60">（定义行为方式）</span>
             </label>
             <textarea
               value={form.systemPrompt}
               onChange={(e) => set('systemPrompt', e.target.value)}
               rows={6}
-              placeholder={`You are ${form.name || 'an expert agent'}. Your role is to...`}
+              placeholder={`你是${form.name || '一名专家智能体'}。你的职责是……`}
               className="w-full resize-y rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none font-mono"
             />
           </div>
@@ -245,14 +246,14 @@ export function AgentEditorDialog({
           {/* Model override */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-[var(--theme-muted)]">
-              Model override
-              <span className="ml-1.5 font-normal opacity-60">(optional — uses session default if blank)</span>
+              模型覆盖
+              <span className="ml-1.5 font-normal opacity-60">（可选，留空则使用会话默认模型）</span>
             </label>
             <input
               type="text"
               value={form.model ?? ''}
               onChange={(e) => set('model', e.target.value.trim() || null)}
-              placeholder="e.g. claude-opus-4-5"
+              placeholder="例如：claude-opus-4-5"
               className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none font-mono"
             />
           </div>
@@ -260,14 +261,14 @@ export function AgentEditorDialog({
           {/* Tags */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-[var(--theme-muted)]">
-              Tags
-              <span className="ml-1.5 font-normal opacity-60">(comma-separated)</span>
+              标签
+              <span className="ml-1.5 font-normal opacity-60">（使用逗号分隔）</span>
             </label>
             <input
               type="text"
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              placeholder="e.g. analysis, legal, research"
+              placeholder="例如：分析、法务、研究"
               className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
             />
           </div>
@@ -279,14 +280,14 @@ export function AgentEditorDialog({
               onClick={() => onOpenChange(false)}
               className="rounded-lg px-4 py-2 text-sm text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-hover)]"
             >
-              Cancel
+              取消
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !form.name.trim()}
               className="rounded-lg bg-[var(--theme-accent)] px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
             >
-              {isSubmitting ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Agent'}
+              {isSubmitting ? '保存中…' : isEditing ? '保存更改' : '创建智能体'}
             </button>
           </div>
         </form>

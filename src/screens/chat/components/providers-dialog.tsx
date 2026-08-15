@@ -21,9 +21,9 @@ export function ProvidersDialog({ open, onOpenChange }: ProvidersDialogProps) {
       <DialogContent className="flex h-[min(85dvh,680px)] w-[min(640px,92vw)] max-h-[calc(100dvh-3rem)] flex-col overflow-hidden p-0">
         <div className="flex items-start justify-between border-b border-primary-200 p-4 pb-3">
           <div>
-            <DialogTitle className="mb-1 text-balance">Providers</DialogTitle>
+            <DialogTitle className="mb-1 text-balance">提供方</DialogTitle>
             <DialogDescription className="text-pretty">
-              Configure provider access without leaving your current page.
+              无需离开当前页面，即可完成提供方接入配置。
             </DialogDescription>
           </div>
           <DialogClose
@@ -32,7 +32,7 @@ export function ProvidersDialog({ open, onOpenChange }: ProvidersDialogProps) {
                 size="icon-sm"
                 variant="ghost"
                 className="text-primary-500 hover:bg-primary-100 dark:hover:bg-primary-800 hover:text-primary-700"
-                aria-label="Close providers dialog"
+                aria-label="关闭提供方对话框"
               >
                 <HugeiconsIcon
                   icon={Cancel01Icon}

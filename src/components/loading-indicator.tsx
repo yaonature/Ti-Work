@@ -3,6 +3,7 @@
 import { BrailleSpinner } from './ui/braille-spinner'
 import { ThreeDotsSpinner } from './ui/three-dots-spinner'
 import { LogoLoader } from './logo-loader'
+import { LobsterIcon } from './emoji-icon'
 import type { BrailleSpinnerPreset } from './ui/braille-spinner'
 import type { LoaderStyle } from '@/hooks/use-chat-settings'
 import { useChatSettingsStore } from '@/hooks/use-chat-settings'
@@ -35,13 +36,10 @@ function renderLoader(loaderStyle: LoaderStyle, iconClassName?: string) {
   if (loaderStyle === 'lobster') {
     return (
       <span
-        className={cn(
-          'inline-block leading-none text-sm animate-pulse',
-          iconClassName,
-        )}
+        className={cn('inline-flex items-center', iconClassName)}
         aria-hidden="true"
       >
-        🦞
+        <LobsterIcon size={16} className="animate-pulse" />
       </span>
     )
   }
@@ -70,7 +68,7 @@ function renderLoader(loaderStyle: LoaderStyle, iconClassName?: string) {
 function LoadingIndicator({
   className,
   iconClassName,
-  ariaLabel = 'Assistant is streaming',
+  ariaLabel = '助手正在回复',
 }: LoadingIndicatorProps) {
   const loaderStyle = useChatSettingsStore(
     (state) => state.settings.loaderStyle,

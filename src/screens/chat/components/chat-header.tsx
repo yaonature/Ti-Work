@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Folder01Icon } from '@hugeicons/core-free-icons'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { Button } from '@/components/ui/button'
 import {
   TooltipContent,
@@ -22,13 +23,13 @@ function toTitleCase(value: string): string {
 
 function formatMobileSessionTitle(rawTitle: string): string {
   const title = rawTitle.trim()
-  if (!title) return 'New Chat'
+  if (!title) return '新建会话'
 
   const normalized = title.toLowerCase()
 
   // Agent session patterns
   if (normalized === 'agent:main:main' || normalized === 'agent:main') {
-    return 'Main Chat'
+    return '主会话'
   }
   const parts = title
     .split(':')
@@ -40,14 +41,14 @@ function formatMobileSessionTitle(rawTitle: string): string {
     parts[1].length > 0
   ) {
     const candidate = parts[parts.length - 1]
-    if (candidate.toLowerCase() === 'main') return 'Main Chat'
-    return `${toTitleCase(candidate)} Chat`
+    if (candidate.toLowerCase() === 'main') return '主会话'
+    return `${toTitleCase(candidate)} 会话`
   }
 
   // Common system prompts → friendly names
-  if (normalized.startsWith('read heartbeat')) return 'Main Chat'
-  if (normalized.startsWith('generate daily')) return 'Daily Brief'
-  if (normalized.startsWith('morning check')) return 'Morning Check-in'
+  if (normalized.startsWith('read heartbeat')) return '主会话'
+  if (normalized.startsWith('generate daily')) return '每日报告'
+  if (normalized.startsWith('morning check')) return '晨间检查'
 
   // If it looks like a command/prompt (starts with a verb + long), summarize it
   const MAX_LEN = 20
@@ -254,7 +255,7 @@ function ChatHeaderComponent({
             type="button"
             onClick={openHamburgerMenu}
             className="shrink-0 flex items-center justify-center w-11 h-11 -ml-1 rounded-xl active:bg-[var(--theme-accent-subtle)] transition-colors z-10"
-            aria-label="Open navigation menu"
+            aria-label="打开导航菜单"
           >
             <svg
               width="20"
@@ -277,10 +278,10 @@ function ChatHeaderComponent({
             type="button"
             onClick={onOpenSessions}
             className="flex items-center gap-1 min-w-0 max-w-[55vw] px-3 py-1.5 rounded-full bg-[var(--theme-accent-subtle)] hover:bg-[var(--theme-hover)] active:bg-primary-150 transition-colors"
-            aria-label="Switch session"
+            aria-label="切换会话"
           >
             <span className="truncate text-[13px] font-medium text-ink">
-              {mobileTitle === 'new' ? 'New Chat' : mobileTitle}
+              {mobileTitle === 'new' ? '新建会话' : mobileTitle}
             </span>
             <svg
               width="8"
@@ -323,7 +324,7 @@ function ChatHeaderComponent({
                     variant="ghost"
                     className="mr-2 text-primary-800 hover:bg-[var(--theme-hover)] dark:hover:bg-primary-800"
                     aria-label={
-                      fileExplorerCollapsed ? 'Show files' : 'Hide files'
+                      fileExplorerCollapsed ? '显示文件' : '隐藏文件'
                     }
                   >
                     <HugeiconsIcon
@@ -335,7 +336,7 @@ function ChatHeaderComponent({
                 }
               />
               <TooltipContent side="bottom">
-                {fileExplorerCollapsed ? 'Show files' : 'Hide files'}
+                {fileExplorerCollapsed ? '显示文件' : '隐藏文件'}
               </TooltipContent>
             </TooltipRoot>
           </TooltipProvider>
@@ -362,7 +363,7 @@ function ChatHeaderComponent({
                 }
               }}
               className="h-7 w-full min-w-0 border-b border-transparent bg-transparent px-0 text-sm font-medium text-balance text-ink outline-none transition-colors focus:border-[var(--theme-border)]"
-              aria-label="Session name"
+              aria-label="会话名称"
             />
           ) : (
             <div
@@ -373,7 +374,7 @@ function ChatHeaderComponent({
                 type="button"
                 onClick={() => setSessionPopoverOpen((p) => !p)}
                 className="min-w-0 truncate text-sm font-medium text-balance hover:text-accent-600 transition-colors rounded-sm text-left"
-                title="Click to switch session"
+                title="点击切换会话"
               >
                 {activeTitle}
               </button>
@@ -382,9 +383,9 @@ function ChatHeaderComponent({
                   type="button"
                   onClick={startTitleEdit}
                   className="text-xs text-[var(--theme-muted)] opacity-0 group-hover:opacity-100 hover:text-[var(--theme-muted)] transition-opacity shrink-0"
-                  title="Rename session"
+                  title="重命名会话"
                 >
-                  ✏️
+                  <EmojiIcon emoji="✏️" size={14} />
                 </button>
               )}
               {sessionPopoverOpen && (
@@ -405,7 +406,7 @@ function ChatHeaderComponent({
                     <input
                       autoFocus
                       type="text"
-                      placeholder="Search sessions..."
+                      placeholder="搜索会话…"
                       value={sessionSearch}
                       onChange={(e) => setSessionSearch(e.target.value)}
                       className="flex-1 bg-transparent text-sm outline-none text-[var(--theme-text)] placeholder-neutral-400 dark:text-neutral-200"
@@ -430,7 +431,7 @@ function ChatHeaderComponent({
                           s.derivedTitle ||
                           s.title ||
                           s.friendlyId?.slice(0, 8) ||
-                          'Session'
+                          '会话'
                         const isActive =
                           Boolean(activeFriendlyId) &&
                           (s.friendlyId === activeFriendlyId ||
@@ -461,7 +462,7 @@ function ChatHeaderComponent({
                       })}
                     {sessions.length === 0 && (
                       <p className="px-3 py-4 text-sm text-neutral-400">
-                        No sessions
+                        没有会话
                       </p>
                     )}
                   </div>
@@ -473,7 +474,7 @@ function ChatHeaderComponent({
         {renamingTitle ? (
           <span
             className="mr-1 inline-flex size-3 animate-spin rounded-full border border-[var(--theme-border)] border-t-[var(--theme-accent)]"
-            aria-label="Saving session name"
+            aria-label="正在保存会话名称"
           />
         ) : null}
         {showThinkingIndicator ? (
@@ -483,19 +484,19 @@ function ChatHeaderComponent({
                 render={
                   <span
                     className="mr-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                    aria-label="Thinking: Adaptive"
+                    aria-label="思考：自适应"
                     role="status"
                     style={{ boxShadow: '0 0 6px 1px rgba(251,191,36,0.4)' }}
                   >
-                    🧠
+                    <EmojiIcon emoji="🧠" size={14} />
                   </span>
                 }
               />
               <TooltipContent side="bottom">
-                Thinking: Adaptive — Claude reasons before responding
+                思考：自适应 — Claude 会在回复前进行推理
               </TooltipContent>
-            </TooltipRoot>
-          </TooltipProvider>
+              </TooltipRoot>
+            </TooltipProvider>
         ) : null}
         {dataUpdatedAt > 0 ? (
           <TooltipProvider>
@@ -505,7 +506,7 @@ function ChatHeaderComponent({
                 render={
                   <button
                     type="button"
-                    aria-label={isStale ? 'Stale — click to sync' : 'Live'}
+                    aria-label={isStale ? '数据过期 — 点击同步' : '实时'}
                     className={cn(
                       'mr-2 inline-flex items-center justify-center rounded-full transition-colors',
                       isRefreshing && 'animate-pulse',
@@ -524,7 +525,7 @@ function ChatHeaderComponent({
                 }
               />
               <TooltipContent side="bottom">
-                {isStale ? 'Stale — click to sync' : 'Live'}
+                {isStale ? '数据过期 — 点击同步' : '实时'}
               </TooltipContent>
             </TooltipRoot>
           </TooltipProvider>
@@ -540,13 +541,13 @@ function ChatHeaderComponent({
                     size="icon-sm"
                     variant="ghost"
                     className="text-[var(--theme-muted)] hover:bg-[var(--theme-hover)] dark:hover:bg-primary-800"
-                    aria-label="Undo last message"
+                    aria-label="撤销上一条消息"
                   >
-                    <span className="text-sm">↩️</span>
+                    <EmojiIcon emoji="↩️" size={14} />
                   </Button>
                 }
               />
-              <TooltipContent side="bottom">Undo last message</TooltipContent>
+              <TooltipContent side="bottom">撤销上一条消息</TooltipContent>
             </TooltipRoot>
           </TooltipProvider>
         )}
@@ -572,17 +573,18 @@ function ChatHeaderComponent({
                       clearConfirm ? 'text-red-500' : 'text-[var(--theme-muted)]',
                     )}
                     aria-label={
-                      clearConfirm ? 'Confirm clear' : 'Clear session'
+                      clearConfirm ? '确认清空' : '清空会话'
                     }
                   >
-                    <span className="text-sm">
-                      {clearConfirm ? '⚠️' : '🗑️'}
-                    </span>
+                    <EmojiIcon
+                      emoji={clearConfirm ? '⚠️' : '🗑️'}
+                      size={16}
+                    />
                   </Button>
                 }
               />
               <TooltipContent side="bottom">
-                {clearConfirm ? 'Click again to confirm' : 'Clear session'}
+                {clearConfirm ? '再次点击确认' : '清空会话'}
               </TooltipContent>
             </TooltipRoot>
           </TooltipProvider>

@@ -19,6 +19,7 @@ import type { DebugAnalysis } from '@/components/terminal/debug-panel'
 import type { TerminalTab } from '@/stores/terminal-panel-store'
 import { DebugPanel } from '@/components/terminal/debug-panel'
 import { Button } from '@/components/ui/button'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { cn } from '@/lib/utils'
 import { useTerminalPanelStore } from '@/stores/terminal-panel-store'
 
@@ -235,14 +236,14 @@ export function TerminalWorkspace({
 
         const analysis = toDebugAnalysis(payload)
         if (!analysis) {
-          throw new Error('Invalid analysis response payload')
+          throw new Error('无效的调试分析响应')
         }
 
         setDebugAnalysis(analysis)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         setDebugAnalysis({
-          summary: 'Debug analysis failed.',
+          summary: '调试分析失败。',
           rootCause: message,
           suggestedCommands: [],
         })
@@ -770,17 +771,17 @@ export function TerminalWorkspace({
             variant="ghost"
             onClick={handleAnalyzeDebug}
             disabled={debugLoading}
-            aria-label="AI Debug analysis"
-            title="AI Debug — analyze terminal output"
+            aria-label="AI 调试分析"
+            title="AI 调试 — 分析终端输出"
           >
-            🔍
+            <EmojiIcon emoji="🔍" size={18} />
           </Button>
           <Button
             size="icon-sm"
             variant="ghost"
             onClick={handleCreateTab}
-            aria-label="New terminal tab"
-            title="New tab"
+            aria-label="新建终端标签页"
+            title="新建标签页"
           >
             <HugeiconsIcon icon={Add01Icon} size={20} strokeWidth={1.5} />
           </Button>
@@ -790,7 +791,7 @@ export function TerminalWorkspace({
                 size="icon-sm"
                 variant="ghost"
                 onClick={onMinimizePanel}
-                aria-label="Minimize"
+                aria-label="最小化"
               >
                 <HugeiconsIcon
                   icon={SidebarLeft01Icon}
@@ -802,7 +803,7 @@ export function TerminalWorkspace({
                 size="icon-sm"
                 variant="ghost"
                 onClick={onMaximizePanel}
-                aria-label="Maximize"
+                aria-label="最大化"
               >
                 <HugeiconsIcon
                   icon={ArrowRight01Icon}
@@ -814,7 +815,7 @@ export function TerminalWorkspace({
                 size="icon-sm"
                 variant="ghost"
                 onClick={handleClosePanel}
-                aria-label="Close"
+                aria-label="关闭"
               >
                 <HugeiconsIcon
                   icon={Cancel01Icon}
@@ -886,7 +887,7 @@ export function TerminalWorkspace({
               setContextMenu(null)
               if (!menuTab) return
               const nextName = window.prompt(
-                'Rename terminal tab',
+                '重命名终端标签页',
                 menuTab.title,
               )
               if (!nextName) return
@@ -905,7 +906,7 @@ export function TerminalWorkspace({
               handleCloseTab(menuTab)
             }}
           >
-            Close
+            关闭
           </button>
         </div>
       ) : null}

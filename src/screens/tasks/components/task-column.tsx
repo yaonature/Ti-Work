@@ -5,7 +5,7 @@ import { TASK_COLUMN_LABELS } from '@/types/task'
 
 interface TaskColumnProps {
   column: TaskColumnType
-  tasks: HermesTask[]
+  tasks: Array<HermesTask>
   onEdit: (task: HermesTask) => void
   onDragStart: (e: React.DragEvent, taskId: string) => void
   onDrop: (e: React.DragEvent, column: TaskColumnType) => void
@@ -74,7 +74,7 @@ export function TaskColumn({ column, tasks, onEdit, onDragStart, onDrop }: TaskC
             className="flex items-center justify-center py-8 text-xs"
             style={{ color: 'var(--theme-muted)' }}
           >
-            No tasks
+            暂无任务
           </div>
         )}
       </div>

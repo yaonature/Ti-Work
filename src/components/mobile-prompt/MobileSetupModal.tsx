@@ -61,8 +61,8 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
 
   const steps = [
     {
-      title: 'Install Tailscale on your desktop',
-      body: 'Install Tailscale on the machine running Hermes Studio, then sign in.',
+      title: '在桌面端安装 Tailscale',
+      body: '请先在运行 Ti Work 的设备上安装 Tailscale，并完成登录。',
       showTailscaleIcon: true,
       action: (
         <a
@@ -71,24 +71,23 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center rounded-lg bg-accent-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-400"
         >
-          Open Tailscale Downloads
+          打开 Tailscale 下载页
         </a>
       ),
     },
     {
-      title: 'Keep your backend reachable',
-      body: 'Hermes Studio can talk to any OpenAI-compatible backend on mobile too. Make sure both the workspace and backend stay reachable over Tailscale or your local network.',
+      title: '确保后端可访问',
+      body: 'Ti Work 在移动端同样可以连接任意 OpenAI 兼容后端。请确保工作区和后端都能通过 Tailscale 或局域网访问。',
       showTailscaleIcon: false,
       action: (
         <div className="rounded-lg border border-primary-700 bg-primary-950 px-4 py-3 text-sm text-primary-200">
-          Enhanced Hermes gateway APIs are optional. If core chat already works
-          on desktop, mobile access mainly depends on network reachability.
+          Hermes 网关增强 API 不是必须项。如果桌面端核心会话已经可用，移动端能否访问主要取决于网络可达性。
         </div>
       ),
     },
     {
-      title: 'Install Tailscale on your phone',
-      body: 'Install Tailscale on iOS or Android and sign in with the same account.',
+      title: '在手机上安装 Tailscale',
+      body: '请在 iOS 或 Android 设备上安装 Tailscale，并使用同一账号登录。',
       showTailscaleIcon: true,
       action: (
         <div className="flex gap-2">
@@ -98,7 +97,7 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center rounded-lg border border-primary-700 bg-primary-950 px-3 py-2 text-xs font-medium text-primary-100 transition-colors hover:bg-primary-800"
           >
-            iOS App
+            iOS 应用
           </a>
           <a
             href="https://play.google.com/store/apps/details?id=com.tailscale.ipn"
@@ -106,19 +105,19 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center rounded-lg border border-primary-700 bg-primary-950 px-3 py-2 text-xs font-medium text-primary-100 transition-colors hover:bg-primary-800"
           >
-            Android App
+            Android 应用
           </a>
         </div>
       ),
     },
     {
-      title: 'Open Hermes Studio on your phone',
+      title: '在手机上打开 Ti Work',
       body:
         networkUrl?.source === 'tailscale'
-          ? 'Your Tailscale address. Open this on your phone browser to use the same workspace.'
+          ? '这是你的 Tailscale 地址。请在手机浏览器中打开它，以访问同一个工作区。'
           : networkUrl?.source === 'lan'
-            ? 'Your local network address. Your phone must be on the same WiFi.'
-            : 'Start Tailscale on this machine if you want a shareable address outside localhost.',
+            ? '这是你的局域网地址。请确保手机连接到同一 Wi-Fi。'
+            : '如果你希望在 localhost 之外分享访问地址，请先在这台设备上启动 Tailscale。',
       showTailscaleIcon: networkUrl?.source === 'tailscale',
       action: (
         <button
@@ -214,19 +213,19 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
           type="button"
           onClick={onClose}
           className="absolute top-4 right-4 rounded-lg p-1.5 text-primary-400 transition-colors hover:bg-primary-900 hover:text-primary-200"
-          aria-label="Close mobile setup"
+          aria-label="关闭移动端设置"
         >
           <HugeiconsIcon icon={Cancel01Icon} size={18} strokeWidth={2} />
         </button>
 
         <div className="mb-4 flex items-center gap-3 pr-10">
           <img
-            src="/hermes-avatar.webp"
-            alt="Hermes"
+            src="/ti-work-logo.svg"
+            alt="Ti Work"
             className="size-9 rounded-xl"
           />
           <div className="flex-1">
-            <h2 className="text-lg font-semibold text-white">Mobile Setup</h2>
+            <h2 className="text-lg font-semibold text-white">移动端设置</h2>
             <div className="mt-1 flex items-center gap-1.5">
               {steps.map((_, index) => (
                 <span
@@ -270,7 +269,7 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
             disabled={step === 0}
             className="rounded-lg px-3 py-2 text-sm text-primary-400 transition-colors hover:text-primary-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Back
+            上一步
           </button>
           <div className="flex items-center gap-2">
             <button
@@ -278,14 +277,14 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
               onClick={onClose}
               className="rounded-lg px-3 py-2 text-sm text-primary-400 transition-colors hover:text-primary-200"
             >
-              Close
+              关闭
             </button>
             <button
               type="button"
               onClick={handleNext}
               className="rounded-lg bg-accent-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-400"
             >
-              {isLastStep ? 'Finish' : 'Next'}
+              {isLastStep ? '完成' : '下一步'}
             </button>
           </div>
         </div>

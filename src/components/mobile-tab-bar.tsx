@@ -45,63 +45,63 @@ type TabItem = {
 const TABS: Array<TabItem> = [
   {
     id: 'dashboard',
-    label: 'Home',
+    label: '首页',
     icon: DashboardSquare01Icon,
     to: '/dashboard',
     match: (p) => p === '/dashboard',
   },
   {
     id: 'chat',
-    label: 'Chat',
+    label: '会话',
     icon: Chat01Icon,
     to: '/chat/main',
     match: (p) => p.startsWith('/chat') || p === '/new',
   },
   {
     id: 'files',
-    label: 'Files',
+    label: '文件',
     icon: File01Icon,
     to: '/files',
     match: (p) => p.startsWith('/files'),
   },
   {
     id: 'terminal',
-    label: 'Terminal',
+    label: '终端',
     icon: CommandLineIcon,
     to: '/terminal',
     match: (p) => p.startsWith('/terminal'),
   },
   {
     id: 'jobs',
-    label: 'Jobs',
+    label: '任务',
     icon: Clock01Icon,
     to: '/jobs',
     match: (p) => p.startsWith('/jobs'),
   },
   {
     id: 'memory',
-    label: 'Memory',
+    label: '记忆',
     icon: BrainIcon,
     to: '/memory',
     match: (p) => p.startsWith('/memory'),
   },
   {
     id: 'skills',
-    label: 'Skills',
+    label: '技能',
     icon: PuzzleIcon,
     to: '/skills',
     match: (p) => p.startsWith('/skills'),
   },
   {
     id: 'profiles',
-    label: 'Profiles',
+    label: '档案',
     icon: UserGroupIcon,
     to: '/profiles',
     match: (p) => p.startsWith('/profiles'),
   },
   {
     id: 'settings',
-    label: 'Settings',
+    label: '设置',
     icon: Settings01Icon,
     to: '/settings',
     match: (p) => p.startsWith('/settings'),
@@ -241,7 +241,7 @@ export function MobileTabBar() {
             : 'translate-y-0 opacity-100',
           isDragging ? 'cursor-grabbing' : '',
         )}
-        aria-label="Mobile navigation"
+        aria-label="移动端导航"
         onTouchStart={handlePillTouchStart}
         onTouchMove={handlePillTouchMove}
         onTouchEnd={handlePillTouchEnd}

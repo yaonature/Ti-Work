@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { EmojiIcon } from '@/components/emoji-icon'
 import {
   Add01Icon,
   CheckmarkCircle02Icon,
@@ -176,11 +177,11 @@ function TaskDialog({ title, initial, members, onSubmit, onClose }: TaskDialogPr
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: 'rgba(0,0,0,0.45)' }}
+      style={{ background: 'rgba(0,0,0,0.5)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
-        className="w-full max-w-md rounded-2xl p-6 shadow-xl"
+        className="w-full max-w-md rounded-[20px] p-6 shadow-[var(--theme-shadow-3)]"
         style={{ background: 'var(--theme-panel, var(--theme-bg))', border: '1px solid var(--theme-border)' }}
       >
         <h2 className="mb-4 text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
@@ -189,13 +190,13 @@ function TaskDialog({ title, initial, members, onSubmit, onClose }: TaskDialogPr
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--theme-muted)' }}>
-              Task label *
+              任务名称 *
             </label>
             <input
               autoFocus
               value={label}
               onChange={e => setLabel(e.target.value)}
-              placeholder="e.g. Research competitors"
+              placeholder="例如：研究竞争对手"
               className="w-full rounded-lg px-3 py-2 text-sm outline-none"
               style={{
                 background: 'var(--theme-card)',
@@ -206,12 +207,12 @@ function TaskDialog({ title, initial, members, onSubmit, onClose }: TaskDialogPr
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--theme-muted)' }}>
-              Prompt sent to agent
+              发送给智能体的提示词
             </label>
             <textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
-              placeholder="Describe what the agent should do…"
+              placeholder="描述智能体应该做什么…"
               rows={4}
               className="w-full resize-none rounded-lg px-3 py-2 text-sm outline-none"
               style={{
@@ -223,7 +224,7 @@ function TaskDialog({ title, initial, members, onSubmit, onClose }: TaskDialogPr
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--theme-muted)' }}>
-              Assign to
+              指派给
             </label>
             <select
               value={assigneeId ?? ''}
@@ -235,7 +236,7 @@ function TaskDialog({ title, initial, members, onSubmit, onClose }: TaskDialogPr
                 color: 'var(--theme-text)',
               }}
             >
-              <option value="">All agents</option>
+              <option value="">全部智能体</option>
               {members.map(m => (
                 <option key={m.id} value={m.id}>{m.displayName} — {m.roleLabel}</option>
               ))}
@@ -252,7 +253,7 @@ function TaskDialog({ title, initial, members, onSubmit, onClose }: TaskDialogPr
                 color: 'var(--theme-muted)',
               }}
             >
-              Cancel
+              取消
             </button>
             <button
               type="submit"
@@ -260,7 +261,7 @@ function TaskDialog({ title, initial, members, onSubmit, onClose }: TaskDialogPr
               className="rounded-lg px-4 py-2 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
               style={{ background: 'var(--theme-accent)' }}
             >
-              {initial?.label ? 'Update' : 'Add Task'}
+              {initial?.label ? '更新' : '添加任务'}
             </button>
           </div>
         </form>
@@ -340,9 +341,9 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
     onSuccess: (wf) => {
       queryClient.setQueryData(['workflow', crewId], wf)
       setDirty(false)
-      toast('Workflow saved')
+      toast('工作流已保存')
     },
-    onError: (err) => toast(err instanceof Error ? err.message : 'Save failed', { type: 'error' }),
+    onError: (err) => toast(err instanceof Error ? err.message : '保存失败', { type: 'error' }),
   })
 
   const clearMutation = useMutation({
@@ -350,9 +351,9 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
     onSuccess: () => {
       setTasks([]); setEdges([]); setDirty(false)
       queryClient.setQueryData(['workflow', crewId], null)
-      toast('Workflow cleared')
+      toast('工作流已清空')
     },
-    onError: () => toast('Failed to clear workflow', { type: 'error' }),
+    onError: () => toast('清空工作流失败', { type: 'error' }),
   })
 
   // ── Coordinate helpers ────────────────────────────────────────────────────
@@ -376,9 +377,9 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
       const toId = nodeEl?.getAttribute('data-tid')
       if (toId && toId !== connectFromId) {
         if (edges.some(ed => ed.from === connectFromId && ed.to === toId)) {
-          toast('Connection already exists', { type: 'error' })
+          toast('连接已存在', { type: 'error' })
         } else if (wouldCreateCycle(tasks, edges, connectFromId, toId)) {
-          toast('That would create a cycle', { type: 'error' })
+          toast('这会产生循环依赖', { type: 'error' })
         } else {
           setEdges(prev => [...prev, { from: connectFromId, to: toId }])
           setDirty(true)
@@ -527,7 +528,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
   }
 
   async function startWorkflow() {
-    if (tasks.length === 0) { toast('Add tasks first', { type: 'error' }); return }
+    if (tasks.length === 0) { toast('请先添加任务', { type: 'error' }); return }
     const layers = topoLayers(tasks, edges)
     if (layers.length === 0) return
     setRunError(null)
@@ -564,7 +565,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
 
         if (isError) {
           const task = tasks.find(t => t.id === taskId)
-          setRunError(`Task "${task?.label ?? taskId}" failed`)
+          setRunError(`任务"${task?.label ?? taskId}"失败`)
           setIsRunning(false)
           es.close()
           return
@@ -583,7 +584,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
         const nextLayerIndex = currentLayerRef.current + 1
         if (nextLayerIndex >= layersRef.current.length) {
           setIsRunning(false)
-          toast('Workflow complete!')
+          toast('工作流已完成！')
           es.close()
           return
         }
@@ -617,7 +618,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
   if (workflowQuery.isLoading) {
     return (
       <div className="flex h-full items-center justify-center text-sm" style={{ color: 'var(--theme-muted)' }}>
-        Loading workflow…
+        加载工作流中…
       </div>
     )
   }
@@ -637,12 +638,12 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
           style={{ background: 'var(--theme-accent)', color: '#fff' }}
         >
           <HugeiconsIcon icon={Add01Icon} size={13} />
-          Add Task
+          添加任务
         </button>
 
         <button
           onClick={() => setConnectFromId(connectFromId === null ? '' : null)}
-          title="Connect two tasks (draw dependency edge)"
+          title="连接两个任务（绘制依赖连线）"
           className={cn(
             'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors',
             connectFromId !== null
@@ -656,7 +657,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
           }
         >
           <HugeiconsIcon icon={ConnectIcon} size={13} />
-          {connectFromId !== null ? (connectFromId ? 'Click target…' : 'Click source…') : 'Connect'}
+          {connectFromId !== null ? (connectFromId ? '点击目标…' : '点击起点…') : '连接'}
         </button>
 
         <button
@@ -665,7 +666,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
           style={{ border: '1px solid var(--theme-border)', color: 'var(--theme-muted)', background: 'var(--theme-card)' }}
         >
           <HugeiconsIcon icon={Share01Icon} size={13} />
-          Auto Layout
+          自动布局
         </button>
 
         <div className="mx-1 h-4 w-px" style={{ background: 'var(--theme-border)' }} />
@@ -676,7 +677,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
           className="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
           style={{ border: '1px solid var(--theme-border)', color: 'var(--theme-text)', background: 'var(--theme-card)' }}
         >
-          {saveMutation.isPending ? 'Saving…' : dirty ? 'Save' : 'Saved'}
+          {saveMutation.isPending ? '保存中…' : dirty ? '保存' : '已保存'}
         </button>
 
         <button
@@ -686,21 +687,22 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
           style={{ background: 'var(--theme-success, #22c55e)', color: '#fff' }}
         >
           <HugeiconsIcon icon={PlayIcon} size={13} />
-          {isRunning ? 'Running…' : 'Run Workflow'}
+          {isRunning ? '运行中…' : '运行工作流'}
         </button>
 
         {runError && (
-          <span className="text-xs" style={{ color: 'var(--theme-danger)' }}>
-            ⚠ {runError}
+          <span className="inline-flex items-center gap-1 text-xs" style={{ color: 'var(--theme-danger)' }}>
+            <EmojiIcon emoji="⚠" size={12} />
+            {runError}
           </span>
         )}
 
         {tasks.length > 0 && (
           <button
-            onClick={() => { if (window.confirm('Clear the entire workflow?')) clearMutation.mutate() }}
+            onClick={() => { if (window.confirm('清空整个工作流？')) clearMutation.mutate() }}
             className="ml-auto rounded-lg p-1.5 transition-colors"
             style={{ color: 'var(--theme-muted)' }}
-            title="Clear workflow"
+            title="清空工作流"
           >
             <HugeiconsIcon icon={Delete01Icon} size={14} />
           </button>
@@ -723,7 +725,11 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
                 color: 'var(--theme-muted)',
               }}
             >
-              {label}
+              {label === '−' || label === '⊙' ? (
+                <EmojiIcon emoji={label} size={12} />
+              ) : (
+                label
+              )}
             </button>
           ))}
         </div>
@@ -739,16 +745,16 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
             >
               <HugeiconsIcon icon={Share01Icon} size={22} style={{ color: 'var(--theme-muted)' }} />
             </div>
-            <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>No tasks yet</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>还没有任务</p>
             <p className="text-xs" style={{ color: 'var(--theme-muted)' }}>
-              Add tasks and draw dependencies to build your workflow.
+              添加任务并绘制依赖关系以构建你的工作流。
             </p>
             <button
               onClick={() => setAddingTask(true)}
               className="mt-1 rounded-lg px-4 py-2 text-xs font-medium text-white"
               style={{ background: 'var(--theme-accent)' }}
             >
-              Add First Task
+              添加第一个任务
             </button>
           </div>
         ) : (
@@ -832,7 +838,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
                 const label = task.label.length > 22 ? task.label.slice(0, 20) + '…' : task.label
                 const assigneeName = assignee
                   ? (assignee.displayName.length > 20 ? assignee.displayName.slice(0, 18) + '…' : assignee.displayName)
-                  : 'All agents'
+                  : '全部智能体'
 
                 return (
                   <g
@@ -898,18 +904,30 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
 
                     {/* Status badge */}
                     {status !== 'idle' && (
-                      <text
-                        x={12} y={58}
-                        fontSize={9}
-                        fill={
-                          status === 'running' ? 'rgba(34,197,94,0.9)'
-                          : status === 'done' ? 'rgba(99,102,241,0.9)'
-                          : 'rgba(239,68,68,0.9)'
-                        }
-                        style={{ pointerEvents: 'none', fontFamily: 'inherit' }}
-                      >
-                        {status === 'running' ? '● Running' : status === 'done' ? '✓ Done' : '✕ Error'}
-                      </text>
+                      <g style={{ pointerEvents: 'none' }}>
+                        <g
+                          transform="translate(8 54)"
+                          color={
+                            status === 'running' ? 'rgba(34,197,94,0.9)'
+                            : status === 'done' ? 'rgba(99,102,241,0.9)'
+                            : 'rgba(239,68,68,0.9)'
+                          }
+                        >
+                          <EmojiIcon emoji={status === 'running' ? '●' : status === 'done' ? '✓' : '✕'} size={8} />
+                        </g>
+                        <text
+                          x={24} y={58}
+                          fontSize={9}
+                          fill={
+                            status === 'running' ? 'rgba(34,197,94,0.9)'
+                            : status === 'done' ? 'rgba(99,102,241,0.9)'
+                            : 'rgba(239,68,68,0.9)'
+                          }
+                          style={{ fontFamily: 'inherit' }}
+                        >
+                          {status === 'running' ? '运行中' : status === 'done' ? '已完成' : '错误'}
+                        </text>
+                      </g>
                     )}
 
                     {/* Input port (left) */}
@@ -959,8 +977,8 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
             }}
           >
             {connectFromId
-              ? `From "${tasks.find(t => t.id === connectFromId)?.label ?? '…'}" — click the target task. Press Esc to cancel.`
-              : 'Click the source task. Press Esc to cancel.'}
+              ? `从"${tasks.find(t => t.id === connectFromId)?.label ?? '…'}"出发——点击目标任务。按 Esc 取消。`
+              : '点击源任务。按 Esc 取消。'}
           </div>
         )}
 
@@ -971,36 +989,36 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
             style={{ background: 'var(--theme-card)', borderColor: 'var(--theme-border)' }}
           >
             <div className="flex items-center justify-between border-b px-3 py-2" style={{ borderColor: 'var(--theme-border)' }}>
-              <span className="text-xs font-semibold" style={{ color: 'var(--theme-text)' }}>Task</span>
+              <span className="text-xs font-semibold" style={{ color: 'var(--theme-text)' }}>任务</span>
               <button
                 onClick={() => setSelectedTaskId(null)}
-                className="rounded p-0.5 text-[10px]"
+                className="rounded p-0.5"
                 style={{ color: 'var(--theme-muted)' }}
               >
-                ✕
+                <EmojiIcon emoji="✕" size={12} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto space-y-3 p-3">
               <div>
-                <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--theme-muted)' }}>Label</p>
+                <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--theme-muted)' }}>名称</p>
                 <p className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>{selectedTask.label}</p>
               </div>
               {selectedTask.prompt && (
                 <div>
-                  <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--theme-muted)' }}>Prompt</p>
+                  <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--theme-muted)' }}>提示词</p>
                   <p className="text-xs whitespace-pre-wrap break-words" style={{ color: 'var(--theme-text)' }}>{selectedTask.prompt}</p>
                 </div>
               )}
               <div>
-                <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--theme-muted)' }}>Assigned to</p>
+                <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--theme-muted)' }}>指派给</p>
                 <p className="text-xs" style={{ color: 'var(--theme-text)' }}>
-                  {selectedTask.assigneeId ? memberById[selectedTask.assigneeId]?.displayName ?? 'Unknown' : 'All agents'}
+                  {selectedTask.assigneeId ? memberById[selectedTask.assigneeId]?.displayName ?? '未知' : '全部智能体'}
                 </p>
               </div>
               {/* Dependency info */}
               {edges.filter(e => e.to === selectedTask.id).length > 0 && (
                 <div>
-                  <p className="mb-1 text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--theme-muted)' }}>Depends on</p>
+                  <p className="mb-1 text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--theme-muted)' }}>依赖</p>
                   <div className="flex flex-wrap gap-1">
                     {edges.filter(e => e.to === selectedTask.id).map(e => {
                       const src = tasks.find(t => t.id === e.from)
@@ -1015,7 +1033,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
                             onClick={() => deleteEdge(e.from, selectedTask.id)}
                             className="ml-0.5"
                             style={{ color: 'var(--theme-danger)' }}
-                            title="Remove dependency"
+                            title="移除依赖"
                           >
                             ×
                           </button>
@@ -1028,13 +1046,13 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
               {/* Run status */}
               {runState[selectedTask.id] && runState[selectedTask.id] !== 'idle' && (
                 <div>
-                  <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--theme-muted)' }}>Status</p>
+                  <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--theme-muted)' }}>状态</p>
                   <p className="text-xs font-medium capitalize" style={{
                     color: runState[selectedTask.id] === 'running' ? 'var(--theme-success)'
                       : runState[selectedTask.id] === 'done' ? 'var(--theme-accent)'
                       : 'var(--theme-danger)'
                   }}>
-                    {runState[selectedTask.id]}
+                    {runState[selectedTask.id] === 'running' ? '运行中' : runState[selectedTask.id] === 'done' ? '已完成' : '错误'}
                   </p>
                 </div>
               )}
@@ -1045,7 +1063,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
                 className="w-full rounded-lg border py-1.5 text-xs font-medium transition-colors"
                 style={{ border: '1px solid var(--theme-border)', color: 'var(--theme-text)', background: 'var(--theme-card)' }}
               >
-                Edit Task
+                编辑任务
               </button>
               <button
                 onClick={() => {
@@ -1057,7 +1075,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
                 style={{ border: '1px solid var(--theme-border)', color: 'var(--theme-muted)', background: 'var(--theme-card)' }}
               >
                 <HugeiconsIcon icon={ConnectIcon} size={12} className="mr-1 inline" />
-                Connect from here
+                从此处连接
               </button>
               <button
                 onClick={() => deleteTask(selectedTask.id)}
@@ -1065,7 +1083,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
                 style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--theme-danger)', border: '1px solid rgba(239,68,68,0.2)' }}
               >
                 <HugeiconsIcon icon={Delete01Icon} size={12} className="mr-1 inline" />
-                Delete Task
+                删除任务
               </button>
             </div>
           </div>
@@ -1079,18 +1097,18 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
           >
             <div className="flex items-center gap-1.5">
               <span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_FILL.running, border: '1px solid rgba(34,197,94,0.7)' }} />
-              Running
+              运行中
             </div>
             <div className="flex items-center gap-1.5">
               <span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_FILL.done, border: '1px solid rgba(99,102,241,0.7)' }} />
-              Done
+              已完成
             </div>
             <div className="flex items-center gap-1.5">
               <span className="inline-block h-2 w-2 rounded-sm" style={{ background: STATUS_FILL.error, border: '1px solid rgba(239,68,68,0.7)' }} />
-              Error
+              错误
             </div>
             <div className="mt-0.5 border-t pt-0.5" style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-muted)' }}>
-              {tasks.length} task{tasks.length !== 1 ? 's' : ''} · {edges.length} dep{edges.length !== 1 ? 's' : ''}
+              {tasks.length} 个任务 · {edges.length} 条依赖
             </div>
           </div>
         )}
@@ -1099,7 +1117,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
       {/* ── Dialogs ──────────────────────────────────────────────────────── */}
       {addingTask && (
         <TaskDialog
-          title="Add Task"
+          title="添加任务"
           members={displayMembers}
           onSubmit={addTask}
           onClose={() => setAddingTask(false)}
@@ -1108,7 +1126,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
 
       {editingTask && (
         <TaskDialog
-          title="Edit Task"
+          title="编辑任务"
           initial={editingTask}
           members={displayMembers}
           onSubmit={(vals) => updateTask(editingTask.id, vals)}

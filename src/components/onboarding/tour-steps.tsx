@@ -5,7 +5,7 @@ export const tourSteps: Array<Step> = [
   {
     target: 'body',
     placement: 'center',
-    title: 'Welcome to Hermes Studio! ⚕',
+    title: '欢迎使用 Ti Work',
     content: (
       <div
         style={{
@@ -16,13 +16,12 @@ export const tourSteps: Array<Step> = [
         }}
       >
         <img
-          src="/hermes-avatar.webp"
-          alt="Hermes"
+          src="/ti-work-logo.svg"
+          alt="Ti Work"
           style={{ width: 48, height: 48, borderRadius: 12 }}
         />
         <p style={{ textAlign: 'center', margin: 0 }}>
-          Your AI-powered command center for managing agents, chats, files, and
-          more. Let&apos;s take a quick tour!
+          这里是你的 AI 工作中枢，用来统一管理智能体、会话、文件与协作流程。我们先快速看一圈。
         </p>
       </div>
     ),
@@ -32,72 +31,72 @@ export const tourSteps: Array<Step> = [
   {
     target: '[data-tour="sidebar-container"]',
     placement: 'right',
-    title: 'Sidebar Navigation',
+    title: '侧栏导航',
     content:
-      'Navigate between all your tools here. Collapse/expand sections to customize your workspace.',
+      '你可以在这里切换所有主要功能区，也可以折叠或展开分组，按自己的工作方式组织空间。',
   },
   // Step 3: New Session
   {
     target: '[data-tour="new-session"]',
     placement: 'right',
-    title: 'Start a New Chat',
+    title: '发起新会话',
     content:
-      'Click here to start a new AI chat session. Each conversation is saved automatically.',
+      '点击这里即可创建新的 AI 会话。每段对话都会自动保存，方便后续继续跟进。',
   },
   // Step 4: Dashboard
   {
     target: '[data-tour="dashboard"]',
     placement: 'right',
-    title: 'Your Dashboard',
+    title: '工作总览',
     content:
-      'Your overview of sessions, usage, and activity. See everything at a glance.',
+      '这里会展示会话、用量和近期活动，帮助你快速掌握整体工作状态。',
   },
   // Step 5: Agent Hub
   {
     target: '[data-tour="agent-hub"]',
     placement: 'right',
-    title: 'Agent Hub',
+    title: '智能体中心',
     content:
-      'Manage your AI agents and configurations. Create custom agents with specialized behaviors.',
+      '在这里管理智能体及其配置，也可以创建具备专门职责和行为的自定义智能体。',
   },
   // Step 7: Skills
   {
     target: '[data-tour="skills"]',
     placement: 'right',
-    title: 'Skills Library',
+    title: '技能库',
     content:
-      'Browse and install agent skills to extend capabilities. Add new tools and abilities to your agents.',
+      '浏览并安装技能来扩展智能体能力，为你的工作流补充更多工具和动作。',
   },
   // Step 8: Terminal
   {
     target: '[data-tour="terminal"]',
     placement: 'right',
-    title: 'Built-in Terminal',
+    title: '内置终端',
     content:
-      'Built-in terminal for quick commands. Execute shell commands without leaving Hermes Studio.',
+      '你可以直接在应用内执行命令，无需离开 Ti Work 就能完成终端操作。',
   },
   // Step 9: Usage Meter (in header)
   {
     target: '[data-tour="usage-meter"]',
     placement: 'bottom',
-    title: 'Usage Monitor',
+    title: '用量监控',
     content:
-      'Monitor your AI provider usage in real-time. Track costs and API consumption.',
+      '实时查看模型调用与资源消耗，及时掌握成本和 API 使用情况。',
   },
   // Step 10: Settings
   {
     target: '[data-tour="settings"]',
     placement: 'right',
-    title: 'Settings & Customization',
+    title: '设置与个性化',
     content:
-      'Configure providers, themes, accent colors, and more. Make Hermes Studio yours.',
+      '在这里配置模型提供方、主题、强调色等内容，把 Ti Work 调整成你习惯的样子。',
   },
   // Step 11: Finish
   {
     target: 'body',
     placement: 'center',
-    title: "You're all set! 🎉",
+    title: '准备就绪',
     content:
-      'Start chatting with your AI, explore the tools, and customize Hermes Studio to fit your workflow. Need help? Press ? to see all keyboard shortcuts.',
+      '现在你已经可以开始对话、探索各项工具，并按自己的流程进一步定制 Ti Work。需要帮助时，按 `?` 可查看快捷键说明。',
   },
 ]

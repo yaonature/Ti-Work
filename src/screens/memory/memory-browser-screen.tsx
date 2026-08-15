@@ -34,7 +34,7 @@ async function readJson<T>(url: string): Promise<T> {
   const response = await fetch(url)
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(text || `Request failed (${response.status})`)
+    throw new Error(text || `请求失败（HTTP ${response.status}）`)
   }
   return (await response.json()) as T
 }
@@ -189,7 +189,7 @@ export function MemoryBrowserScreen() {
         typeof window === 'undefined'
           ? true
           : window.confirm(
-              'You have unsaved changes. Discard them and switch files?',
+              '您有未保存的更改，放弃更改并切换文件？',
             )
       if (!confirmed) return false
     }
@@ -228,16 +228,16 @@ export function MemoryBrowserScreen() {
       })
       const payload = (await response.json().catch(() => ({}))) as WriteResponse
       if (!response.ok || !payload.success) {
-        throw new Error(payload.error || `Save failed (${response.status})`)
+        throw new Error(payload.error || `保存失败（${response.status}）`)
       }
 
       await queryClient.invalidateQueries({ queryKey: ['memory'] })
       setIsEditing(false)
       setHasUnsavedChanges(false)
-      toast('Saved ✓', { type: 'success' })
+      toast('已保存', { type: 'success' })
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to save file'
+        error instanceof Error ? error.message : '保存文件失败'
       toast(message, { type: 'warning' })
     } finally {
       setIsSaving(false)
@@ -279,7 +279,7 @@ export function MemoryBrowserScreen() {
               <input
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search memory files"
+                placeholder="搜索记忆文件"
                 className="w-full rounded-xl py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-accent-500"
                 style={{
                   border: '1px solid var(--theme-border)',
@@ -300,7 +300,7 @@ export function MemoryBrowserScreen() {
             onClick={() => setMobileFilesOpen((value) => !value)}
           >
             <span className="text-xs font-semibold uppercase tracking-wide text-[var(--theme-muted)] ">
-              Memory Files ({fileItems.length})
+              记忆文件（{fileItems.length}）
             </span>
             <span className="md:hidden text-[var(--theme-muted)] ">
               <HugeiconsIcon
@@ -314,16 +314,16 @@ export function MemoryBrowserScreen() {
           {searchEnabled ? (
             <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
               <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--theme-muted)] ">
-                Search Results
+                搜索结果
               </div>
               <div className="space-y-1">
                 {searchQuery.isLoading ? (
                   <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 py-2 text-xs text-[var(--theme-muted)]   ">
-                    Searching...
+                    正在搜索...
                   </div>
                 ) : searchResults.length === 0 ? (
                   <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 py-2 text-xs text-[var(--theme-muted)]   ">
-                    No matches
+                    没有匹配的结果
                   </div>
                 ) : (
                   searchResults.map((result, index) => (
@@ -380,11 +380,11 @@ export function MemoryBrowserScreen() {
                 ) : null}
 
                 <div className="px-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--theme-muted)] ">
-                  memory/ or memories/
+                  memory/ 或 memories/
                 </div>
                 {memoryFiles.length === 0 ? (
                   <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 py-2 text-xs text-[var(--theme-muted)]   ">
-                    No files in memory/ or memories/
+                    `memory/` 或 `memories/` 中暂无文件
                   </div>
                 ) : (
                   memoryFiles.map((file) => (
@@ -407,13 +407,13 @@ export function MemoryBrowserScreen() {
           <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-3 py-2 ">
             <div className="min-w-0">
               <div className="truncate font-mono text-sm text-[var(--theme-text)] ">
-                {selectedPath || 'Select a file'}
+                {selectedPath || '选择一个文件'}
               </div>
               {selectedPath ? (
                 <div className="text-xs text-[var(--theme-muted)] ">
                   {selectedFileMeta?.size != null
                     ? `${formatBytes(selectedFileMeta.size)} · ${formatModified(selectedFileMeta.modified)}`
-                    : 'Loading metadata...'}
+                    : '正在加载元数据...'}
                 </div>
               ) : null}
             </div>
@@ -427,7 +427,7 @@ export function MemoryBrowserScreen() {
                       onClick={handleSaveEditing}
                       className="rounded-md bg-[var(--theme-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-text)] transition-colors hover:bg-accent-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {isSaving ? 'Saving...' : 'Save'}
+                      {isSaving ? '保存中...' : '保存'}
                     </button>
                     <button
                       type="button"
@@ -435,11 +435,11 @@ export function MemoryBrowserScreen() {
                       onClick={handleCancelEditing}
                       className="rounded-md border border-[var(--theme-border)] px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-[var(--theme-hover)] disabled:cursor-not-allowed disabled:opacity-50     "
                     >
-                      Cancel
+                      取消
                     </button>
                     {hasUnsavedChanges ? (
                       <span
-                        title="Unsaved changes"
+                        title="有未保存的更改"
                         className="inline-block size-2 rounded-full bg-amber-400"
                       />
                     ) : null}
@@ -455,7 +455,7 @@ export function MemoryBrowserScreen() {
                       size={14}
                       strokeWidth={1.7}
                     />
-                    Edit
+                    编辑
                     {hasUnsavedChanges ? (
                       <span className="absolute -right-1 -top-1 size-2 rounded-full bg-amber-400" />
                     ) : null}
@@ -472,17 +472,17 @@ export function MemoryBrowserScreen() {
             )}
           >
             {filesQuery.isLoading ? (
-              <StateBox label="Loading memory files..." />
+              <StateBox label="正在加载记忆文件..." />
             ) : filesQuery.error instanceof Error ? (
               <StateBox label={filesQuery.error.message} error />
             ) : !selectedPath ? (
               <EmptyState
                 icon={<HugeiconsIcon icon={BrainIcon} size={36} />}
-                title="No memory files found"
-                description="Memory files will appear here when the agent creates them."
+                title="未找到记忆文件"
+                description="当智能体开始创建记忆文件后，它们将显示在这里。"
               />
             ) : contentQuery.isLoading ? (
-              <StateBox label="Loading file..." />
+              <StateBox label="正在加载文件..." />
             ) : contentQuery.error instanceof Error ? (
               <StateBox label={contentQuery.error.message} error />
             ) : isEditing ? (

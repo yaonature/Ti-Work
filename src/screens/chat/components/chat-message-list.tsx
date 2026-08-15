@@ -5,6 +5,7 @@ import {
   Robot01Icon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { EmojiIcon } from '@/components/emoji-icon'
 import {
   getMessageTimestamp,
   getToolCallsFromMessage,
@@ -34,34 +35,34 @@ const THINKING_GRACE_PERIOD_MS = 300
 
 /** Map tool names to human-readable status strings */
 const TOOL_STATUS_MAP: Record<string, string> = {
-  memory_search: 'Searching memory…',
-  memory_get: 'Searching memory…',
-  web_search: 'Searching the web…',
-  web_fetch: 'Reading page…',
-  cron: 'Managing schedules…',
-  message: 'Sending message…',
-  gateway: 'Managing gateway…',
-  canvas: 'Rendering canvas…',
-  voice_call: 'Making call…',
-  pdf: 'Reading PDF…',
-  todo: 'Managing tasks…',
-  Read: 'Reading file…',
-  read: 'Reading file…',
-  Write: 'Writing file…',
-  write: 'Writing file…',
-  Edit: 'Writing file…',
-  edit: 'Writing file…',
-  exec: 'Running code…',
-  sessions_spawn: 'Spawning agent…',
-  sessions_history: 'Checking sessions…',
-  sessions_list: 'Checking sessions…',
-  browser: 'Browsing web…',
-  image: 'Analyzing image…',
-  tts: 'Generating audio…',
+  memory_search: '正在搜索记忆…',
+  memory_get: '正在搜索记忆…',
+  web_search: '正在搜索网络…',
+  web_fetch: '正在读取页面…',
+  cron: '正在管理定时任务…',
+  message: '正在发送消息…',
+  gateway: '正在管理网关…',
+  canvas: '正在渲染画布…',
+  voice_call: '正在拨打电话…',
+  pdf: '正在读取 PDF…',
+  todo: '正在管理任务…',
+  Read: '正在读取文件…',
+  read: '正在读取文件…',
+  Write: '正在写入文件…',
+  write: '正在写入文件…',
+  Edit: '正在写入文件…',
+  edit: '正在写入文件…',
+  exec: '正在运行代码…',
+  sessions_spawn: '正在创建智能体…',
+  sessions_history: '正在检查会话…',
+  sessions_list: '正在检查会话…',
+  browser: '正在浏览网页…',
+  image: '正在分析图片…',
+  tts: '正在生成音频…',
 }
 
 function getToolStatusLabel(toolName: string): string {
-  return TOOL_STATUS_MAP[toolName] ?? 'Working…'
+  return TOOL_STATUS_MAP[toolName] ?? '正在工作…'
 }
 
 const TOOL_EMOJIS: Record<string, string> = {
@@ -131,15 +132,15 @@ function getToolEmoji(name: string): string {
 }
 
 function getToolVerb(name: string): string {
-  if (name.includes('search')) return 'Searching'
-  if (name.includes('read') || name.includes('Read')) return 'Reading'
+  if (name.includes('search')) return '正在搜索'
+  if (name.includes('read') || name.includes('Read')) return '正在读取'
   if (name.includes('write') || name.includes('Write') || name.includes('edit'))
-    return 'Writing'
-  if (name.includes('exec') || name.includes('terminal')) return 'Executing'
-  if (name.includes('memory')) return 'Remembering'
-  if (name.includes('browser')) return 'Browsing'
-  if (name.includes('skill')) return 'Loading skill'
-  return 'Working'
+    return '正在写入'
+  if (name.includes('exec') || name.includes('terminal')) return '正在执行'
+  if (name.includes('memory')) return '正在记忆'
+  if (name.includes('browser')) return '正在浏览'
+  if (name.includes('skill')) return '正在加载技能'
+  return '正在工作'
 }
 
 function ToolCallCard({ name, phase }: { name: string; phase: string }) {
@@ -165,8 +166,8 @@ function ToolCallCard({ name, phase }: { name: string; phase: string }) {
 
   const elapsedLabel =
     elapsed >= 60
-      ? `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`
-      : `${elapsed}s`
+      ? `${Math.floor(elapsed / 60)}分 ${elapsed % 60}秒`
+      : `${elapsed}秒`
   const emoji = getToolEmoji(name)
   const verb = getToolVerb(name)
   const displayName = name.replace(/_/g, ' ')
@@ -181,7 +182,9 @@ function ToolCallCard({ name, phase }: { name: string; phase: string }) {
       }}
     >
       <div className="flex items-center gap-1.5 px-2.5 py-1.5">
-        <span className="text-sm leading-none">{emoji}</span>
+        <span className="leading-none">
+          <EmojiIcon emoji={emoji} size={14} />
+        </span>
         <span className="font-mono font-semibold text-ink">{displayName}</span>
         <span className="flex-1" />
         {isRunning && (
@@ -189,8 +192,16 @@ function ToolCallCard({ name, phase }: { name: string; phase: string }) {
             {elapsedLabel}
           </span>
         )}
-        {isDone && <span className="text-xs text-green-500">✅</span>}
-        {isError && <span className="text-xs text-red-500">❌</span>}
+        {isDone && (
+          <span className="text-xs text-green-500">
+            <EmojiIcon emoji="✅" size={12} />
+          </span>
+        )}
+        {isError && (
+          <span className="text-xs text-red-500">
+            <EmojiIcon emoji="❌" size={12} />
+          </span>
+        )}
         {isRunning && (
           <span className="size-1.5 rounded-full animate-pulse bg-indigo-500" />
         )}
@@ -249,10 +260,10 @@ function ThinkingBubble({
   }, [activeToolCalls, liveToolActivity])
 
   const statusLabel = isCompacting
-    ? 'Compacting context...'
+    ? '正在压缩上下文...'
     : activeToolName
       ? getToolStatusLabel(activeToolName)
-      : 'Thinking…'
+      : '正在思考…'
 
   // Elapsed time counter — resets when the status label changes (new tool)
   const [elapsed, setElapsed] = useState(0)
@@ -264,8 +275,8 @@ function ThinkingBubble({
 
   const elapsedLabel =
     elapsed >= 60
-      ? `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`
-      : `${elapsed}s`
+      ? `${Math.floor(elapsed / 60)}分 ${elapsed % 60}秒`
+      : `${elapsed}秒`
 
   const isStale = elapsed >= 30
   const isVeryStale = elapsed >= 60
@@ -352,15 +363,15 @@ function ThinkingBubble({
                 <div className="mt-1 flex items-center gap-2 text-[11px] text-primary-500 dark:text-primary-400">
                   <span>
                     {completedResearchSteps}/
-                    {expandedResearchCard?.steps.length ?? 0} tools
+                    {expandedResearchCard?.steps.length ?? 0} 个工具
                   </span>
                   <span aria-hidden="true" className="opacity-40">
                     •
                   </span>
                   <span>
                     {expandedResearchCard?.isActive
-                      ? 'Live timeline'
-                      : 'Timeline ready'}
+                      ? '实时时间线'
+                      : '时间线就绪'}
                   </span>
                 </div>
               ) : null}
@@ -376,13 +387,13 @@ function ThinkingBubble({
                 className="relative z-10 inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-primary-200/80 bg-primary-50/90 text-primary-500 transition-colors hover:bg-primary-100 dark:border-primary-800 dark:bg-primary-900/80 dark:text-primary-300 dark:hover:bg-primary-800"
                 aria-label={
                   expandedResearchCard?.collapsed
-                    ? 'Expand research timeline'
-                    : 'Collapse research timeline'
+                    ? '展开研究时间线'
+                    : '收起研究时间线'
                 }
                 title={
                   expandedResearchCard?.collapsed
-                    ? 'Expand research timeline'
-                    : 'Collapse research timeline'
+                    ? '展开研究时间线'
+                    : '收起研究时间线'
                 }
               >
                 <HugeiconsIcon
@@ -401,8 +412,8 @@ function ThinkingBubble({
           {isStale ? (
             <span className="text-[11px] text-amber-500 dark:text-amber-400 animate-pulse">
               {isVeryStale
-                ? 'Still working… this is taking a while'
-                : 'Taking longer than usual…'}
+                ? '仍在工作…可能需要更长时间'
+                : '比平时耗时更长…'}
             </span>
           ) : null}
 
@@ -884,7 +895,7 @@ function ChatMessageListComponent({
         clearTimeout(thinkingGraceTimerRef.current)
       }
     }
-  }, [displayEntries, waitingForResponse]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [displayEntries, waitingForResponse])
 
   const normalizedMessageSearch = useMemo(
     function getNormalizedMessageSearch() {
@@ -1092,7 +1103,6 @@ function ChatMessageListComponent({
       streamingTargets: new Set<string>(),
       signatureById: nextSignatures,
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayEntries, streamingCleared])
 
   const lastAssistantIndex = visibleEntries
@@ -1590,14 +1600,14 @@ function ChatMessageListComponent({
                 type="text"
                 value={messageSearchValue}
                 onChange={(e) => setMessageSearchValue(e.target.value)}
-                placeholder="Search messages..."
+                placeholder="搜索消息..."
                 className="min-w-0 flex-1 rounded-md border border-primary-200 bg-primary-50 px-2.5 py-1.5 text-sm text-primary-900 outline-none placeholder:text-primary-400 focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
               />
               {isMessageSearchActive && (
                 <span className="shrink-0 text-xs text-primary-500 dark:text-neutral-400">
                   {messageSearchMatches.length > 0
-                    ? `${activeSearchMatchIndex + 1} of ${messageSearchMatches.length}`
-                    : 'No matches'}
+                    ? `${activeSearchMatchIndex + 1} / ${messageSearchMatches.length}`
+                    : '无匹配结果'}
                 </span>
               )}
               <div className="flex shrink-0 items-center gap-0.5">
@@ -1606,7 +1616,7 @@ function ChatMessageListComponent({
                   onClick={jumpToPreviousMatch}
                   disabled={messageSearchMatches.length === 0}
                   className="rounded p-1 text-primary-500 dark:text-neutral-400 hover:bg-primary-200 dark:hover:bg-primary-800 hover:text-primary-700 dark:hover:text-neutral-200 disabled:opacity-30"
-                  aria-label="Previous match"
+                  aria-label="上一个匹配"
                 >
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                     <path
@@ -1623,7 +1633,7 @@ function ChatMessageListComponent({
                   onClick={jumpToNextMatch}
                   disabled={messageSearchMatches.length === 0}
                   className="rounded p-1 text-primary-500 dark:text-neutral-400 hover:bg-primary-200 dark:hover:bg-primary-800 hover:text-primary-700 dark:hover:text-neutral-200 disabled:opacity-30"
-                  aria-label="Next match"
+                  aria-label="下一个匹配"
                 >
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                     <path
@@ -1639,7 +1649,7 @@ function ChatMessageListComponent({
                   type="button"
                   onClick={closeMessageSearch}
                   className="rounded p-1 text-primary-500 dark:text-neutral-400 hover:bg-primary-200 dark:hover:bg-primary-800 hover:text-primary-700 dark:hover:text-neutral-200"
-                  aria-label="Close search"
+                  aria-label="关闭搜索"
                 >
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                     <path
@@ -1673,15 +1683,14 @@ function ChatMessageListComponent({
                     />
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-amber-800 text-balance">
-                        This session contains{' '}
+                        此会话包含{' '}
                         <span className="tabular-nums">
                           {toolInteractionCount}
                         </span>{' '}
-                        tool interactions
+                        次工具交互
                       </p>
                       <p className="mt-1 text-sm text-amber-700 text-pretty">
-                        Most content is AI agent tool usage (file reads, code
-                        execution, etc.)
+                        大部分内容为智能体工具调用（文件读取、代码执行等）
                       </p>
                     </div>
                   </div>
@@ -1697,11 +1706,18 @@ function ChatMessageListComponent({
                     )}
                     aria-label={
                       expandAllToolSections
-                        ? 'All tool sections expanded'
-                        : 'Expand all tool sections'
+                        ? '所有工具部分已展开'
+                        : '展开全部工具部分'
                     }
                   >
-                    {expandAllToolSections ? '✓ Expanded' : 'Show All'}
+                    {expandAllToolSections ? (
+                      <span className="inline-flex items-center gap-1">
+                        <EmojiIcon emoji="✓" size={12} />
+                        已展开
+                      </span>
+                    ) : (
+                      '全部展开'
+                    )}
                   </button>
                 </div>
               </div>
@@ -1728,7 +1744,7 @@ function ChatMessageListComponent({
               (emptyState ?? <div aria-hidden></div>)
             ) : isMessageSearchActive && visibleEntries.length === 0 ? (
               <div className="rounded-xl border border-primary-200 bg-primary-50 px-4 py-6 text-sm text-primary-600">
-                No messages match “{messageSearchValue.trim()}”.
+                没有消息匹配“{messageSearchValue.trim()}”。
               </div>
             ) : hasGroup ? (
               <>

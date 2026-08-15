@@ -14,14 +14,15 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChatMessage } from '@/screens/chat/types'
+import type { RichSession } from '@/lib/session-utils'
 import {
-  normalise,
+  fmtCost,
   fmtDate,
   fmtTokens,
-  fmtCost,
+  normalise,
   sessionTitle,
 } from '@/lib/session-utils'
-import type { RichSession } from '@/lib/session-utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -30,11 +31,11 @@ type SortDir = 'asc' | 'desc'
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
-async function fetchSessions(): Promise<RichSession[]> {
+async function fetchSessions(): Promise<Array<RichSession>> {
   const res = await fetch('/api/sessions')
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()
-  const arr: any[] = Array.isArray(data)
+  const arr: Array<any> = Array.isArray(data)
     ? data
     : Array.isArray(data.sessions)
       ? data.sessions
@@ -42,7 +43,7 @@ async function fetchSessions(): Promise<RichSession[]> {
   return arr.map(normalise)
 }
 
-async function fetchMessages(sessionKey: string): Promise<ChatMessage[]> {
+async function fetchMessages(sessionKey: string): Promise<Array<ChatMessage>> {
   const res = await fetch(
     `/api/history?sessionKey=${encodeURIComponent(sessionKey)}&limit=200`,
   )
@@ -84,7 +85,7 @@ function SortHeader({
         borderBottom: '1px solid var(--theme-border)',
       }}
     >
-      {label} {active ? (dir === 'desc' ? '↓' : '↑') : ''}
+      {label} {active ? <EmojiIcon emoji={dir === 'desc' ? '↓' : '↑'} size={12} /> : null}
     </th>
   )
 }
@@ -136,14 +137,14 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
 export function SessionHistoryScreen() {
-  const [sessions, setSessions] = useState<RichSession[]>([])
+  const [sessions, setSessions] = useState<Array<RichSession>>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [sortField, setSortField] = useState<SortField>('updatedAt')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [selected, setSelected] = useState<RichSession | null>(null)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<Array<ChatMessage>>([])
   const [msgLoading, setMsgLoading] = useState(false)
   const threadRef = useRef<HTMLDivElement>(null)
 
@@ -155,7 +156,7 @@ export function SessionHistoryScreen() {
         setLoading(false)
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Failed to load')
+        setError(err instanceof Error ? err.message : '加载失败')
         setLoading(false)
       })
   }, [])
@@ -254,14 +255,14 @@ export function SessionHistoryScreen() {
       {/* Header */}
       <div style={{ padding: '1.25rem 1.5rem 0.75rem', borderBottom: '1px solid var(--theme-border)' }}>
         <h1 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-          Session History
+          会话历史
         </h1>
         {!loading && !error && (
           <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>
-            <span><strong style={{ color: 'var(--theme-text)' }}>{totals.sessions}</strong> sessions</span>
-            <span><strong style={{ color: 'var(--theme-text)' }}>{fmtTokens(totals.tokens)}</strong> tokens</span>
-            <span><strong style={{ color: 'var(--theme-text)' }}>{fmtCost(totals.cost)}</strong> total cost</span>
-            <span><strong style={{ color: 'var(--theme-text)' }}>{totals.messages}</strong> messages</span>
+            <span><strong style={{ color: 'var(--theme-text)' }}>{totals.sessions}</strong> 个会话</span>
+            <span><strong style={{ color: 'var(--theme-text)' }}>{fmtTokens(totals.tokens)}</strong> Token</span>
+            <span><strong style={{ color: 'var(--theme-text)' }}>{fmtCost(totals.cost)}</strong> 总费用</span>
+            <span><strong style={{ color: 'var(--theme-text)' }}>{totals.messages}</strong> 条消息</span>
           </div>
         )}
       </div>
@@ -274,7 +275,7 @@ export function SessionHistoryScreen() {
 
       {loading ? (
         <div style={{ padding: '2rem 1.5rem', fontSize: '0.85rem', color: 'var(--theme-text-muted)' }}>
-          Loading sessions…
+          加载会话中…
         </div>
       ) : (
         <div
@@ -292,7 +293,7 @@ export function SessionHistoryScreen() {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search sessions…"
+                placeholder="搜索会话…"
                 style={{
                   width: '100%',
                   background: 'var(--theme-card)',
@@ -309,12 +310,12 @@ export function SessionHistoryScreen() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead style={{ position: 'sticky', top: 0, background: 'var(--theme-bg)', zIndex: 1 }}>
                   <tr>
-                    <SortHeader field="updatedAt" label="Date" current={sortField} dir={sortDir} onClick={handleSort} />
-                    <th style={{ padding: '0.45rem 0.6rem', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--theme-text-muted)', borderBottom: '1px solid var(--theme-border)' }}>Title</th>
-                    <SortHeader field="model" label="Model" current={sortField} dir={sortDir} onClick={handleSort} />
-                    <SortHeader field="messageCount" label="Msgs" current={sortField} dir={sortDir} onClick={handleSort} />
-                    <SortHeader field="tokens" label="Tokens" current={sortField} dir={sortDir} onClick={handleSort} />
-                    <SortHeader field="cost" label="Cost" current={sortField} dir={sortDir} onClick={handleSort} />
+                    <SortHeader field="updatedAt" label="日期" current={sortField} dir={sortDir} onClick={handleSort} />
+                    <th style={{ padding: '0.45rem 0.6rem', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--theme-text-muted)', borderBottom: '1px solid var(--theme-border)' }}>标题</th>
+                    <SortHeader field="model" label="模型" current={sortField} dir={sortDir} onClick={handleSort} />
+                    <SortHeader field="messageCount" label="消息" current={sortField} dir={sortDir} onClick={handleSort} />
+                    <SortHeader field="tokens" label="Token" current={sortField} dir={sortDir} onClick={handleSort} />
+                    <SortHeader field="cost" label="费用" current={sortField} dir={sortDir} onClick={handleSort} />
                   </tr>
                 </thead>
                 <tbody>
@@ -361,7 +362,7 @@ export function SessionHistoryScreen() {
                   {sorted.length === 0 && (
                     <tr>
                       <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', fontSize: '0.82rem', color: 'var(--theme-text-muted)' }}>
-                        {search ? 'No sessions match your search.' : 'No sessions found.'}
+                        {search ? '没有匹配的会话。' : '暂无会话。'}
                       </td>
                     </tr>
                   )}
@@ -395,9 +396,9 @@ export function SessionHistoryScreen() {
                     color: 'var(--theme-text-muted)',
                     padding: '0.2rem 0.4rem',
                   }}
-                  aria-label="Close thread"
+                  aria-label="关闭会话线程"
                 >
-                  ✕
+                  <EmojiIcon emoji="✕" size={14} />
                 </button>
               </div>
 
@@ -408,11 +409,11 @@ export function SessionHistoryScreen() {
               >
                 {msgLoading ? (
                   <div style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--theme-text-muted)', paddingTop: '2rem' }}>
-                    Loading messages…
+                    加载消息中…
                   </div>
                 ) : messages.length === 0 ? (
                   <div style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--theme-text-muted)', paddingTop: '2rem' }}>
-                    No messages available for this session.
+                    该会话暂无消息。
                   </div>
                 ) : (
                   messages.map((msg, i) => (

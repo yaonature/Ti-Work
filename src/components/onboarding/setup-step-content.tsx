@@ -11,6 +11,7 @@ import {
   Settings01Icon,
 } from '@hugeicons/core-free-icons'
 import type { OnboardingStepComponentProps } from './onboarding-steps'
+import { ProviderSelectStep } from './provider-select-step'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -23,6 +24,12 @@ type AuthCheckResponse = {
 type HermesConfigResponse = {
   activeProvider?: string
   activeModel?: string
+  providers?: Array<{
+    id: string
+    authType?: string
+    configured?: boolean
+    authSource?: string
+  }>
 }
 
 type ConnectionStatus = 'checking' | 'connected' | 'disconnected'
@@ -51,14 +58,14 @@ export function ConnectionCheckStep({
       if (!connected) {
         setLastError(
           data.error === 'server_timeout'
-            ? 'Hermes Agent did not respond in time.'
-            : 'Hermes Agent is not reachable yet.',
+            ? 'Hermes Agent 响应超时。'
+            : '暂时无法连接到 Hermes Agent。',
         )
       }
     } catch (error) {
       setStatus('disconnected')
       setLastError(
-        error instanceof Error ? error.message : 'Connection check failed.',
+        error instanceof Error ? error.message : '连接检查失败。',
       )
     }
   }, [])
@@ -97,26 +104,26 @@ export function ConnectionCheckStep({
       </div>
 
       <h2 className="mb-3 text-2xl font-semibold text-primary-900">
-        Connection Check
+        连接检查
       </h2>
 
       <p className="mb-6 max-w-md text-base leading-relaxed text-primary-600">
         {status === 'connected'
-          ? 'Your backend is reachable and ready for setup.'
+          ? '后端已可访问，可以继续完成设置。'
           : status === 'checking'
-            ? 'Checking whether an OpenAI-compatible backend is available...'
-            : 'No compatible backend is connected yet.'}
+            ? '正在检查是否存在可用的 OpenAI 兼容后端...'
+            : '当前还没有检测到可用的兼容后端。'}
       </p>
 
       {status === 'disconnected' && (
         <div className="mb-6 w-full rounded-2xl border border-red-200 bg-red-50 p-4 text-left">
           <p className="mb-3 text-sm font-medium text-red-700">
-            Make sure the Hermes HTTP API server is enabled:
+            请先确认 Hermes HTTP API 服务已启用：
           </p>
           <div className="space-y-2">
             <div>
               <p className="text-xs font-medium text-red-700 mb-1">
-                1. Enable the API server in <code>~/.hermes/.env</code>:
+                1. 在 <code>~/.hermes/.env</code> 中启用 API 服务：
               </p>
               <code className="block overflow-x-auto rounded-lg bg-red-100 px-3 py-2 text-xs text-red-900">
                 API_SERVER_ENABLED=true
@@ -124,7 +131,7 @@ export function ConnectionCheckStep({
             </div>
             <div>
               <p className="text-xs font-medium text-red-700 mb-1">
-                2. Restart the gateway:
+                2. 重启网关：
               </p>
               <code className="block overflow-x-auto rounded-lg bg-red-100 px-3 py-2 text-xs text-red-900">
                 cd hermes-agent && hermes --gateway
@@ -132,8 +139,8 @@ export function ConnectionCheckStep({
             </div>
           </div>
           <p className="mt-3 text-xs text-red-700">
-            Or point <code>HERMES_API_URL</code> at any OpenAI-compatible
-            backend (Ollama, LiteLLM, vLLM, etc.).
+            或者将 <code>HERMES_API_URL</code> 指向任意 OpenAI 兼容后端
+            （如 Ollama、LiteLLM、vLLM 等）。
           </p>
           {lastError && (
             <p className="mt-3 text-xs text-red-700">{lastError}</p>
@@ -147,7 +154,7 @@ export function ConnectionCheckStep({
         className="gap-2"
       >
         <HugeiconsIcon icon={RefreshIcon} className="size-4" />
-        Check Connection
+        重新检查连接
       </Button>
     </div>
   )
@@ -158,6 +165,8 @@ export function ModelConfigurationStep({
 }: OnboardingStepComponentProps) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [config, setConfig] = useState<HermesConfigResponse | null>(null)
+  const [hasKey, setHasKey] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     setCanProceed(true)
@@ -178,6 +187,15 @@ export function ModelConfigurationStep({
         const data = (await response.json()) as HermesConfigResponse
         if (!cancelled) {
           setConfig(data)
+          // 首启引导判定：任一 API Key 类提供方已真实配置（env / auth store / 网关模型）
+          const providers = Array.isArray(data.providers) ? data.providers : []
+          const anyKeyConfigured = providers.some(
+            (p) =>
+              p.authType === 'api_key' &&
+              p.configured === true &&
+              p.authSource !== 'none',
+          )
+          if (anyKeyConfigured) setHasKey(true)
           setStatus('ready')
         }
       } catch {
@@ -192,7 +210,21 @@ export function ModelConfigurationStep({
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloadKey])
+
+  // 未配置任何 API Key → 内嵌首启引导，直接让用户配置第一个提供方
+  if (status === 'ready' && !hasKey) {
+    return (
+      <div className="max-h-[60vh] w-full overflow-y-auto px-1 py-2 text-left">
+        <ProviderSelectStep
+          onComplete={() => {
+            setHasKey(true)
+            setReloadKey((k) => k + 1)
+          }}
+        />
+      </div>
+    )
+  }
 
   const provider = config?.activeProvider?.trim()
   const model = config?.activeModel?.trim()
@@ -209,18 +241,18 @@ export function ModelConfigurationStep({
       </div>
 
       <h2 className="mb-3 text-2xl font-semibold text-primary-900">
-        Model Configuration
+        模型配置
       </h2>
 
       <p className="mb-6 max-w-md text-base leading-relaxed text-primary-600">
-        Core chat works with any OpenAI-compatible backend. Hermes gateway APIs
-        make provider and model setup editable from the workspace.
+        核心会话能力可对接任意 OpenAI 兼容后端。通过 Hermes 网关 API，
+        你可以直接在工作空间内调整提供方和模型设置。
       </p>
 
       <div className="mb-6 w-full rounded-2xl border border-primary-200 bg-primary-100/70 p-4 text-left">
         {status === 'loading' && (
           <p className="text-sm text-primary-600">
-            Loading current provider and model information...
+            正在加载当前提供方与模型信息...
           </p>
         )}
 
@@ -231,16 +263,15 @@ export function ModelConfigurationStep({
               className="mt-0.5 size-5 shrink-0"
             />
             <p className="text-sm">
-              Could not load editable backend configuration right now. You can
-              still continue if chat works and update settings where your
-              backend manages them.
+              当前暂时无法读取可编辑的后端配置。如果聊天功能已可用，你仍可继续，
+              并到后端自身的配置位置完成调整。
             </p>
           </div>
         )}
 
         {status === 'ready' && hasModel && (
           <p className="text-sm font-medium text-primary-900">
-            Current model: <span className="text-accent-700">{model}</span> via{' '}
+            当前模型：<span className="text-accent-700">{model}</span>，提供方：
             <span className="text-accent-700">{provider}</span>
           </p>
         )}
@@ -252,9 +283,8 @@ export function ModelConfigurationStep({
               className="mt-0.5 size-5 shrink-0"
             />
             <p className="text-sm">
-              No model is reported yet. If your backend manages models
-              externally, finish setup there and use the chat test to verify the
-              connection.
+              当前尚未检测到模型信息。如果你的后端在外部管理模型，请先在那里完成设置，
+              再通过聊天测试确认连接是否正常。
             </p>
           </div>
         )}
@@ -265,7 +295,7 @@ export function ModelConfigurationStep({
         className={buttonVariants({ variant: 'outline', className: 'gap-2' })}
       >
         <HugeiconsIcon icon={Settings01Icon} className="size-4" />
-        Open Provider Settings
+        打开提供方设置
       </Link>
     </div>
   )

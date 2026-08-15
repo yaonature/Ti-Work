@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState  } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
+  ActivitySparkIcon,
   Add01Icon,
   CheckmarkCircle02Icon,
   Copy01Icon,
@@ -12,48 +13,67 @@ import {
   GridViewIcon,
   PauseIcon,
   UserMultiple02Icon,
-  ActivitySparkIcon,
 } from '@hugeicons/core-free-icons'
-import { useMemo } from 'react'
+
 import { CreateCrewDialog } from './components/create-crew-dialog'
 import { TemplatesGallery } from './components/templates-gallery'
-import type { Crew } from '@/lib/crews-api'
-import type { CrewMemberRole } from '@/lib/crews-api'
+import type { Crew, CrewMemberRole, CrewMemberStatus } from '@/lib/crews-api'
+
+import type { CrewTemplate } from '@/lib/templates-api'
 import {
   cloneCrew,
   createCrew,
   deleteCrew,
   fetchCrews,
 } from '@/lib/crews-api'
-import type { CrewTemplate } from '@/lib/templates-api'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
 const QUERY_KEY = ['crews'] as const
 
 const STATUS_CONFIG: Record<
-  Crew['status'],
+  Crew['status'] | CrewMemberStatus,
   { label: string; color: string; dot: string }
 > = {
   draft: {
-    label: 'Draft',
+    label: '草稿',
     color: 'text-[var(--theme-muted)]',
     dot: 'bg-[var(--theme-muted)]',
   },
   active: {
-    label: 'Active',
+    label: '活跃',
     color: 'text-[var(--theme-success)]',
     dot: 'bg-[var(--theme-success)]',
   },
   paused: {
-    label: 'Paused',
+    label: '已暂停',
     color: 'text-[var(--theme-warning,#f59e0b)]',
     dot: 'bg-[var(--theme-warning,#f59e0b)]',
   },
   complete: {
-    label: 'Complete',
+    label: '已完成',
     color: 'text-[var(--theme-accent)]',
     dot: 'bg-[var(--theme-accent)]',
+  },
+  idle: {
+    label: '空闲',
+    color: 'text-[var(--theme-muted)]',
+    dot: 'bg-[var(--theme-muted)]',
+  },
+  running: {
+    label: '运行中',
+    color: 'text-[var(--theme-success)]',
+    dot: 'bg-[var(--theme-success)]',
+  },
+  done: {
+    label: '已完成',
+    color: 'text-[var(--theme-accent)]',
+    dot: 'bg-[var(--theme-accent)]',
+  },
+  error: {
+    label: '错误',
+    color: 'text-[var(--theme-danger,#ef4444)]',
+    dot: 'bg-[var(--theme-danger,#ef4444)]',
   },
 }
 
@@ -97,7 +117,7 @@ function StatChip({
   )
 }
 
-function RecentActivityFeed({ crews }: { crews: Crew[] }) {
+function RecentActivityFeed({ crews }: { crews: Array<Crew> }) {
   const items = useMemo(() => {
     const entries: Array<{ memberName: string; crewName: string; text: string; ts: number }> = []
     for (const crew of crews) {
@@ -120,7 +140,7 @@ function RecentActivityFeed({ crews }: { crews: Crew[] }) {
   return (
     <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)] px-4 py-3">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--theme-muted)]">
-        Recent Activity
+        最近活动
       </div>
       <div className="space-y-1.5">
         {items.map((item, i) => (
@@ -138,7 +158,7 @@ function RecentActivityFeed({ crews }: { crews: Crew[] }) {
   )
 }
 
-function StatsStrip({ crews }: { crews: Crew[] }) {
+function StatsStrip({ crews }: { crews: Array<Crew> }) {
   const stats = useMemo(() => {
     const totalAgents = crews.reduce((sum, c) => sum + c.members.length, 0)
     const runningAgents = crews.reduce(
@@ -161,35 +181,35 @@ function StatsStrip({ crews }: { crews: Crew[] }) {
     <div className="mb-6 space-y-3">
       <div className="flex flex-wrap gap-3">
         <StatChip
-          label="Crews"
+          label="多智能体"
           value={stats.total}
           icon={<HugeiconsIcon icon={UserMultiple02Icon} size={12} strokeWidth={1.8} className="text-[var(--theme-muted)]" />}
         />
         <StatChip
-          label="Active"
+          label="活跃"
           value={stats.active}
           accent={stats.active > 0 ? 'var(--theme-success)' : undefined}
           pulse={stats.active > 0}
           icon={<HugeiconsIcon icon={ActivitySparkIcon} size={12} strokeWidth={1.8} className="text-[var(--theme-muted)]" />}
         />
         <StatChip
-          label="Paused"
+          label="已暂停"
           value={stats.paused}
           icon={<HugeiconsIcon icon={PauseIcon} size={12} strokeWidth={1.8} className="text-[var(--theme-muted)]" />}
         />
         <StatChip
-          label="Complete"
+          label="已完成"
           value={stats.complete}
           accent={stats.complete > 0 ? 'var(--theme-accent)' : undefined}
           icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} strokeWidth={1.8} className="text-[var(--theme-muted)]" />}
         />
         <StatChip
-          label="Agents"
+          label="智能体"
           value={stats.totalAgents}
           icon={<HugeiconsIcon icon={UserMultiple02Icon} size={12} strokeWidth={1.8} className="text-[var(--theme-muted)]" />}
         />
         <StatChip
-          label="Running"
+          label="运行中"
           value={stats.runningAgents}
           accent={stats.runningAgents > 0 ? 'var(--theme-success)' : undefined}
           pulse={stats.runningAgents > 0}
@@ -229,7 +249,7 @@ function CrewCard({
         <span className={cn('text-xs', status.color)}>{status.label}</span>
         {activeCount > 0 && (
           <span className="ml-auto rounded-full bg-[var(--theme-accent)]/20 px-2 py-0.5 text-[10px] font-medium text-[var(--theme-accent)]">
-            {activeCount} running
+            {activeCount} 个运行中
           </span>
         )}
       </div>
@@ -255,7 +275,7 @@ function CrewCard({
         {crew.members.map((m) => (
           <span
             key={m.id}
-            title={`${m.displayName} — ${m.roleLabel} (${m.status})`}
+            title={`${m.displayName} — ${m.roleLabel} (${STATUS_CONFIG[m.status].label})`}
             className={cn(
               'inline-flex items-center gap-1 rounded-full border border-[var(--theme-border)] px-2 py-0.5 text-[10px]',
               m.status === 'running' && 'border-[var(--theme-accent)]/40 bg-[var(--theme-accent)]/10',
@@ -270,7 +290,7 @@ function CrewCard({
       {/* Footer */}
       <div className="flex items-center justify-between text-[10px] text-[var(--theme-muted)]">
         <span>
-          {crew.members.length} agent{crew.members.length !== 1 ? 's' : ''}
+          {crew.members.length} 个智能体
         </span>
         <span>{new Date(crew.updatedAt).toLocaleDateString()}</span>
       </div>
@@ -283,7 +303,7 @@ function CrewCard({
             onClone(crew.id)
           }}
           disabled={isCloning}
-          title="Clone crew"
+          title="复制多智能体"
           className="rounded-lg p-1.5 text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-hover)] hover:text-[var(--theme-text)] disabled:opacity-40"
         >
           <HugeiconsIcon icon={Copy01Icon} size={14} />
@@ -293,7 +313,7 @@ function CrewCard({
             e.preventDefault()
             onDelete(crew.id)
           }}
-          title="Delete crew"
+          title="删除多智能体"
           className="rounded-lg p-1.5 text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-hover)] hover:text-[var(--theme-danger)]"
         >
           <HugeiconsIcon icon={Delete01Icon} size={14} />
@@ -339,10 +359,10 @@ export function CrewsScreen() {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
       setCreateOpen(false)
       clearPrefill()
-      toast('Crew created')
+      toast('多智能体已创建')
     },
     onError: (err) => {
-      toast(err instanceof Error ? err.message : 'Failed to create crew', {
+      toast(err instanceof Error ? err.message : '创建多智能体失败', {
         type: 'error',
       })
     },
@@ -352,10 +372,10 @@ export function CrewsScreen() {
     mutationFn: deleteCrew,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
-      toast('Crew deleted')
+      toast('多智能体已删除')
     },
     onError: () => {
-      toast('Failed to delete crew', { type: 'error' })
+      toast('删除多智能体失败', { type: 'error' })
     },
   })
 
@@ -363,10 +383,10 @@ export function CrewsScreen() {
     mutationFn: cloneCrew,
     onSuccess: (crew) => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
-      toast(`Cloned as "${crew.name}"`)
+      toast(`已复制为"${crew.name}"`)
     },
     onError: (err) => {
-      toast(err instanceof Error ? err.message : 'Failed to clone crew', { type: 'error' })
+      toast(err instanceof Error ? err.message : '复制多智能体失败', { type: 'error' })
     },
   })
 
@@ -383,7 +403,7 @@ export function CrewsScreen() {
             className="text-[var(--theme-accent)]"
           />
           <h1 className="text-base font-semibold text-[var(--theme-text)]">
-            Crews
+            多智能体
           </h1>
           {crews.length > 0 && (
             <span className="rounded-full bg-[var(--theme-hover)] px-2 py-0.5 text-xs text-[var(--theme-muted)]">
@@ -397,14 +417,14 @@ export function CrewsScreen() {
             className="flex items-center gap-1.5 rounded-lg border border-[var(--theme-border)] px-3 py-1.5 text-xs font-medium text-[var(--theme-muted)] transition-colors hover:border-[var(--theme-accent)] hover:text-[var(--theme-text)]"
           >
             <HugeiconsIcon icon={GridViewIcon} size={14} />
-            Templates
+            模板
           </button>
           <button
             onClick={() => setCreateOpen(true)}
             className="flex items-center gap-1.5 rounded-lg bg-[var(--theme-accent)] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
           >
             <HugeiconsIcon icon={Add01Icon} size={14} />
-            New Crew
+            新建多智能体
           </button>
         </div>
       </div>
@@ -413,7 +433,7 @@ export function CrewsScreen() {
       <div className="flex-1 overflow-y-auto p-6">
         {crewsQuery.isLoading ? (
           <div className="flex h-40 items-center justify-center text-sm text-[var(--theme-muted)]">
-            Loading crews…
+            加载多智能体中…
           </div>
         ) : crews.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-4 text-center">
@@ -426,17 +446,17 @@ export function CrewsScreen() {
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--theme-text)]">
-                No crews yet
+                还没有多智能体
               </p>
               <p className="mt-1 text-xs text-[var(--theme-muted)]">
-                Create a crew to coordinate multiple agents on a shared goal.
+                创建多智能体，让多个智能体围绕共同目标协同执行。
               </p>
             </div>
             <button
               onClick={() => setCreateOpen(true)}
               className="rounded-lg bg-[var(--theme-accent)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
             >
-              Create your first crew
+              创建你的第一个多智能体
             </button>
           </div>
         ) : (

@@ -7,6 +7,7 @@ import { useEffect } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 type ModelSuggestionToastProps = {
   suggestedModel: string
@@ -37,10 +38,12 @@ export function ModelSuggestionToast({
       <div className="flex max-w-[380px] w-[calc(100vw-2rem)] flex-col gap-3 rounded-xl border border-primary-200 bg-primary-50/95 p-4 shadow-lg backdrop-blur-xl">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-2">
-            <span className="text-lg">💡</span>
+            <span className="text-lg">
+              <EmojiIcon emoji="💡" size={18} />
+            </span>
             <div>
               <p className="text-sm font-medium text-primary-900">
-                Try {getModelDisplayName(suggestedModel)}?
+                试试 {getModelDisplayName(suggestedModel)}？
               </p>
               <p className="mt-0.5 text-xs text-primary-600">{reason}</p>
               {costImpact && (
@@ -54,7 +57,7 @@ export function ModelSuggestionToast({
             type="button"
             onClick={onDismiss}
             className="shrink-0 rounded-md p-1 text-primary-500 hover:bg-primary-200 hover:text-primary-900"
-            aria-label="Dismiss"
+            aria-label="关闭"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={1.5} />
           </button>
@@ -62,7 +65,7 @@ export function ModelSuggestionToast({
 
         <div className="flex gap-2">
           <Button size="sm" onClick={onSwitch} className="flex-1">
-            Switch
+            切换
           </Button>
           <Button
             size="sm"
@@ -70,7 +73,7 @@ export function ModelSuggestionToast({
             onClick={onDismissForSession}
             className="flex-1"
           >
-            Not for this session
+            本次会话不切换
           </Button>
         </div>
       </div>

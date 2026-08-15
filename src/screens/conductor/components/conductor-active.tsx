@@ -6,13 +6,14 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import { OfficeView } from './office-view'
 import { CyclingStatus, WorkingIndicator } from './mission-event-log'
 import { getAgentPersona } from './agent-avatar'
+import { EmojiIcon } from '@/components/emoji-icon'
 import type { AgentWorkingRow } from './office-view'
 import type { useConductorGateway } from '../hooks/use-conductor-gateway'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,41 +32,41 @@ function formatElapsedMilliseconds(durationMs: number): string {
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
-  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`
-  if (minutes > 0) return `${minutes}m ${seconds}s`
-  return `${seconds}s`
+  if (hours > 0) return `${hours}小时 ${minutes}分 ${seconds}秒`
+  if (minutes > 0) return `${minutes}分 ${seconds}秒`
+  return `${seconds}秒`
 }
 
 function formatElapsedTime(startIso: string | null | undefined, endMs: number): string {
-  if (!startIso) return '0s'
+  if (!startIso) return '0秒'
   const startMs = new Date(startIso).getTime()
-  if (!Number.isFinite(startMs)) return '0s'
+  if (!Number.isFinite(startMs)) return '0秒'
   return formatElapsedMilliseconds(endMs - startMs)
 }
 
 function formatRelativeTime(value: string | null | undefined, now: number): string {
-  if (!value) return 'just now'
+  if (!value) return '刚刚'
   const ms = new Date(value).getTime()
-  if (!Number.isFinite(ms)) return 'just now'
+  if (!Number.isFinite(ms)) return '刚刚'
   const diffSeconds = Math.max(0, Math.floor((now - ms) / 1000))
-  if (diffSeconds < 10) return 'just now'
-  if (diffSeconds < 60) return `${diffSeconds}s ago`
+  if (diffSeconds < 10) return '刚刚'
+  if (diffSeconds < 60) return `${diffSeconds}秒前`
   const diffMinutes = Math.floor(diffSeconds / 60)
-  if (diffMinutes < 60) return `${diffMinutes}m ago`
-  return `${Math.floor(diffMinutes / 60)}h ago`
+  if (diffMinutes < 60) return `${diffMinutes}分钟前`
+  return `${Math.floor(diffMinutes / 60)}小时前`
 }
 
 function getShortModelName(model: string | null | undefined): string {
-  if (!model) return 'Unknown'
+  if (!model) return '未知'
   const parts = model.split('/')
   return parts[parts.length - 1] || model
 }
 
 function getWorkerDot(status: 'running' | 'complete' | 'stale' | 'idle') {
-  if (status === 'complete') return { dotClass: 'bg-emerald-400', label: 'Complete' }
-  if (status === 'running') return { dotClass: 'bg-sky-400 animate-pulse', label: 'Running' }
-  if (status === 'idle') return { dotClass: 'bg-amber-400', label: 'Idle' }
-  return { dotClass: 'bg-red-400', label: 'Stale' }
+  if (status === 'complete') return { dotClass: 'bg-emerald-400', label: '已完成' }
+  if (status === 'running') return { dotClass: 'bg-sky-400 animate-pulse', label: '运行中' }
+  if (status === 'idle') return { dotClass: 'bg-amber-400', label: '空闲' }
+  return { dotClass: 'bg-red-400', label: '过期' }
 }
 
 function getWorkerBorderClass(status: 'running' | 'complete' | 'stale' | 'idle') {
@@ -76,14 +77,14 @@ function getWorkerBorderClass(status: 'running' | 'complete' | 'stale' | 'idle')
 }
 
 const WORKING_STEPS = [
-  'Reviewing the brief...',
-  'Scanning existing patterns...',
-  'Drafting the implementation...',
-  'Thinking through edge cases...',
-  'Polishing the design...',
-  'Wiring up components...',
-  'Checking the layout...',
-  'Almost there...',
+  '正在审阅任务简报...',
+  '正在扫描现有模式...',
+  '正在起草实现方案...',
+  '正在检查边界情况...',
+  '正在打磨整体设计...',
+  '正在串联组件逻辑...',
+  '正在检查 UI 布局...',
+  '快完成了...',
 ]
 
 // ---------------------------------------------------------------------------
@@ -110,7 +111,7 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
   const missionProgress = totalWorkers > 0 ? Math.round((completedWorkers / totalWorkers) * 100) : 0
 
   // Build office agent rows
-  const officeAgentRows = useMemo<AgentWorkingRow[]>(() => {
+  const officeAgentRows = useMemo<Array<AgentWorkingRow>>(() => {
     if (conductor.workers.length > 0) {
       return conductor.workers.map((worker, index) => {
         const persona = getAgentPersona(index)
@@ -124,10 +125,10 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
           modelId: worker.model || 'auto',
           roleDescription: worker.displayName,
           status: isWorkerPaused ? 'paused' as const : worker.status === 'complete' ? 'idle' as const : worker.status === 'stale' ? 'error' as const : 'active' as const,
-          lastLine: isWorkerPaused ? 'Paused' : lastLine || undefined,
+          lastLine: isWorkerPaused ? '已暂停' : lastLine || undefined,
           lastAt: worker.updatedAt ? new Date(worker.updatedAt).getTime() : undefined,
           taskCount: conductor.tasks.filter((t) => t.workerKey === worker.key).length,
-          currentTask: isWorkerPaused ? 'Paused' : currentTask,
+          currentTask: isWorkerPaused ? '已暂停' : currentTask,
           sessionKey: worker.key,
         }
       })
@@ -135,13 +136,13 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
 
     return [{
       id: 'conductor-placeholder-agent',
-      name: 'Nova',
+      name: 'Stellar',
       modelId: conductor.conductorSettings.workerModel || 'auto',
-      roleDescription: 'Waiting for workers',
+      roleDescription: '等待工作智能体加入',
       status: 'spawning' as const,
-      lastLine: conductor.goal || 'Preparing the office...',
+      lastLine: conductor.goal || '正在准备办公区…',
       taskCount: 0,
-      currentTask: conductor.goal || 'Preparing the office...',
+      currentTask: conductor.goal || '正在准备办公区…',
       sessionKey: 'conductor-placeholder-agent',
     }]
   }, [conductor.workers, conductor.tasks, conductor.workerOutputs, conductor.isPaused, conductor.goal, conductor.conductorSettings.workerModel])
@@ -157,7 +158,7 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
       {/* Header badge */}
       <div className="text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--theme-muted)]">
-          Conductor
+          任务指挥中心
           <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
         </div>
       </div>
@@ -169,14 +170,14 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
           <div className="mt-2 flex items-center justify-center gap-2 text-xs text-[var(--theme-muted)]">
             <span>{formatElapsedMilliseconds(conductor.isPaused ? conductor.pausedElapsedMs : conductor.missionElapsedMs)}</span>
             <span className="text-[var(--theme-border)]">&middot;</span>
-            <span>{completedWorkers}/{Math.max(totalWorkers, 1)} complete</span>
+            <span>{completedWorkers}/{Math.max(totalWorkers, 1)} 已完成</span>
             <span className="text-[var(--theme-border)]">&middot;</span>
-            <span>{activeWorkerCount} active</span>
+            <span>{activeWorkerCount} 运行中</span>
           </div>
           {conductor.isPaused && (
             <div className="mt-3 flex justify-center">
               <span className="rounded-full border border-[var(--theme-accent)] bg-[var(--theme-accent-soft)] px-3 py-1 text-xs font-medium text-[var(--theme-accent-strong)] animate-pulse">
-                Paused
+                已暂停
               </span>
             </div>
           )}
@@ -190,7 +191,7 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
             onClick={() => void conductor.stopMission()}
             className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--theme-danger-border,color-mix(in_srgb,var(--theme-danger)_35%,white))] bg-[var(--theme-danger-soft,color-mix(in_srgb,var(--theme-danger)_12%,transparent))] px-3 py-1.5 text-xs font-medium text-[var(--theme-danger)] transition-colors hover:bg-[var(--theme-danger-soft-strong,color-mix(in_srgb,var(--theme-danger)_18%,transparent))]"
           >
-            <span>&#9632;</span> Stop Mission
+            <span>&#9632;</span> 停止任务
           </button>
           <button
             type="button"
@@ -210,7 +211,17 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
                   : 'border-[var(--theme-border)] bg-[var(--theme-card2)] text-[var(--theme-muted)] hover:border-[var(--theme-accent)] hover:text-[var(--theme-text)]',
             )}
           >
-            <span>{conductor.isPaused ? '\u25B6' : '\u23F8'}</span> {conductor.isPausing ? '...' : conductor.isPaused ? 'Resume' : 'Pause'}
+            <span className="inline-flex items-center">
+              <EmojiIcon
+                emoji={conductor.isPaused ? '▶' : '⏸️'}
+                size={12}
+              />
+            </span>{' '}
+            {conductor.isPausing
+              ? '处理中…'
+              : conductor.isPaused
+                ? '继续'
+                : '暂停'}
           </button>
         </div>
       </section>
@@ -220,8 +231,8 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
         <section className="rounded-2xl border border-[var(--theme-warning-border)] bg-[var(--theme-warning-soft)] px-5 py-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-[var(--theme-warning)]">Mission appears stalled — no activity for 60 seconds</p>
-              <p className="mt-1 text-xs text-[var(--theme-muted)]">Sometimes the workers are still alive, but the stream went quiet. Your call.</p>
+              <p className="text-sm font-semibold text-[var(--theme-warning)]">任务似乎已停滞 — 最近 60 秒没有新活动</p>
+              <p className="mt-1 text-xs text-[var(--theme-muted)]">有时智能体仍在运行 — 只是流式输出暂时安静了。由你决定下一步操作。</p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button
@@ -229,14 +240,14 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
                 onClick={conductor.dismissTimeoutWarning}
                 className="rounded-xl border border-[var(--theme-warning-border)] bg-[var(--theme-card)] px-4 text-[var(--theme-text)] hover:bg-[var(--theme-card2)]"
               >
-                Keep Waiting
+                继续等待
               </Button>
               <Button
                 type="button"
                 onClick={() => void conductor.stopMission()}
                 className="rounded-xl border border-[var(--theme-warning-border)] bg-[var(--theme-warning-soft)] px-4 text-[var(--theme-warning)] hover:bg-[var(--theme-warning-soft-strong)]"
               >
-                Stop Mission
+                停止任务
               </Button>
             </div>
           </div>
@@ -250,7 +261,7 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
           missionRunning
           onViewOutput={() => {}}
           processType="parallel"
-          companyName="Conductor Office"
+          companyName="任务办公区"
           containerHeight={360}
           hideHeader
         />
@@ -261,7 +272,7 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
         <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
           <div className="space-y-2">
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-muted)]">
-              Tasks ({conductor.tasks.filter((t) => t.status === 'complete').length}/{conductor.tasks.length})
+              任务 ({conductor.tasks.filter((t) => t.status === 'complete').length}/{conductor.tasks.length})
             </h2>
             {conductor.tasks.map((task) => {
               const isSelected = selectedTaskId === task.id
@@ -293,7 +304,7 @@ export function ConductorActive({ conductor }: ConductorActiveProps) {
 
           <div className="space-y-3">
             {selectedTaskId && (
-              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--theme-muted)]">Task Output</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--theme-muted)]">任务输出</h2>
             )}
             <WorkerCards
               workers={(() => {
@@ -334,7 +345,7 @@ function WorkerCards({
       <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-card)] px-4 py-8 text-center text-sm text-[var(--theme-muted)] md:col-span-2">
         <div className="flex items-center justify-center gap-3">
           <div className="size-4 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
-          <span>Spawning workers...</span>
+          <span>正在启动工作智能体…</span>
         </div>
       </div>
     )
@@ -369,8 +380,9 @@ function WorkerCards({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className={cn('size-2.5 rounded-full', dot.dotClass)} />
-                  <p className="truncate text-sm font-medium text-[var(--theme-text)]">
-                    {persona.emoji} {persona.name} <span className="text-[var(--theme-muted)]">&middot;</span> {worker.label}
+                  <p className="truncate text-sm font-medium text-[var(--theme-text)] inline-flex items-center gap-1">
+                    <EmojiIcon emoji={persona.emoji} size={14} />
+                    {persona.name} <span className="text-[var(--theme-muted)]">&middot;</span> {worker.label}
                   </p>
                 </div>
                 <p className="mt-1 text-xs text-[var(--theme-muted-2)]">{worker.displayName}</p>
@@ -382,19 +394,19 @@ function WorkerCards({
 
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card2)] px-3 py-2">
-                <p className="text-[var(--theme-muted)]">Model</p>
+                <p className="text-[var(--theme-muted)]">模型</p>
                 <p className="mt-1 truncate text-[var(--theme-text)]">{getShortModelName(worker.model)}</p>
               </div>
               <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card2)] px-3 py-2">
-                <p className="text-[var(--theme-muted)]">Tokens</p>
+                <p className="text-[var(--theme-muted)]">Token</p>
                 <p className="mt-1 text-[var(--theme-text)]">{worker.tokenUsageLabel}</p>
               </div>
               <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card2)] px-3 py-2">
-                <p className="text-[var(--theme-muted)]">Elapsed</p>
+                <p className="text-[var(--theme-muted)]">已用时间</p>
                 <p className="mt-1 text-[var(--theme-text)]">{formatElapsedTime(workerStartedAt, workerEndTime)}</p>
               </div>
               <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card2)] px-3 py-2">
-                <p className="text-[var(--theme-muted)]">Last update</p>
+                <p className="text-[var(--theme-muted)]">最近更新</p>
                 <p className="mt-1 text-[var(--theme-text)]">{formatRelativeTime(worker.updatedAt, now)}</p>
               </div>
             </div>

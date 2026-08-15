@@ -86,7 +86,7 @@ export function AttachmentPreview({
               size="icon-sm"
               onClick={() => onRemove(attachment.id)}
               className="size-5 shrink-0 rounded-full hover:bg-primary-200"
-              aria-label="Remove attachment"
+              aria-label="移除附件"
               type="button"
             >
               <HugeiconsIcon icon={Cancel01Icon} size={12} />
@@ -108,7 +108,7 @@ export function AttachmentPreview({
               <div className="flex items-center gap-2 text-xs text-primary-600">
                 <HugeiconsIcon icon={File01Icon} size={20} />
                 <span className="tabular-nums">
-                  {getFileExtension(attachment.file.name) || 'FILE'}
+                  {getFileExtension(attachment.file.name) || '文件'}
                 </span>
               </div>
             </div>

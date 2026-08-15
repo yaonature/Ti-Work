@@ -1,15 +1,21 @@
 import { useEffect, useState } from 'react'
+import type { CreateTaskInput, HermesTask, TaskColumn, TaskPriority } from '@/types/task'
 import {
-  DialogRoot,
-  DialogContent,
-  DialogTitle,
   DialogClose,
+  DialogContent,
+  DialogRoot,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import type { HermesTask, CreateTaskInput, TaskColumn, TaskPriority } from '@/types/task'
 import { TASK_COLUMNS, TASK_COLUMN_LABELS } from '@/types/task'
 
-const PRIORITY_OPTIONS: TaskPriority[] = ['high', 'medium', 'low']
+const PRIORITY_OPTIONS: Array<TaskPriority> = ['high', 'medium', 'low']
+
+const PRIORITY_LABELS: Record<TaskPriority, string> = {
+  high: '高',
+  medium: '中',
+  low: '低',
+}
 
 const inputStyle: React.CSSProperties = {
   background: 'var(--theme-input)',
@@ -90,32 +96,32 @@ export function TaskDialog({ open, onClose, onSave, task }: TaskDialogProps) {
           className="flex items-center justify-between px-5 py-4 border-b"
           style={{ borderColor: 'var(--theme-border)' }}
         >
-          <DialogTitle>{task ? 'Edit Task' : 'New Task'}</DialogTitle>
-          <DialogClose>{task ? 'Cancel' : 'Cancel'}</DialogClose>
+          <DialogTitle>{task ? '编辑任务' : '新建任务'}</DialogTitle>
+          <DialogClose>取消</DialogClose>
         </div>
 
         {/* Body */}
         <div className="flex flex-col gap-4 px-5 py-4 overflow-y-auto">
           {/* Title */}
           <div>
-            <label style={labelStyle}>Title *</label>
+            <label style={labelStyle}>标题 *</label>
             <input
               style={inputStyle}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Task title"
+              placeholder="任务标题"
               autoFocus
             />
           </div>
 
           {/* Description */}
           <div>
-            <label style={labelStyle}>Description</label>
+            <label style={labelStyle}>描述</label>
             <textarea
               style={{ ...inputStyle, resize: 'vertical', minHeight: '72px' }}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description…"
+              placeholder="可选描述…"
               rows={3}
             />
           </div>
@@ -123,7 +129,7 @@ export function TaskDialog({ open, onClose, onSave, task }: TaskDialogProps) {
           {/* Priority + Column row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label style={labelStyle}>Priority</label>
+              <label style={labelStyle}>优先级</label>
               <select
                 style={inputStyle}
                 value={priority}
@@ -131,13 +137,13 @@ export function TaskDialog({ open, onClose, onSave, task }: TaskDialogProps) {
               >
                 {PRIORITY_OPTIONS.map((p) => (
                   <option key={p} value={p} style={{ background: 'var(--theme-input)', color: 'var(--theme-text)' }}>
-                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                    {PRIORITY_LABELS[p]}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label style={labelStyle}>Column</label>
+              <label style={labelStyle}>列</label>
               <select
                 style={inputStyle}
                 value={column}
@@ -154,23 +160,23 @@ export function TaskDialog({ open, onClose, onSave, task }: TaskDialogProps) {
 
           {/* Assignee */}
           <div>
-            <label style={labelStyle}>Assignee</label>
+            <label style={labelStyle}>负责人</label>
             <input
               style={inputStyle}
               value={assignee}
               onChange={(e) => setAssignee(e.target.value)}
-              placeholder="Username or name"
+              placeholder="用户名或姓名"
             />
           </div>
 
           {/* Tags */}
           <div>
-            <label style={labelStyle}>Tags (comma-separated)</label>
+            <label style={labelStyle}>标签（逗号分隔）</label>
             <input
               style={inputStyle}
               value={tagsRaw}
               onChange={(e) => setTagsRaw(e.target.value)}
-              placeholder="e.g. frontend, urgent"
+              placeholder="例如：frontend, urgent"
             />
           </div>
         </div>
@@ -181,10 +187,10 @@ export function TaskDialog({ open, onClose, onSave, task }: TaskDialogProps) {
           style={{ borderColor: 'var(--theme-border)' }}
         >
           <Button variant="outline" size="sm" onClick={onClose}>
-            Cancel
+            取消
           </Button>
           <Button size="sm" onClick={handleSave} disabled={!title.trim()}>
-            {task ? 'Save Changes' : 'Create Task'}
+            {task ? '保存更改' : '创建任务'}
           </Button>
         </div>
       </DialogContent>

@@ -18,7 +18,7 @@ export const Route = createFileRoute('/memory')({
   component: function MemoryRoute() {
     const [tab, setTab] = useState<'memory' | 'knowledge'>('memory')
 
-    usePageTitle('Memory')
+    usePageTitle('记忆')
 
     return (
       <div className="flex h-full min-h-0 flex-col">
@@ -32,8 +32,8 @@ export const Route = createFileRoute('/memory')({
               variant="underline"
               className="w-full justify-start gap-1"
             >
-              <TabsTab value="memory">Memory</TabsTab>
-              <TabsTab value="knowledge">Knowledge</TabsTab>
+              <TabsTab value="memory">记忆</TabsTab>
+              <TabsTab value="knowledge">知识</TabsTab>
             </TabsList>
           </div>
 
@@ -41,7 +41,7 @@ export const Route = createFileRoute('/memory')({
             {tab === 'memory' ? (
               <Suspense
                 fallback={
-                  <RouteLoadingState label="Loading memory browser..." />
+                  <RouteLoadingState label="正在加载记忆浏览器..." />
                 }
               >
                 <MemoryBrowserScreen />
@@ -53,7 +53,7 @@ export const Route = createFileRoute('/memory')({
             {tab === 'knowledge' ? (
               <Suspense
                 fallback={
-                  <RouteLoadingState label="Loading knowledge browser..." />
+                  <RouteLoadingState label="正在加载知识浏览器..." />
                 }
               >
                 <KnowledgeBrowserScreen />

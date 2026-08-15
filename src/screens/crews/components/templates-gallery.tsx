@@ -3,29 +3,30 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { EmojiIcon } from '@/components/emoji-icon'
 import {
+  Add01Icon,
   Cancel01Icon,
   Delete01Icon,
-  Add01Icon,
 } from '@hugeicons/core-free-icons'
-import {
-  fetchTemplates,
-  deleteUserTemplate,
-} from '@/lib/templates-api'
 import type { CrewTemplate, CrewTemplateCategory } from '@/lib/templates-api'
-import { fetchAgents } from '@/lib/agents-api'
 import type { AgentDefinition } from '@/types/agent'
+import {
+  deleteUserTemplate,
+  fetchTemplates,
+} from '@/lib/templates-api'
+import { fetchAgents } from '@/lib/agents-api'
 import { AGENT_PERSONAS } from '@/lib/agent-personas'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
 const CATEGORIES: Array<{ value: 'all' | CrewTemplateCategory; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'research', label: 'Research' },
-  { value: 'engineering', label: 'Engineering' },
-  { value: 'creative', label: 'Creative' },
-  { value: 'operations', label: 'Operations' },
-  { value: 'conductor', label: 'Conductor' },
+  { value: 'all', label: '全部' },
+  { value: 'research', label: '研究' },
+  { value: 'engineering', label: '工程' },
+  { value: 'creative', label: '创意' },
+  { value: 'operations', label: '运维' },
+  { value: 'conductor', label: '编排' },
 ]
 
 const CATEGORY_COLORS: Record<CrewTemplateCategory, string> = {
@@ -50,7 +51,7 @@ function TemplateCard({
   isDeleting,
 }: {
   template: CrewTemplate
-  agents: AgentDefinition[]
+  agents: Array<AgentDefinition>
   onSelect: () => void
   onDelete: () => void
   isDeleting: boolean
@@ -60,7 +61,9 @@ function TemplateCard({
       {/* Header */}
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5">
-          <span className="text-2xl leading-none">{template.icon}</span>
+          <span className="text-2xl leading-none">
+            <EmojiIcon emoji={template.icon} size={24} />
+          </span>
           <div>
             <div className="text-sm font-semibold text-[var(--theme-text)]">
               {template.name}
@@ -71,7 +74,7 @@ function TemplateCard({
                 CATEGORY_COLORS[template.category],
               )}
             >
-              {template.category}
+              {CATEGORIES.find((c) => c.value === template.category)?.label ?? template.category}
             </span>
           </div>
         </div>
@@ -82,7 +85,7 @@ function TemplateCard({
               onDelete()
             }}
             disabled={isDeleting}
-            title="Delete template"
+            title="删除模板"
             className="shrink-0 rounded-lg p-1.5 text-[var(--theme-muted)] opacity-0 transition-all hover:text-[var(--theme-danger)] group-hover:opacity-100 disabled:opacity-30"
           >
             <HugeiconsIcon icon={Delete01Icon} size={13} />
@@ -108,7 +111,9 @@ function TemplateCard({
               title={`${displayName} — ${m.role}`}
               className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card2)] px-2 py-0.5 text-[10px] text-[var(--theme-muted)]"
             >
-              <span>{emoji}</span>
+              <span className="inline-flex items-center">
+                <EmojiIcon emoji={emoji} size={12} />
+              </span>
               <span>{displayName}</span>
             </span>
           )
@@ -121,7 +126,7 @@ function TemplateCard({
         className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--theme-accent)] px-3 py-2 text-xs font-medium text-white transition-opacity hover:opacity-90"
       >
         <HugeiconsIcon icon={Add01Icon} size={13} />
-        Use Template
+        使用模板
       </button>
     </div>
   )
@@ -148,10 +153,10 @@ export function TemplatesGallery({ open, onOpenChange, onSelectTemplate }: Props
     mutationFn: deleteUserTemplate,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['crew-templates'] })
-      toast('Template deleted')
+      toast('模板已删除')
     },
     onError: (err) => {
-      toast(err instanceof Error ? err.message : 'Failed to delete template', {
+      toast(err instanceof Error ? err.message : '删除模板失败', {
         type: 'error',
       })
     },
@@ -183,21 +188,21 @@ export function TemplatesGallery({ open, onOpenChange, onSelectTemplate }: Props
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50"
         onClick={() => onOpenChange(false)}
       />
 
       {/* Dialog */}
-      <div className="relative z-10 flex w-full max-w-3xl flex-col rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] shadow-2xl"
+      <div className="relative z-10 flex w-full max-w-3xl flex-col rounded-[20px] border border-[var(--theme-border)] bg-[var(--theme-panel)] shadow-[var(--theme-shadow-3)]"
         style={{ maxHeight: 'min(680px, 90vh)' }}>
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--theme-border)] px-6 py-4">
           <div>
             <h2 className="text-base font-semibold text-[var(--theme-text)]">
-              Crew Templates
+              多智能体模板
             </h2>
             <p className="mt-0.5 text-xs text-[var(--theme-muted)]">
-              Start from a pre-built configuration
+              从预构建配置开始
             </p>
           </div>
           <button
@@ -230,11 +235,11 @@ export function TemplatesGallery({ open, onOpenChange, onSelectTemplate }: Props
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           {templatesQuery.isLoading ? (
             <div className="flex h-40 items-center justify-center text-sm text-[var(--theme-muted)]">
-              Loading templates…
+              加载模板中…
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex h-40 items-center justify-center text-sm text-[var(--theme-muted)]">
-              No templates in this category
+              此分类下暂无模板
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

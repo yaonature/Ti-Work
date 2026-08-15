@@ -3,7 +3,7 @@ import { useNavigate, useRouterState } from '@tanstack/react-router'
 import type { TouchEvent } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
-const TAB_ORDER = ['/chat/main', '/files', '/jobs', '/settings'] as const
+const TAB_ORDER = ['/chat', '/files', '/jobs', '/settings'] as const
 
 const EDGE_ZONE = 24
 const LOCK_THRESHOLD = 12
@@ -143,7 +143,7 @@ export function useSwipeNavigation() {
       if (nextIndex === currentIndex) return
 
       triggerHaptic()
-      void navigate({ to: TAB_ORDER[nextIndex] as string })
+      void navigate({ to: TAB_ORDER[nextIndex] })
     },
     [navigate, pathname],
   )

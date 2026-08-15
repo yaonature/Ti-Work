@@ -28,9 +28,9 @@ export interface CrewTemplate {
   icon: string
   category: CrewTemplateCategory
   defaultGoal: string
-  defaultMembers: CrewTemplateMember[]
+  defaultMembers: Array<CrewTemplateMember>
   isBuiltIn: boolean
-  tags: string[]
+  tags: Array<string>
   /** Undefined for built-ins; epoch ms for user templates */
   createdAt?: number
   /** 'crew' for traditional crews, 'conductor' for mission templates */

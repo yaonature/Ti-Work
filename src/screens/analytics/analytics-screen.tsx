@@ -49,8 +49,7 @@ function fmtNum(n: number): string {
 function fmtDate(iso: string): string {
   // iso = "YYYY-MM-DD"
   const [, m, d] = iso.split('-')
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  return `${months[Number(m) - 1]} ${Number(d)}`
+  return `${Number(m)}月${Number(d)}日`
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -196,10 +195,10 @@ export function AnalyticsScreen() {
             marginBottom: '0.25rem',
           }}
         >
-          Event Store Analytics
+          事件库分析
         </h1>
         <p style={{ fontSize: '0.8rem', color: 'var(--theme-text-muted)' }}>
-          Aggregate insights from <code style={{ fontFamily: 'monospace' }}>.runtime/events.db</code> · auto-refreshes every 30 s
+          来自 <code style={{ fontFamily: 'monospace' }}>.runtime/events.db</code> 的聚合洞察 · 每 30 秒自动刷新
         </p>
       </div>
 
@@ -214,13 +213,13 @@ export function AnalyticsScreen() {
             color: 'var(--theme-error, #ef4444)',
           }}
         >
-          Failed to load analytics. The event store may be unavailable.
+          加载分析数据失败，事件库可能不可用。
         </div>
       )}
 
       {isPending && !data ? (
         <div style={{ color: 'var(--theme-text-muted)', fontSize: '0.85rem' }}>
-          Loading…
+          加载中…
         </div>
       ) : (
         <>
@@ -233,29 +232,29 @@ export function AnalyticsScreen() {
             }}
           >
             <StatCard
-              label="Total Events"
+              label="事件总数"
               value={fmtNum(data?.totalEvents ?? 0)}
               accent="#6366f1"
             />
             <StatCard
-              label="Sessions"
+              label="会话数"
               value={fmtNum(data?.totalSessions ?? 0)}
               accent="#22c55e"
             />
             <StatCard
-              label="Tool Calls"
+              label="工具调用数"
               value={fmtNum(totalToolCalls)}
               accent="#f59e0b"
             />
             <StatCard
-              label="User Messages"
+              label="用户消息数"
               value={fmtNum(totalMessages)}
               accent="#3b82f6"
             />
           </div>
 
           {/* 14-day volume chart */}
-          <SectionCard title="Event volume — last 14 days">
+          <SectionCard title="事件量 —— 最近 14 天">
             {dailyData.every(
               (d) => d.tool === 0 && d.user_message === 0 && d.approval === 0,
             ) ? (
@@ -269,7 +268,7 @@ export function AnalyticsScreen() {
                   color: 'var(--theme-text-muted)',
                 }}
               >
-                No events recorded yet.
+                暂无记录的事件。
               </div>
             ) : (
               <>
@@ -282,9 +281,9 @@ export function AnalyticsScreen() {
                     color: 'var(--theme-text-muted)',
                   }}
                 >
-                  <Legend color="#6366f1" label="Tool calls" />
-                  <Legend color="#3b82f6" label="Messages" />
-                  <Legend color="#f59e0b" label="Approvals" />
+                  <Legend color="#6366f1" label="工具调用" />
+                  <Legend color="#3b82f6" label="消息" />
+                  <Legend color="#f59e0b" label="审批" />
                 </div>
                 <ResponsiveContainer width="100%" height={140}>
                   <BarChart
@@ -320,9 +319,9 @@ export function AnalyticsScreen() {
                       }}
                       cursor={{ fill: 'var(--theme-border)', opacity: 0.15 }}
                     />
-                    <Bar dataKey="tool" stackId="a" fill="#6366f1" radius={[0,0,0,0]} />
-                    <Bar dataKey="user_message" stackId="a" fill="#3b82f6" radius={[0,0,0,0]} name="messages" />
-                    <Bar dataKey="approval" stackId="a" fill="#f59e0b" radius={[2,2,0,0]} />
+                    <Bar dataKey="tool" stackId="a" fill="#6366f1" radius={[0,0,0,0]} name="工具调用" />
+                    <Bar dataKey="user_message" stackId="a" fill="#3b82f6" radius={[0,0,0,0]} name="消息" />
+                    <Bar dataKey="approval" stackId="a" fill="#f59e0b" radius={[2,2,0,0]} name="审批" />
                   </BarChart>
                 </ResponsiveContainer>
               </>
@@ -330,7 +329,7 @@ export function AnalyticsScreen() {
           </SectionCard>
 
           {/* Tool frequency */}
-          <SectionCard title="Top tools by usage">
+          <SectionCard title="使用量最高的工具">
             {toolData.length === 0 ? (
               <div
                 style={{
@@ -342,7 +341,7 @@ export function AnalyticsScreen() {
                   color: 'var(--theme-text-muted)',
                 }}
               >
-                No tool calls recorded yet.
+                暂无工具调用记录。
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={Math.max(180, toolData.length * 28)}>
@@ -383,7 +382,7 @@ export function AnalyticsScreen() {
                     cursor={{ fill: 'var(--theme-border)', opacity: 0.15 }}
                     formatter={(value: number, name: string) => [
                       value,
-                      name === 'count' ? 'Completed' : 'Errors',
+                      name === 'count' ? '已完成' : '错误',
                     ]}
                   />
                   <Bar dataKey="count" fill="#6366f1" opacity={0.85} radius={[0, 3, 3, 0]} />
@@ -402,8 +401,8 @@ export function AnalyticsScreen() {
                   color: 'var(--theme-text-muted)',
                 }}
               >
-                <Legend color="#6366f1" label="Completed" />
-                <Legend color="#ef4444" label="Errors" />
+                <Legend color="#6366f1" label="已完成" />
+                <Legend color="#ef4444" label="错误" />
               </div>
             )}
           </SectionCard>
@@ -417,9 +416,9 @@ export function AnalyticsScreen() {
                 textAlign: 'right',
               }}
             >
-              Oldest event:{' '}
-              {new Date(data.timeRange.oldest).toLocaleString()} · Newest:{' '}
-              {new Date(data.timeRange.newest).toLocaleString()} · Retention: 7 days
+              最早事件：{' '}
+              {new Date(data.timeRange.oldest).toLocaleString()} · 最新：{' '}
+              {new Date(data.timeRange.newest).toLocaleString()} · 保留期：7 天
             </div>
           )}
         </>

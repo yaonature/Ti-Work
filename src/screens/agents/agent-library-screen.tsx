@@ -3,23 +3,24 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { EmojiIcon } from '@/components/emoji-icon'
 import {
   Add01Icon,
+  Copy01Icon,
   Delete01Icon,
   Edit01Icon,
+  LockIcon,
   Search01Icon,
   UserMultiple02Icon,
-  LockIcon,
-  Copy01Icon,
 } from '@hugeicons/core-free-icons'
-import {
-  fetchAgents,
-  createAgent,
-  updateAgent,
-  deleteAgent,
-} from '@/lib/agents-api'
-import type { AgentDefinition, CreateAgentInput } from '@/types/agent'
 import { AgentEditorDialog } from './agent-editor-dialog'
+import type { AgentDefinition, CreateAgentInput } from '@/types/agent'
+import {
+  createAgent,
+  deleteAgent,
+  fetchAgents,
+  updateAgent,
+} from '@/lib/agents-api'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
@@ -50,7 +51,9 @@ function AgentCard({
             agent.color,
           )}
         >
-          {agent.emoji}
+          {agent.emoji ? (
+            <EmojiIcon emoji={agent.emoji} size={20} />
+          ) : null}
         </div>
 
         {/* Info */}
@@ -62,7 +65,7 @@ function AgentCard({
             {agent.isBuiltIn && (
               <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-[var(--theme-bg)] text-[var(--theme-muted)] border border-[var(--theme-border)]">
                 <HugeiconsIcon icon={LockIcon} size={9} />
-                built-in
+                内置
               </span>
             )}
           </div>
@@ -108,7 +111,7 @@ function AgentCard({
           <button
             onClick={() => onDuplicate(agent)}
             className="rounded p-1.5 text-[var(--theme-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)] transition-colors"
-            title="Duplicate"
+            title="复制"
           >
             <HugeiconsIcon icon={Copy01Icon} size={14} />
           </button>
@@ -117,14 +120,14 @@ function AgentCard({
               <button
                 onClick={() => onEdit(agent)}
                 className="rounded p-1.5 text-[var(--theme-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)] transition-colors"
-                title="Edit"
+                title="编辑"
               >
                 <HugeiconsIcon icon={Edit01Icon} size={14} />
               </button>
               <button
                 onClick={() => onDelete(agent)}
                 className="rounded p-1.5 text-[var(--theme-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-danger)] transition-colors"
-                title="Delete"
+                title="删除"
               >
                 <HugeiconsIcon icon={Delete01Icon} size={14} />
               </button>
@@ -159,7 +162,7 @@ export function AgentLibraryScreen() {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
       setEditorOpen(false)
       setEditingAgent(null)
-      toast('Agent created', { type: 'success' })
+      toast('智能体已创建', { type: 'success' })
     },
     onError: (err: Error) => toast(err.message, { type: 'error' }),
   })
@@ -171,7 +174,7 @@ export function AgentLibraryScreen() {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
       setEditorOpen(false)
       setEditingAgent(null)
-      toast('Agent updated', { type: 'success' })
+      toast('智能体已更新', { type: 'success' })
     },
     onError: (err: Error) => toast(err.message, { type: 'error' }),
   })
@@ -180,7 +183,7 @@ export function AgentLibraryScreen() {
     mutationFn: deleteAgent,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
-      toast('Agent deleted', { type: 'success' })
+      toast('智能体已删除', { type: 'success' })
     },
     onError: (err: Error) => toast(err.message, { type: 'error' }),
   })
@@ -191,13 +194,13 @@ export function AgentLibraryScreen() {
   }
 
   function handleDelete(agent: AgentDefinition) {
-    if (!confirm(`Delete agent "${agent.name}"? This cannot be undone.`)) return
+    if (!confirm(`确定要删除智能体“${agent.name}”吗？此操作无法撤销。`)) return
     deleteMutation.mutate(agent.id)
   }
 
   function handleDuplicate(agent: AgentDefinition) {
     createMutation.mutate({
-      name: `${agent.name} (copy)`,
+      name: `${agent.name}（副本）`,
       emoji: agent.emoji,
       color: agent.color,
       roleLabel: agent.roleLabel,
@@ -239,9 +242,9 @@ export function AgentLibraryScreen() {
       <div className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)] px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-[var(--theme-text)]">Agent Library</h1>
+            <h1 className="text-lg font-semibold text-[var(--theme-text)]">智能体库</h1>
             <p className="text-xs text-[var(--theme-muted)] mt-0.5">
-              {builtInCount} built-in · {customCount} custom
+              {builtInCount} 个内置 · {customCount} 个自定义
             </p>
           </div>
           <button
@@ -252,7 +255,7 @@ export function AgentLibraryScreen() {
             className="flex items-center gap-1.5 rounded-lg bg-[var(--theme-accent)] px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
             <HugeiconsIcon icon={Add01Icon} size={15} />
-            New Agent
+            新建智能体
           </button>
         </div>
 
@@ -268,7 +271,7 @@ export function AgentLibraryScreen() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search agents…"
+              placeholder="搜索智能体…"
               className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] py-2 pl-8 pr-3 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
             />
           </div>
@@ -284,7 +287,7 @@ export function AgentLibraryScreen() {
                     : 'text-[var(--theme-muted)] hover:text-[var(--theme-text)]',
                 )}
               >
-                {f}
+                {f === 'all' ? '全部' : f === 'builtin' ? '内置' : '自定义'}
               </button>
             ))}
           </div>
@@ -295,13 +298,13 @@ export function AgentLibraryScreen() {
       <div className="flex-1 overflow-y-auto p-6">
         {isLoading ? (
           <div className="flex items-center justify-center py-20 text-[var(--theme-muted)] text-sm">
-            Loading…
+            加载中…
           </div>
         ) : displayed.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <HugeiconsIcon icon={UserMultiple02Icon} size={40} className="text-[var(--theme-muted)]" />
             <p className="text-sm text-[var(--theme-muted)]">
-              {search ? 'No agents match your search.' : 'No agents yet. Create your first one!'}
+              {search ? '没有匹配当前搜索的智能体。' : '还没有智能体，先创建第一个吧。'}
             </p>
             {!search && (
               <button
@@ -311,7 +314,7 @@ export function AgentLibraryScreen() {
                 }}
                 className="text-sm text-[var(--theme-accent)] hover:underline"
               >
-                + Create Agent
+                + 创建智能体
               </button>
             )}
           </div>

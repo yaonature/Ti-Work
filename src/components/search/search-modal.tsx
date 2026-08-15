@@ -25,21 +25,23 @@ import {
 } from '@/hooks/use-search-modal'
 import { filterResults, useSearchData } from '@/hooks/use-search-data'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
-const SCOPE_TABS: Array<{ value: SearchScope; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'chats', label: '💬 Chats' },
-  { value: 'files', label: '📁 Files' },
-  { value: 'agents', label: '🤖 Agents' },
-  { value: 'skills', label: '🛠️ Skills' },
-  { value: 'actions', label: '⚡ Actions' },
-]
+const SCOPE_TABS: Array<{ value: SearchScope; label: string; emoji?: string }> =
+  [
+    { value: 'all', label: '全部' },
+    { value: 'chats', label: '会话', emoji: '💬' },
+    { value: 'files', label: '文件', emoji: '📁' },
+    { value: 'agents', label: '智能体', emoji: '🤖' },
+    { value: 'skills', label: '技能', emoji: '🛠️' },
+    { value: 'actions', label: '动作', emoji: '⚡' },
+  ]
 
 const RECENT_SEARCHES = [
-  'streaming fixes',
-  'session timeout',
-  'agent memory',
-  'usage alerts',
+  '流式响应修复',
+  '会话超时',
+  '智能体记忆',
+  '用量提醒',
 ]
 
 const RESULT_LIMITS = {
@@ -88,8 +90,8 @@ export function SearchModal() {
       {
         id: 'qa-new-chat',
         emoji: '💬',
-        label: 'New Chat',
-        description: 'Start a new conversation session',
+        label: '新建会话',
+        description: '开始一段新的对话会话',
         onSelect: () => {
           closeModal()
           navigate({ to: '/chat' })
@@ -98,8 +100,8 @@ export function SearchModal() {
       {
         id: 'qa-skills',
         emoji: '🛠️',
-        label: 'Skills',
-        description: 'Manage installed and available skills',
+        label: '技能',
+        description: '管理已安装和可用的技能',
         onSelect: () => {
           closeModal()
           navigate({ to: '/skills' })
@@ -108,8 +110,8 @@ export function SearchModal() {
       {
         id: 'qa-memory',
         emoji: '🧠',
-        label: 'Memory',
-        description: 'Browse durable memory entries',
+        label: '记忆',
+        description: '浏览持久化记忆条目',
         onSelect: () => {
           closeModal()
           navigate({ to: '/memory' })
@@ -118,8 +120,8 @@ export function SearchModal() {
       {
         id: 'qa-files',
         emoji: '📁',
-        label: 'Files',
-        description: 'Toggle the file explorer sidebar',
+        label: '文件',
+        description: '切换文件浏览器侧栏',
         onSelect: () => {
           closeModal()
           emitSearchModalEvent(SEARCH_MODAL_EVENTS.TOGGLE_FILE_EXPLORER)
@@ -128,8 +130,8 @@ export function SearchModal() {
       {
         id: 'qa-settings',
         emoji: '⚙️',
-        label: 'Settings',
-        description: 'Open the settings workspace',
+        label: '设置',
+        description: '打开设置工作区',
         onSelect: () => {
           closeModal()
           navigate({ to: '/settings' })
@@ -138,8 +140,8 @@ export function SearchModal() {
       {
         id: 'qa-usage',
         emoji: '📊',
-        label: 'Usage',
-        description: 'Open usage meter details',
+        label: '用量',
+        description: '打开用量详情面板',
         onSelect: () => {
           closeModal()
           emitSearchModalEvent(SEARCH_MODAL_EVENTS.OPEN_USAGE)
@@ -185,7 +187,7 @@ export function SearchModal() {
       scope: 'chats',
       icon: <HugeiconsIcon icon={Chat01Icon} size={20} strokeWidth={1.5} />,
       title: entry.title || entry.friendlyId,
-      snippet: entry.preview || `Session: ${entry.key}`,
+      snippet: entry.preview || `会话：${entry.key}`,
       meta: entry.updatedAt
         ? new Date(entry.updatedAt).toLocaleTimeString()
         : '',
@@ -235,8 +237,8 @@ export function SearchModal() {
       ),
       title: entry.name,
       snippet: entry.description,
-      meta: entry.installed ? 'Installed' : 'Available',
-      badge: entry.installed ? 'Installed' : 'Not Installed',
+      meta: entry.installed ? '已安装' : '可用',
+      badge: entry.installed ? '已安装' : '未安装',
       onSelect: () => {
         closeModal()
         navigate({ to: '/skills' })
@@ -259,7 +261,7 @@ export function SearchModal() {
         ),
         title: entry.label,
         snippet: entry.description,
-        meta: 'Action',
+        meta: '动作',
         onSelect: entry.onSelect,
       })
       if (actions.length >= RESULT_LIMITS.actions) break
@@ -430,7 +432,14 @@ export function SearchModal() {
                         : 'border-primary-200 bg-primary-100/60 text-primary-500 hover:bg-primary-100',
                     )}
                   >
-                    <span>{tab.label}</span>
+                    <span>
+                      {tab.emoji ? (
+                        <>
+                          <EmojiIcon emoji={tab.emoji} size={14} />{' '}
+                        </>
+                      ) : null}
+                      {tab.label}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -465,13 +474,13 @@ export function SearchModal() {
             <div className="flex items-center justify-between border-t border-primary-200 bg-primary-50/80 px-3 py-2 text-[11px] text-primary-500">
               <div className="flex items-center gap-1.5">
                 <HugeiconsIcon icon={CommandIcon} size={20} strokeWidth={1.5} />
-                <span>Arrow keys to navigate</span>
+                <span>方向键切换</span>
               </div>
               <div className="flex items-center gap-2 tabular-nums">
-                <span>Tab scope</span>
-                <span>1-9 jump</span>
-                <span>↵ open</span>
-                <span>Esc close</span>
+                <span>Tab 切换范围</span>
+                <span>1-9 快速跳转</span>
+                <span>↵ 打开</span>
+                <span>Esc 关闭</span>
               </div>
             </div>
           </motion.div>

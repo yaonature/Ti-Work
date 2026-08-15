@@ -160,11 +160,11 @@ export function OnboardingTour() {
       callback={handleJoyrideCallback}
       styles={styles}
       locale={{
-        back: 'Back',
-        close: 'Close',
-        last: 'Done',
-        next: 'Next',
-        skip: 'Skip tour',
+        back: '上一步',
+        close: '关闭',
+        last: '完成',
+        next: '下一步',
+        skip: '跳过引导',
       }}
       floaterProps={{
         disableAnimation: false,

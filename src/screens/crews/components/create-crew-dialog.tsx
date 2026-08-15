@@ -4,17 +4,18 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
-import { AGENT_PERSONAS } from '@/lib/agent-personas'
-import { fetchAgents } from '@/lib/agents-api'
+import { EmojiIcon } from '@/components/emoji-icon'
 import type { AgentDefinition } from '@/types/agent'
 import type { CreateCrewInput, CrewMemberRole } from '@/lib/crews-api'
+import { AGENT_PERSONAS } from '@/lib/agent-personas'
+import { fetchAgents } from '@/lib/agents-api'
 import { cn } from '@/lib/utils'
 
 const ROLES: Array<{ value: CrewMemberRole; label: string }> = [
-  { value: 'coordinator', label: 'Coordinator' },
-  { value: 'executor', label: 'Executor' },
-  { value: 'reviewer', label: 'Reviewer' },
-  { value: 'specialist', label: 'Specialist' },
+  { value: 'coordinator', label: '协调者' },
+  { value: 'executor', label: '执行者' },
+  { value: 'reviewer', label: '审查者' },
+  { value: 'specialist', label: '专家' },
 ]
 
 type MemberDraft = {
@@ -22,7 +23,7 @@ type MemberDraft = {
   role: CrewMemberRole
 }
 
-function getInitialMembers(): MemberDraft[] {
+function getInitialMembers(): Array<MemberDraft> {
   return [
     { persona: 'kai', role: 'coordinator' },
     { persona: 'luna', role: 'executor' },
@@ -50,7 +51,7 @@ export function CreateCrewDialog({
 }: Props) {
   const [name, setName] = useState(initialName ?? '')
   const [goal, setGoal] = useState(initialGoal ?? '')
-  const [members, setMembers] = useState<MemberDraft[]>(
+  const [members, setMembers] = useState<Array<MemberDraft>>(
     initialMembers ?? getInitialMembers(),
   )
 
@@ -134,16 +135,16 @@ export function CreateCrewDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50"
         onClick={() => onOpenChange(false)}
       />
 
       {/* Dialog */}
-      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] shadow-2xl">
+      <div className="relative z-10 w-full max-w-lg rounded-[20px] border border-[var(--theme-border)] bg-[var(--theme-panel)] shadow-[var(--theme-shadow-3)]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-6 py-4">
           <h2 className="text-base font-semibold text-[var(--theme-text)]">
-            New Crew
+            新建多智能体
           </h2>
           <button
             onClick={() => onOpenChange(false)}
@@ -158,13 +159,13 @@ export function CreateCrewDialog({
           {/* Name */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-[var(--theme-muted)]">
-              Crew name
+              多智能体名称
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Product Launch Team"
+              placeholder="例如：产品发布团队"
               required
               className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
             />
@@ -173,14 +174,14 @@ export function CreateCrewDialog({
           {/* Goal */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-[var(--theme-muted)]">
-              Goal{' '}
-              <span className="font-normal opacity-60">(optional)</span>
+              目标{' '}
+              <span className="font-normal opacity-60">（可选）</span>
             </label>
             <textarea
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
               rows={2}
-              placeholder="What should this crew accomplish?"
+              placeholder="这个多智能体要完成什么？"
               className="w-full resize-none rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
             />
           </div>
@@ -189,7 +190,7 @@ export function CreateCrewDialog({
           <div>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs font-medium text-[var(--theme-muted)]">
-                Agents ({members.length}/8)
+                智能体（{members.length}/8）
               </span>
               {members.length < 8 && (
                 <button
@@ -197,7 +198,7 @@ export function CreateCrewDialog({
                   onClick={addMember}
                   className="text-xs text-[var(--theme-accent)] hover:underline"
                 >
-                  + Add agent
+                  + 添加智能体
                 </button>
               )}
             </div>
@@ -220,27 +221,27 @@ export function CreateCrewDialog({
                       className="flex-1 rounded border-0 bg-transparent text-sm text-[var(--theme-text)] focus:outline-none cursor-pointer"
                     >
                       {agentOptions.length > AGENT_PERSONAS.length && (
-                        <optgroup label="Built-in" className="bg-[var(--theme-bg)]">
+                        <optgroup label="内置" className="bg-[var(--theme-bg)]">
                           {agentOptions.filter((a) => a.isBuiltIn).map((a) => (
                             <option
                               key={a.id}
                               value={a.name.toLowerCase()}
                               className="bg-[var(--theme-bg)]"
                             >
-                              {a.emoji} {a.name} — {a.roleLabel}
+                              {a.name} — {a.roleLabel}
                             </option>
                           ))}
                         </optgroup>
                       )}
                       {agentOptions.length > AGENT_PERSONAS.length && agentOptions.some((a) => !a.isBuiltIn) && (
-                        <optgroup label="Custom" className="bg-[var(--theme-bg)]">
+                        <optgroup label="自定义" className="bg-[var(--theme-bg)]">
                           {agentOptions.filter((a) => !a.isBuiltIn).map((a) => (
                             <option
                               key={a.id}
                               value={a.name.toLowerCase()}
                               className="bg-[var(--theme-bg)]"
                             >
-                              {a.emoji} {a.name} — {a.roleLabel}
+                              {a.name} — {a.roleLabel}
                             </option>
                           ))}
                         </optgroup>
@@ -251,7 +252,7 @@ export function CreateCrewDialog({
                           value={a.name.toLowerCase()}
                           className="bg-[var(--theme-bg)]"
                         >
-                          {a.emoji} {a.name} — {a.roleLabel}
+                          {a.name} — {a.roleLabel}
                         </option>
                       ))}
                     </select>
@@ -282,7 +283,7 @@ export function CreateCrewDialog({
                     {/* Color swatch */}
                     {agent && (
                       <span className={cn('text-base', agent.color)}>
-                        {agent.emoji}
+                        <EmojiIcon emoji={agent.emoji} size={16} />
                       </span>
                     )}
 
@@ -309,14 +310,14 @@ export function CreateCrewDialog({
               onClick={() => onOpenChange(false)}
               className="rounded-lg px-4 py-2 text-sm text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-hover)]"
             >
-              Cancel
+              取消
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !name.trim()}
               className="rounded-lg bg-[var(--theme-accent)] px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
             >
-              {isSubmitting ? 'Creating…' : 'Create Crew'}
+              {isSubmitting ? '创建中…' : '创建多智能体'}
             </button>
           </div>
         </form>

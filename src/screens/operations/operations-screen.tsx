@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { StatusBadge } from '@/components/ds/status-badge'
-import { Button } from '@/components/ui/button'
 import { AgentGrid } from './components/agent-grid'
 import { AgentOutputs } from './components/agent-outputs'
-import { fetchOperationsOverview } from '@/lib/operations-api'
 import type { OperationAgentStatus } from '@/types/operation'
+import { StatusBadge } from '@/components/ds/status-badge'
+import { Button } from '@/components/ui/button'
+import { fetchOperationsOverview } from '@/lib/operations-api'
 
 type ViewMode = 'grid' | 'outputs'
 type StatusFilter = 'all' | OperationAgentStatus
@@ -52,18 +52,18 @@ export function OperationsScreen() {
           {/* Title + stats */}
           <div className="flex flex-col gap-1">
             <h1 className="text-lg font-semibold" style={{ color: 'var(--theme-text)' }}>
-              Operations
+              运行状态
             </h1>
             <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--theme-muted)' }}>
-              <span>{agents.length} agent{agents.length !== 1 ? 's' : ''}</span>
+              <span>{agents.length} 个智能体</span>
               <span>·</span>
               <StatusBadge
                 status="running"
-                label={`${onlineCount} online`}
+                label={`${onlineCount} 在线`}
                 size="sm"
               />
               <span>·</span>
-              <span>${totalCostUsd.toFixed(4)} total cost</span>
+              <span>总成本 ${totalCostUsd.toFixed(4)}</span>
             </div>
           </div>
 
@@ -80,11 +80,11 @@ export function OperationsScreen() {
                 borderColor: 'var(--theme-border)',
               }}
             >
-              <option value="all">All statuses</option>
-              <option value="online">Online</option>
-              <option value="offline">Offline</option>
-              <option value="error">Error</option>
-              <option value="unknown">Unknown</option>
+              <option value="all">全部状态</option>
+              <option value="online">在线</option>
+              <option value="offline">离线</option>
+              <option value="error">错误</option>
+              <option value="unknown">未知</option>
             </select>
 
             {/* View toggle */}
@@ -98,7 +98,7 @@ export function OperationsScreen() {
                 onClick={() => setViewMode('grid')}
                 className="rounded-none border-0 px-3 text-xs"
               >
-                Grid
+                网格
               </Button>
               <Button
                 variant={viewMode === 'outputs' ? 'default' : 'ghost'}
@@ -107,7 +107,7 @@ export function OperationsScreen() {
                 className="rounded-none border-0 border-l px-3 text-xs"
                 style={{ borderColor: 'var(--theme-border)' }}
               >
-                Outputs
+                输出
               </Button>
             </div>
           </div>

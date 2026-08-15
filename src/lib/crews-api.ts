@@ -28,7 +28,7 @@ export interface Crew {
   status: CrewStatus
   createdAt: number
   updatedAt: number
-  members: CrewMember[]
+  members: Array<CrewMember>
 }
 
 export interface CreateCrewInput {
@@ -44,9 +44,9 @@ export interface CreateCrewInput {
 
 // ─── API calls ────────────────────────────────────────────────────────────────
 
-export async function fetchCrews(): Promise<Crew[]> {
+export async function fetchCrews(): Promise<Array<Crew>> {
   const res = await fetch('/api/crews')
-  const data = (await res.json()) as { ok: boolean; crews?: Crew[] }
+  const data = (await res.json()) as { ok: boolean; crews?: Array<Crew> }
   return data.crews ?? []
 }
 
@@ -94,7 +94,7 @@ export async function dispatchTask(
   crewId: string,
   task: string,
   target: 'all' | string = 'all',
-): Promise<{ dispatched: string[] }> {
+): Promise<{ dispatched: Array<string> }> {
   const res = await fetch(`/api/crews/${crewId}/dispatch`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -102,7 +102,7 @@ export async function dispatchTask(
   })
   const data = (await res.json()) as {
     ok: boolean
-    dispatched?: string[]
+    dispatched?: Array<string>
     error?: string
   }
   if (!data.ok) throw new Error(data.error ?? 'Dispatch failed')

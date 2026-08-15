@@ -76,9 +76,9 @@ export function useChatSessions({
       if (activeSession.label) return activeSession.label
       if (activeSession.title) return activeSession.title
       if (activeSession.derivedTitle) return activeSession.derivedTitle
-      if (activeSession.titleStatus === 'generating') return 'Naming…'
-      if (activeSession.titleStatus === 'error') return 'New Session'
-      return 'New Session'
+      if (activeSession.titleStatus === 'generating') return '正在命名…'
+      if (activeSession.titleStatus === 'error') return '新建会话'
+      return '新建会话'
     }
     return activeFriendlyId === 'main' ? 'Hermes' : activeFriendlyId
   }, [activeFriendlyId, activeSession])

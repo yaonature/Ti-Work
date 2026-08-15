@@ -1,18 +1,18 @@
-import { useState, useCallback } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Add01Icon } from '@hugeicons/core-free-icons'
-import { StatusBadge } from '@/components/ds/status-badge'
-import { Button } from '@/components/ui/button'
 import { TaskColumn } from './components/task-column'
 import { TaskDialog } from './components/task-dialog'
+import type { CreateTaskInput, HermesTask, TaskColumn as TaskColumnType } from '@/types/task'
+import { StatusBadge } from '@/components/ds/status-badge'
+import { Button } from '@/components/ui/button'
 import {
-  fetchTasks,
   createTask as apiCreateTask,
-  updateTask as apiUpdateTask,
   moveTask as apiMoveTask,
+  updateTask as apiUpdateTask,
+  fetchTasks,
 } from '@/lib/tasks-api'
-import type { HermesTask, CreateTaskInput, TaskColumn as TaskColumnType } from '@/types/task'
 import { TASK_COLUMNS } from '@/types/task'
 
 export function TasksScreen() {
@@ -80,7 +80,7 @@ export function TasksScreen() {
       acc[col] = tasks.filter((t) => t.column === col)
       return acc
     },
-    {} as Record<TaskColumnType, HermesTask[]>,
+    {} as Record<TaskColumnType, Array<HermesTask>>,
   )
 
   const totalTasks = tasks.length
@@ -96,15 +96,15 @@ export function TasksScreen() {
       >
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold" style={{ color: 'var(--theme-text)' }}>
-            Tasks
+            任务
           </h1>
           <div className="flex items-center gap-3">
             <span className="text-xs" style={{ color: 'var(--theme-muted)' }}>
-              {totalTasks} total
+              共 {totalTasks} 个
             </span>
-            <StatusBadge status="running" label={`${inProgress} active`} size="sm" />
+            <StatusBadge status="running" label={`${inProgress} 进行中`} size="sm" />
             <span className="text-xs" style={{ color: 'var(--theme-success)' }}>
-              {completionPct}% done
+              已完成 {completionPct}%
             </span>
           </div>
         </div>
@@ -116,14 +116,14 @@ export function TasksScreen() {
           }}
         >
           <HugeiconsIcon icon={Add01Icon} size={16} />
-          <span className="ml-1.5">New Task</span>
+          <span className="ml-1.5">新建任务</span>
         </Button>
       </div>
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden p-4">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <StatusBadge status="running" label="Loading tasks..." />
+            <StatusBadge status="running" label="加载任务中…" />
           </div>
         ) : (
           <div className="flex gap-4 h-full min-w-max">

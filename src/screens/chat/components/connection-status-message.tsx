@@ -24,9 +24,9 @@ function classifyConnectionError(
 
   if (!normalizedError && !status) {
     return {
-      title: 'Not connected',
-      description: "Hermes Studio can't reach Hermes.",
-      action: 'Check that Hermes is running, then try again.',
+      title: '未连接',
+      description: 'Ti Work 当前无法连接到 Hermes。',
+      action: '请确认 Hermes 已启动，然后再试一次。',
     }
   }
 
@@ -37,9 +37,9 @@ function classifyConnectionError(
     lower.includes('unauthorized')
   ) {
     return {
-      title: 'Authentication required',
-      description: 'Hermes rejected the connection token.',
-      action: 'Go to Settings -> Advanced -> Hermes to update your token.',
+      title: '需要身份认证',
+      description: 'Hermes 拒绝了当前连接令牌。',
+      action: '请点击顶部横幅「一键连接」重试，或在设置中检查执行引擎配置。',
     }
   }
 
@@ -49,17 +49,17 @@ function classifyConnectionError(
     lower.includes('not paired')
   ) {
     return {
-      title: 'Pairing required',
-      description: "This device isn't paired with Hermes yet.",
-      action: 'Check Hermes Agent connection.',
+      title: '需要先完成配对',
+      description: '当前设备尚未与 Hermes 完成配对。',
+      action: '请检查 Hermes Agent 连接状态。',
     }
   }
 
   if (lower.includes('econnrefused') && lower.includes('8642')) {
     return {
-      title: 'Hermes WebAPI not running',
-      description: 'The Hermes WebAPI server is not running on port 8642.',
-      action: 'Run: cd hermes-agent && pip install -e . && hermes-webapi',
+      title: 'Hermes WebAPI 未启动',
+      description: '8642 端口上的 Hermes WebAPI 服务尚未运行。',
+      action: '请执行：cd hermes-agent && pip install -e . && hermes-webapi',
     }
   }
 
@@ -71,16 +71,16 @@ function classifyConnectionError(
     lower.includes('timeout')
   ) {
     return {
-      title: 'Hermes unreachable',
-      description: "Can't connect to Hermes at the configured URL.",
-      action: 'Make sure Hermes is running and the URL is correct.',
+      title: '无法连接 Hermes',
+      description: '无法访问当前配置的 Hermes 地址。',
+      action: '请确认 Hermes 正在运行，且 URL 配置正确。',
     }
   }
 
   return {
-    title: 'Connection error',
-    description: normalizedError || 'Something went wrong.',
-    action: 'Try refreshing or check Settings -> Advanced -> Hermes.',
+    title: '连接异常',
+    description: normalizedError || '出现了一点问题。',
+    action: '请点击顶部横幅「一键连接」重试；如果网关已就绪，请在设置中检查模型配置。',
   }
 }
 
@@ -133,7 +133,7 @@ export function ConnectionStatusMessage({
         />
         <div className="flex-1 text-xs">
           <p className="font-medium">
-            {isChecking ? 'Connecting to Hermes...' : errorInfo.title}
+            {isChecking ? '正在连接 Hermes...' : errorInfo.title}
           </p>
           {!isChecking ? (
             <>
@@ -150,7 +150,7 @@ export function ConnectionStatusMessage({
             onClick={onRetry}
             className="shrink-0 rounded-md border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-200 dark:hover:bg-amber-900/30"
           >
-            Retry
+            重试
           </button>
         )}
       </div>

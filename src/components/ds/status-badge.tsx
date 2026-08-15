@@ -1,11 +1,11 @@
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
-  Loading03Icon,
-  CheckmarkCircle01Icon,
-  Cancel01Icon,
   Alert02Icon,
-  MinusSignCircleIcon,
+  Cancel01Icon,
+  CheckmarkCircle01Icon,
   Clock01Icon,
+  Loading03Icon,
+  MinusSignCircleIcon,
 } from '@hugeicons/core-free-icons'
 import { cn } from '@/lib/utils'
 
@@ -20,15 +20,15 @@ interface StatusBadgeProps {
 
 const statusConfig: Record<
   Status,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   { icon: any; colorVar: string; defaultLabel: string; spin?: boolean }
 > = {
-  running: { icon: Loading03Icon,          colorVar: 'var(--theme-active)',   defaultLabel: 'Running', spin: true },
-  success: { icon: CheckmarkCircle01Icon,  colorVar: 'var(--theme-success)',  defaultLabel: 'Success' },
-  error:   { icon: Cancel01Icon,           colorVar: 'var(--theme-danger)',   defaultLabel: 'Error' },
-  warning: { icon: Alert02Icon,            colorVar: 'var(--theme-warning)',  defaultLabel: 'Warning' },
-  idle:    { icon: MinusSignCircleIcon,    colorVar: 'var(--theme-muted)',    defaultLabel: 'Idle' },
-  pending: { icon: Clock01Icon,            colorVar: 'var(--theme-muted)',    defaultLabel: 'Pending' },
+  running: { icon: Loading03Icon,          colorVar: 'var(--theme-active)',   defaultLabel: '运行中', spin: true },
+  success: { icon: CheckmarkCircle01Icon,  colorVar: 'var(--theme-success)',  defaultLabel: '成功' },
+  error:   { icon: Cancel01Icon,           colorVar: 'var(--theme-danger)',   defaultLabel: '异常' },
+  warning: { icon: Alert02Icon,            colorVar: 'var(--theme-warning)',  defaultLabel: '警告' },
+  idle:    { icon: MinusSignCircleIcon,    colorVar: 'var(--theme-muted)',    defaultLabel: '空闲' },
+  pending: { icon: Clock01Icon,            colorVar: 'var(--theme-muted)',    defaultLabel: '等待中' },
 }
 
 export function StatusBadge({ status, label, size = 'sm', className }: StatusBadgeProps) {

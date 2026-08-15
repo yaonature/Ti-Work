@@ -94,7 +94,7 @@ export async function fetchStatus(): Promise<StatusResponse> {
     }
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new Error('Server check timed out')
+      throw new Error('服务器检查超时')
     }
     throw err
   } finally {
@@ -470,12 +470,14 @@ export function moveHistoryMessages(
 ) {
   const fromKey = chatQueryKeys.history(fromFriendlyId, fromSessionKey)
   const toKey = chatQueryKeys.history(toFriendlyId, toSessionKey)
-  const fromData = queryClient.getQueryData(fromKey) as Record<string, unknown> | undefined
+  const fromData = queryClient.getQueryData(fromKey) as
+    | { messages?: Array<unknown>; sessionId?: string }
+    | undefined
   if (!fromData) return
   const messages = Array.isArray(fromData.messages) ? fromData.messages : []
   queryClient.setQueryData(toKey, {
     sessionKey: toSessionKey,
-    sessionId: (fromData as any).sessionId,
+    sessionId: fromData.sessionId,
     messages,
   })
   queryClient.removeQueries({ queryKey: fromKey, exact: true })

@@ -101,8 +101,8 @@ export function MobilePromptTrigger() {
               <div className="flex items-center gap-3">
                 <div className="flex shrink-0 items-center gap-1.5">
                   <img
-                    src="/hermes-avatar.webp"
-                    alt="Hermes"
+                    src="/ti-work-logo.svg"
+                    alt="Ti Work"
                     className="size-8 rounded-lg"
                   />
                   <span className="text-xs text-primary-600">+</span>
@@ -174,14 +174,13 @@ export function MobilePromptTrigger() {
                     className="text-sm font-semibold"
                     style={{ color: 'var(--theme-text)' }}
                   >
-                    Set up mobile access
+                    设置移动端访问
                   </p>
                   <p
                     className="text-xs"
                     style={{ color: 'var(--theme-muted)' }}
                   >
-                    Connect your phone to this Hermes Studio instance in a
-                    few steps.
+                    几步即可将手机连接到这台 Ti Work 实例。
                   </p>
                 </div>
 
@@ -192,14 +191,14 @@ export function MobilePromptTrigger() {
                     className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
                     style={{ background: 'var(--theme-accent)' }}
                   >
-                    Set up
+                    立即设置
                   </button>
                   <button
                     type="button"
                     onClick={dismissPrompt}
                     className="rounded-lg p-1.5 transition-colors hover:opacity-80"
                     style={{ color: 'var(--theme-muted)' }}
-                    aria-label="Dismiss mobile setup prompt"
+                    aria-label="关闭移动端设置提示"
                   >
                     <HugeiconsIcon
                       icon={Cancel01Icon}
@@ -224,7 +223,7 @@ export function MobilePromptTrigger() {
                     background: 'var(--theme-card2)',
                   }}
                 />
-                <span>Don&apos;t show this again</span>
+                <span>不再显示</span>
               </label>
             </div>
           </motion.div>

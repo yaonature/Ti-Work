@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { ConsoleIcon, Cancel01Icon } from '@hugeicons/core-free-icons'
+import { Cancel01Icon, ConsoleIcon } from '@hugeicons/core-free-icons'
 import { EmptyState } from '@/components/ds'
 
 type LogLevel = 'all' | 'errors'
@@ -52,7 +52,7 @@ export function LogsScreen() {
       setLines(parsed)
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch logs')
+      setError(err instanceof Error ? err.message : '加载日志失败')
     } finally {
       setLoading(false)
     }
@@ -72,7 +72,7 @@ export function LogsScreen() {
       <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-4 py-3">
         <div className="flex items-center gap-2">
           <HugeiconsIcon icon={ConsoleIcon} size={18} className="text-[var(--theme-accent)]" />
-          <h1 className="text-base font-semibold text-[var(--theme-text)]">Logs</h1>
+          <h1 className="text-base font-semibold text-[var(--theme-text)]">日志</h1>
           {lines.length > 0 && (
             <span className="rounded-full bg-[var(--theme-panel)] px-2 py-0.5 text-xs text-[var(--theme-muted)]">
               {visible.length}
@@ -93,7 +93,7 @@ export function LogsScreen() {
                   color: filter === lvl ? '#fff' : 'var(--theme-muted)',
                 }}
               >
-                {lvl === 'all' ? 'All' : 'Errors'}
+                {lvl === 'all' ? '全部' : '错误'}
               </button>
             ))}
           </div>
@@ -103,7 +103,7 @@ export function LogsScreen() {
             disabled={loading}
             className="rounded-lg border border-[var(--theme-border)] px-3 py-1.5 text-xs font-medium text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-hover)] disabled:opacity-50"
           >
-            {loading ? 'Loading…' : 'Refresh'}
+            {loading ? '加载中…' : '刷新'}
           </button>
         </div>
       </div>
@@ -113,7 +113,7 @@ export function LogsScreen() {
         <div className="relative">
           <input
             type="search"
-            placeholder="Filter logs…"
+            placeholder="筛选日志…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-input)] px-3 pr-8 text-xs text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-accent)]"
@@ -123,7 +123,7 @@ export function LogsScreen() {
               type="button"
               onClick={() => setSearch('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--theme-muted)] hover:text-[var(--theme-text)]"
-              aria-label="Clear search"
+              aria-label="清除搜索"
             >
               <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={1.5} />
             </button>
@@ -137,7 +137,7 @@ export function LogsScreen() {
           <div className="p-8">
             <EmptyState
               icon={<HugeiconsIcon icon={ConsoleIcon} size={36} />}
-              title="Could not load logs"
+              title="无法加载日志"
               description={error}
             />
           </div>
@@ -145,11 +145,11 @@ export function LogsScreen() {
           <div className="p-8">
             <EmptyState
               icon={<HugeiconsIcon icon={ConsoleIcon} size={36} />}
-              title="No log entries"
+              title="暂无日志条目"
               description={
                 search
-                  ? 'No lines match your filter.'
-                  : 'Logs will appear here once the agent has run.'
+                  ? '没有与筛选条件匹配的日志。'
+                  : '智能体开始运行后，日志将显示在这里。'
               }
             />
           </div>

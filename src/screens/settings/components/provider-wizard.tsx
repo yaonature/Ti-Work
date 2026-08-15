@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dialog'
 import { useConnectionRestart } from '@/components/connection-overlay'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 type WizardStep = 'provider' | 'auth' | 'instructions' | 'verify'
 type CopyState = 'idle' | 'copied' | 'failed'
@@ -55,10 +56,10 @@ type AuthTypeMeta = {
 }
 
 const WIZARD_STEPS: Array<StepItem> = [
-  { id: 'provider', label: 'Choose Provider' },
-  { id: 'auth', label: 'Choose Auth' },
-  { id: 'instructions', label: 'Config Instructions' },
-  { id: 'verify', label: 'Verify' },
+  { id: 'provider', label: '选择服务提供方' },
+  { id: 'auth', label: '选择认证方式' },
+  { id: 'instructions', label: '配置' },
+  { id: 'verify', label: '验证连接' },
 ]
 
 const AUTH_TYPE_ORDER: Array<ProviderAuthType> = [
@@ -71,8 +72,8 @@ const AUTH_TYPE_ORDER: Array<ProviderAuthType> = [
 function getAuthTypeMeta(authType: ProviderAuthType): AuthTypeMeta {
   if (authType === 'api-key') {
     return {
-      title: 'API Key',
-      description: 'Paste your API key — saved directly to local config',
+      title: 'API 密钥',
+      description: '粘贴您的 API 密钥 — 它将直接保存到本地配置',
     }
   }
 
@@ -80,20 +81,20 @@ function getAuthTypeMeta(authType: ProviderAuthType): AuthTypeMeta {
     return {
       title: 'CLI Token',
       description:
-        'Use your existing Claude CLI auth token (from Claude Code / claude.ai)',
+        '复用您现有的 Claude CLI 认证令牌（来自 Claude Code / claude.ai）',
     }
   }
 
   if (authType === 'oauth') {
     return {
       title: 'OAuth',
-      description: 'Sign in via browser — launches OAuth flow automatically',
+      description: '通过浏览器登录 — OAuth 流程将自动开始',
     }
   }
 
   return {
-    title: 'Local',
-    description: 'No auth needed (Ollama)',
+    title: '本地',
+    description: '无需认证（Ollama）',
   }
 }
 
@@ -255,7 +256,7 @@ export function ProviderWizard({
     const providerId = selectedProvider.id
     const patchBody = JSON.stringify({
       raw: JSON.stringify(patch, null, 2),
-      reason: `Studio: add ${providerName} API key`,
+      reason: `Studio：添加 ${providerName} API 密钥`,
     })
 
     async function saveConfigAndRestart() {
@@ -268,7 +269,7 @@ export function ProviderWizard({
       const data = (await res.json()) as { ok: boolean; error?: string }
 
       if (!data.ok) {
-        throw new Error(data.error || 'Failed to save config')
+        throw new Error(data.error || '保存配置失败')
       }
     }
 
@@ -277,7 +278,7 @@ export function ProviderWizard({
       setSaveState('saved')
       setVerifyState('checking')
       setVerificationMessage(
-        `${providerName} API key saved. Hermes is restarting…`,
+        `${providerName} API 密钥已保存；Hermes 正在重启…`,
       )
       setStep('verify')
 
@@ -288,7 +289,7 @@ export function ProviderWizard({
       if (!pollingRef.current) {
         pollingRef.current = true
         setVerificationMessage(
-          `Checking if ${providerName} models are available…`,
+          `正在检查 ${providerName} 的模型是否可用…`,
         )
 
         const found = await pollForProvider(providerId)
@@ -296,20 +297,20 @@ export function ProviderWizard({
         if (found) {
           setVerifyState('success')
           setVerificationMessage(
-            `${providerName} is connected and models are available.`,
+            `${providerName} 已连接，其模型可用。`,
           )
         } else {
           setVerifyState('warning')
           setVerificationMessage(
-            `Hermes restarted, but ${providerName} models haven't appeared yet. ` +
-              `Check your API key or wait a moment and refresh.`,
+            `Hermes 已重启，但 ${providerName} 的模型尚未显示。` +
+              ` 请检查您的 API 密钥，或稍后再刷新。`,
           )
         }
         pollingRef.current = false
       }
     } catch (err) {
       setSaveState('error')
-      setSaveError(err instanceof Error ? err.message : 'Network error')
+      setSaveError(err instanceof Error ? err.message : '网络错误')
     }
   }
 
@@ -334,10 +335,10 @@ export function ProviderWizard({
 
   const verifyTitle =
     verifyState === 'success'
-      ? 'Connection Verified ✓'
+      ? '连接已验证'
       : verifyState === 'warning'
-        ? 'Connected (models pending)'
-        : 'Checking connection…'
+        ? '已连接（模型待确认）'
+        : '正在检查连接…'
 
   return (
     <DialogRoot open={open} onOpenChange={handleDialogOpenChange}>
@@ -348,12 +349,11 @@ export function ProviderWizard({
               <div className="space-y-1">
                 <DialogTitle className="text-balance">
                   {editProvider
-                    ? `Edit Provider: ${editProvider.name}`
-                    : 'Provider Setup Wizard'}
+                    ? `编辑服务提供方：${editProvider.name}`
+                    : '服务提供方设置向导'}
                 </DialogTitle>
                 <DialogDescription className="text-pretty">
-                  Add provider credentials safely. API keys stay local in your
-                  Hermes config file and are never sent to Studio.
+                  安全地添加服务提供方凭据。API 密钥仅存储在本地 Hermes 配置文件中，绝不会发送到 Studio。
                 </DialogDescription>
               </div>
               <Button
@@ -362,7 +362,7 @@ export function ProviderWizard({
                 onClick={function onClose() {
                   handleDialogOpenChange(false)
                 }}
-                aria-label="Close provider setup wizard"
+                aria-label="关闭服务提供方设置向导"
               >
                 <HugeiconsIcon
                   icon={Cancel01Icon}
@@ -416,10 +416,10 @@ export function ProviderWizard({
             {step === 'provider' ? (
               <section className="mt-5">
                 <h3 className="text-base font-medium text-[var(--theme-text)] text-balance">
-                  Step 1: Choose Provider
+                  第 1 步：选择服务提供方
                 </h3>
                 <p className="mt-1 text-sm text-primary-600 text-pretty">
-                  Select the provider you want to configure.
+                  选择要配置的服务提供方。
                 </p>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -468,21 +468,21 @@ export function ProviderWizard({
             {step === 'auth' && selectedProvider ? (
               <section className="mt-5">
                 <h3 className="text-base font-medium text-[var(--theme-text)] text-balance">
-                  Step 2: Choose Auth Type
+                  第 2 步：选择认证方式
                 </h3>
                 <p className="mt-1 text-sm text-primary-600 text-pretty">
-                  {selectedProvider.name} supports{' '}
+                  {selectedProvider.name} 支持{' '}
                   {selectedProvider.authTypes
                     .map(function mapAuthType(authType) {
                       return getAuthTypeLabel(authType)
                     })
                     .join(', ')}
-                  .
+                  。
                 </p>
 
                 <div className="mt-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/70 px-3 py-2">
                   <p className="text-xs text-[var(--theme-text)] text-pretty">
-                    Config file path:{' '}
+                    配置文件路径：{' '}
                     <code className="font-mono">{HERMES_CONFIG_PATH}</code>
                   </p>
                 </div>
@@ -516,7 +516,7 @@ export function ProviderWizard({
                         </p>
                         {!supported ? (
                           <p className="mt-2 text-xs text-[var(--theme-muted)] text-pretty">
-                            Not supported by {selectedProvider.name}.
+                            {selectedProvider.name} 尚不支持此认证方式。
                           </p>
                         ) : null}
                       </button>
@@ -542,7 +542,7 @@ export function ProviderWizard({
                       size={20}
                       strokeWidth={1.5}
                     />
-                    Back
+                    返回
                   </Button>
                 </div>
               </section>
@@ -551,18 +551,17 @@ export function ProviderWizard({
             {step === 'instructions' && selectedProvider && selectedAuthType ? (
               <section className="mt-5">
                 <h3 className="text-base font-medium text-[var(--theme-text)] text-balance">
-                  Step 3: Add API Key
+                  第 3 步：添加您的 API 密钥
                 </h3>
 
                 {selectedAuthType === 'oauth' ? (
                   <>
                     <p className="mt-1 text-sm text-primary-600 text-pretty">
-                      This will run{' '}
+                      这将在您的终端中运行{' '}
                       <code className="font-mono text-primary-800">
                         hermes setup
                       </code>{' '}
-                      in the terminal to start the OAuth flow. A browser window
-                      will open for you to sign in with Google.
+                      以启动 OAuth 流程。随后浏览器窗口将打开，引导您使用 Google 完成登录。
                     </p>
 
                     <div className="mt-4 flex flex-col gap-3">
@@ -571,42 +570,41 @@ export function ProviderWizard({
                         onClick={function onLaunchOAuth() {
                           window.open('/terminal', '_blank')
                           setVerificationMessage(
-                            'Run "hermes setup" in the terminal and select Google OAuth when prompted. ' +
-                              'A browser window will open for sign-in. Once complete, Hermes will restart automatically.',
+                            '在终端中运行 "hermes setup"，出现提示时选择 Google OAuth。' +
+                              ' 浏览器将打开用于登录，完成后 Hermes 会自动重启。',
                           )
                           setVerifyState('warning')
                           setStep('verify')
                         }}
                       >
-                        Open Terminal
+                        打开终端
                       </Button>
 
                       <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/70 px-3 py-2">
                         <p className="text-xs text-[var(--theme-text)] text-pretty">
-                          In the terminal, run:
+                          在终端中运行：
                         </p>
                         <pre className="mt-1 rounded-lg bg-primary-200/60 px-2 py-1.5 text-xs font-mono text-[var(--theme-text)]">
                           hermes setup
                         </pre>
                         <p className="mt-1.5 text-xs text-primary-600 text-pretty">
-                          Select <strong>Google Antigravity</strong> →{' '}
-                          <strong>OAuth</strong>. A browser tab will open for
-                          Google sign-in.
+                          选择 <strong>Google Antigravity</strong> →{' '}
+                          <strong>OAuth</strong>。将打开一个浏览器标签页进行 Google 登录。
                         </p>
                       </div>
 
                       <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/70 px-3 py-2">
                         <p className="text-xs text-[var(--theme-text)] text-pretty">
-                          No terminal access?{' '}
+                          无法使用终端？{' '}
                           <a
                             href="https://github.com/NousResearch/hermes-agent"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-primary-800 underline decoration-primary-400 hover:text-[var(--theme-text)]"
                           >
-                            See the Hermes Agent docs
+                            查看 Hermes Agent 文档
                           </a>{' '}
-                          for setup instructions.
+                          获取配置说明。
                         </p>
                       </div>
                     </div>
@@ -614,9 +612,7 @@ export function ProviderWizard({
                 ) : selectedAuthType === 'cli-token' ? (
                   <>
                     <p className="mt-1 text-sm text-primary-600 text-pretty">
-                      If you have Claude Code or the Claude CLI installed,
-                      Hermes can use the same auth token. Run the configure
-                      command to detect and import it automatically.
+                      如果您已经安装了 Claude Code 或 Claude CLI，Hermes 可以复用相同的认证令牌。运行设置命令后，系统会自动检测并导入该令牌。
                     </p>
 
                     <div className="mt-4 flex flex-col gap-3">
@@ -625,52 +621,51 @@ export function ProviderWizard({
                         onClick={function onLaunchCLI() {
                           window.open('/terminal', '_blank')
                           setVerificationMessage(
-                            'Run "hermes setup" in the terminal and select Anthropic → CLI Token. ' +
-                              'It will detect your Claude CLI credentials and import them automatically.',
+                            '在终端中运行 "hermes setup"，然后选择 Anthropic → CLI Token。' +
+                              ' 您的 Claude CLI 凭据将被自动检测并导入。',
                           )
                           setVerifyState('warning')
                           setStep('verify')
                         }}
                       >
-                        Open Terminal
+                        打开终端
                       </Button>
 
                       <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/70 px-3 py-2">
                         <p className="text-xs text-[var(--theme-text)] text-pretty">
-                          In the terminal, run:
+                          在终端中运行：
                         </p>
                         <pre className="mt-1 rounded-lg bg-primary-200/60 px-2 py-1.5 text-xs font-mono text-[var(--theme-text)]">
                           hermes setup
                         </pre>
                         <p className="mt-1.5 text-xs text-primary-600 text-pretty">
-                          Select <strong>Anthropic</strong> →{' '}
-                          <strong>Setup Token (Claude CLI)</strong>. It will
-                          detect your existing Claude credentials from{' '}
-                          <code className="font-mono">~/.claude/</code>.
+                          选择 <strong>Anthropic</strong> →{' '}
+                          <strong>Setup Token (Claude CLI)</strong>。系统将自动从{' '}
+                          <code className="font-mono">~/.claude/</code>{' '}
+                          检测您现有的 Claude 凭据。
                         </p>
                       </div>
 
                       <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2">
                         <p className="text-xs text-amber-800 text-pretty">
-                          <strong>Requires:</strong> Claude Code or Claude CLI
-                          must be installed and authenticated first. Run{' '}
-                          <code className="font-mono">claude</code> in terminal
-                          to verify.
+                          <strong>前提条件：</strong>您需要先安装并登录 Claude Code 或 Claude CLI。请在终端中运行{' '}
+                          <code className="font-mono">claude</code>{' '}
+                          以确认。
                         </p>
                       </div>
 
                       <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/70 px-3 py-2">
                         <p className="text-xs text-[var(--theme-text)] text-pretty">
-                          No terminal access?{' '}
+                          无法使用终端？{' '}
                           <a
                             href="https://github.com/NousResearch/hermes-agent"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-primary-800 underline decoration-primary-400 hover:text-[var(--theme-text)]"
                           >
-                            See the Hermes Agent docs
+                            查看 Hermes Agent 文档
                           </a>{' '}
-                          for CLI token setup instructions.
+                          获取 CLI Token 配置说明。
                         </p>
                       </div>
                     </div>
@@ -678,8 +673,7 @@ export function ProviderWizard({
                 ) : selectedAuthType === 'api-key' ? (
                   <>
                     <p className="mt-1 text-sm text-primary-600 text-pretty">
-                      Paste your {selectedProvider.name} API key below. It will
-                      be saved directly to your local config file.
+                      在下方粘贴您的 {selectedProvider.name} API 密钥。它将直接保存到本地配置文件中。
                     </p>
 
                     <div className="mt-4 flex flex-col gap-3">
@@ -690,7 +684,7 @@ export function ProviderWizard({
                           onChange={function onInputChange(e) {
                             setApiKeyInput(e.target.value)
                           }}
-                          placeholder={`sk-... or your ${selectedProvider.name} API key`}
+                          placeholder={`sk-... 或您的 ${selectedProvider.name} API 密钥`}
                           className="flex-1 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-primary-400 focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/50"
                           autoFocus
                         />
@@ -704,10 +698,14 @@ export function ProviderWizard({
                           }}
                         >
                           {saveState === 'saving'
-                            ? 'Saving…'
+                            ? '保存中…'
                             : saveState === 'saved'
-                              ? 'Saved ✓'
-                              : 'Save & Connect'}
+                              ? (
+                                  <>
+                                    <EmojiIcon emoji="✓" size={12} /> 已保存
+                                  </>
+                                )
+                              : '保存并连接'}
                         </Button>
                       </div>
 
@@ -723,7 +721,7 @@ export function ProviderWizard({
                             strokeWidth={1.5}
                             className="inline mr-1"
                           />
-                          Key saved! Hermes is restarting to apply changes.
+                          API 密钥已保存。Hermes 正在重启以应用更改。
                         </p>
                       ) : null}
                     </div>
@@ -739,14 +737,14 @@ export function ProviderWizard({
                         size={20}
                         strokeWidth={1.5}
                       />
-                      Get your {selectedProvider.name} API key
+                      获取 {selectedProvider.name} API 密钥
                     </a>
 
                     <div className="mt-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/70 px-3 py-2">
                       <p className="text-xs text-[var(--theme-text)] text-pretty">
-                        API keys are stored locally in{' '}
-                        <code className="font-mono">{HERMES_CONFIG_PATH}</code>,
-                        never sent to Studio.
+                        API 密钥仅存储在本地{' '}
+                        <code className="font-mono">{HERMES_CONFIG_PATH}</code>
+                        中，绝不会发送到 Studio。
                       </p>
                     </div>
 
@@ -758,8 +756,7 @@ export function ProviderWizard({
                       }}
                       className="mt-3 text-xs text-[var(--theme-muted)] hover:text-[var(--theme-text)] underline"
                     >
-                      {showManualSnippet ? 'Hide' : 'Show'} manual config
-                      snippet
+                      {showManualSnippet ? '隐藏' : '显示'}手动配置片段
                     </button>
 
                     {showManualSnippet ? (
@@ -777,7 +774,7 @@ export function ProviderWizard({
                               size={20}
                               strokeWidth={1.5}
                             />
-                            Copy snippet
+                            复制片段
                           </Button>
                           {copyState === 'copied' ? (
                             <span className="inline-flex items-center gap-1 text-xs text-green-600">
@@ -786,7 +783,7 @@ export function ProviderWizard({
                                 size={20}
                                 strokeWidth={1.5}
                               />
-                              Copied
+                              已复制
                             </span>
                           ) : null}
                         </div>
@@ -801,8 +798,7 @@ export function ProviderWizard({
                 ) : (
                   <>
                     <p className="mt-1 text-sm text-primary-600 text-pretty">
-                      No additional configuration needed. Just ensure the
-                      service is running locally.
+                      无需额外配置 — 只需确保您的本地服务正在运行。
                     </p>
                   </>
                 )}
@@ -820,7 +816,7 @@ export function ProviderWizard({
                       size={20}
                       strokeWidth={1.5}
                     />
-                    Back
+                    返回
                   </Button>
                   {selectedAuthType === 'local' ? (
                     <Button
@@ -829,7 +825,7 @@ export function ProviderWizard({
                         handleDone()
                       }}
                     >
-                      Done
+                      完成
                     </Button>
                   ) : null}
                 </div>
@@ -839,7 +835,7 @@ export function ProviderWizard({
             {step === 'verify' ? (
               <section className="mt-5">
                 <h3 className="text-base font-medium text-[var(--theme-text)] text-balance">
-                  Step 4: Verify
+                  第 4 步：验证连接
                 </h3>
                 <div
                   className={cn(
@@ -854,9 +850,12 @@ export function ProviderWizard({
                     )}
                   >
                     {verifyTitle}
+                    {verifyState === 'success' ? (
+                      <EmojiIcon emoji="✓" size={12} />
+                    ) : null}
                   </p>
                   <p className="mt-1 text-sm text-primary-600 text-pretty">
-                    {verificationMessage || 'Waiting for Hermes to respond…'}
+                    {verificationMessage || '正在等待 Hermes 响应…'}
                   </p>
                 </div>
 
@@ -873,7 +872,7 @@ export function ProviderWizard({
                       size={20}
                       strokeWidth={1.5}
                     />
-                    Back
+                    返回
                   </Button>
                   <Button
                     size="sm"
@@ -881,7 +880,7 @@ export function ProviderWizard({
                       handleDone()
                     }}
                   >
-                    Done
+                    完成
                   </Button>
                 </div>
               </section>

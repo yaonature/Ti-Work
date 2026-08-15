@@ -19,6 +19,7 @@ import { Route as PatternsRouteImport } from './routes/patterns'
 import { Route as OperationsRouteImport } from './routes/operations'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as LogsRouteImport } from './routes/logs'
+import { Route as LineageRouteImport } from './routes/lineage'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as FilesRouteImport } from './routes/files'
@@ -33,11 +34,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as CrewsIndexRouteImport } from './routes/crews/index'
 import { Route as ChatIndexRouteImport } from './routes/chat/index'
+import { Route as SettingsUsersRouteImport } from './routes/settings/users'
 import { Route as SettingsProvidersRouteImport } from './routes/settings/providers'
 import { Route as SettingsMcpRouteImport } from './routes/settings/mcp'
 import { Route as CrewsCrewIdRouteImport } from './routes/crews/$crewId'
 import { Route as ChatSessionKeyRouteImport } from './routes/chat/$sessionKey'
 import { Route as ApiWorkspaceRouteImport } from './routes/api/workspace'
+import { Route as ApiUsersRouteImport } from './routes/api/users'
 import { Route as ApiTerminalStreamRouteImport } from './routes/api/terminal-stream'
 import { Route as ApiTerminalResizeRouteImport } from './routes/api/terminal-resize'
 import { Route as ApiTerminalInputRouteImport } from './routes/api/terminal-input'
@@ -58,6 +61,9 @@ import { Route as ApiPingRouteImport } from './routes/api/ping'
 import { Route as ApiPathsRouteImport } from './routes/api/paths'
 import { Route as ApiModelsRouteImport } from './routes/api/models'
 import { Route as ApiMemoryRouteImport } from './routes/api/memory'
+import { Route as ApiLineageRouteImport } from './routes/api/lineage'
+import { Route as ApiIntegrationsRouteImport } from './routes/api/integrations'
+import { Route as ApiHubRouteImport } from './routes/api/hub'
 import { Route as ApiHistoryRouteImport } from './routes/api/history'
 import { Route as ApiHermesRunsRouteImport } from './routes/api/hermes-runs'
 import { Route as ApiHermesJobsRouteImport } from './routes/api/hermes-jobs'
@@ -65,8 +71,11 @@ import { Route as ApiHermesConfigRouteImport } from './routes/api/hermes-config'
 import { Route as ApiGatewayStatusRouteImport } from './routes/api/gateway-status'
 import { Route as ApiFilesRouteImport } from './routes/api/files'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
+import { Route as ApiEngineBootstrapRouteImport } from './routes/api/engine-bootstrap'
 import { Route as ApiContextUsageRouteImport } from './routes/api/context-usage'
 import { Route as ApiConnectionStatusRouteImport } from './routes/api/connection-status'
+import { Route as ApiConfigPatchRouteImport } from './routes/api/config-patch'
+import { Route as ApiConfigGetRouteImport } from './routes/api/config-get'
 import { Route as ApiConductorStopRouteImport } from './routes/api/conductor-stop'
 import { Route as ApiConductorSpawnRouteImport } from './routes/api/conductor-spawn'
 import { Route as ApiChatEventsRouteImport } from './routes/api/chat-events'
@@ -77,6 +86,7 @@ import { Route as ApiOperationsIndexRouteImport } from './routes/api/operations/
 import { Route as ApiCrewsIndexRouteImport } from './routes/api/crews/index'
 import { Route as ApiAuditIndexRouteImport } from './routes/api/audit/index'
 import { Route as ApiAgentsIndexRouteImport } from './routes/api/agents/index'
+import { Route as ApiUsersIdRouteImport } from './routes/api/users.$id'
 import { Route as ApiTasksTaskIdRouteImport } from './routes/api/tasks/$taskId'
 import { Route as ApiSkillsUninstallRouteImport } from './routes/api/skills/uninstall'
 import { Route as ApiSkillsSettingsRouteImport } from './routes/api/skills/settings'
@@ -97,14 +107,19 @@ import { Route as ApiMemoryReadRouteImport } from './routes/api/memory/read'
 import { Route as ApiMemoryListRouteImport } from './routes/api/memory/list'
 import { Route as ApiMcpServersRouteImport } from './routes/api/mcp/servers'
 import { Route as ApiMcpReloadRouteImport } from './routes/api/mcp/reload'
+import { Route as ApiLineageSummaryRouteImport } from './routes/api/lineage.summary'
+import { Route as ApiLineageEventsRouteImport } from './routes/api/lineage.events'
 import { Route as ApiKnowledgeSearchRouteImport } from './routes/api/knowledge/search'
 import { Route as ApiKnowledgeReadRouteImport } from './routes/api/knowledge/read'
 import { Route as ApiKnowledgeListRouteImport } from './routes/api/knowledge/list'
 import { Route as ApiKnowledgeGraphRouteImport } from './routes/api/knowledge/graph'
+import { Route as ApiIntegrationsTestRouteImport } from './routes/api/integrations.test'
 import { Route as ApiHermesProxySplatRouteImport } from './routes/api/hermes-proxy/$'
 import { Route as ApiHermesJobsJobIdRouteImport } from './routes/api/hermes-jobs.$jobId'
 import { Route as ApiEventsReplayRouteImport } from './routes/api/events/replay'
 import { Route as ApiCrewsCrewIdRouteImport } from './routes/api/crews/$crewId'
+import { Route as ApiAuthRegisterRouteImport } from './routes/api/auth.register'
+import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth.logout'
 import { Route as ApiAgentsAgentIdRouteImport } from './routes/api/agents/$agentId'
 import { Route as ApiCrewsTemplatesIndexRouteImport } from './routes/api/crews/templates/index'
 import { Route as ApiTasksTaskIdMoveRouteImport } from './routes/api/tasks/$taskId.move'
@@ -167,6 +182,11 @@ const MemoryRoute = MemoryRouteImport.update({
 const LogsRoute = LogsRouteImport.update({
   id: '/logs',
   path: '/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LineageRoute = LineageRouteImport.update({
+  id: '/lineage',
+  path: '/lineage',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JobsRoute = JobsRouteImport.update({
@@ -239,6 +259,11 @@ const ChatIndexRoute = ChatIndexRouteImport.update({
   path: '/chat/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsUsersRoute = SettingsUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const SettingsProvidersRoute = SettingsProvidersRouteImport.update({
   id: '/providers',
   path: '/providers',
@@ -262,6 +287,11 @@ const ChatSessionKeyRoute = ChatSessionKeyRouteImport.update({
 const ApiWorkspaceRoute = ApiWorkspaceRouteImport.update({
   id: '/api/workspace',
   path: '/api/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUsersRoute = ApiUsersRouteImport.update({
+  id: '/api/users',
+  path: '/api/users',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTerminalStreamRoute = ApiTerminalStreamRouteImport.update({
@@ -364,6 +394,21 @@ const ApiMemoryRoute = ApiMemoryRouteImport.update({
   path: '/api/memory',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLineageRoute = ApiLineageRouteImport.update({
+  id: '/api/lineage',
+  path: '/api/lineage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIntegrationsRoute = ApiIntegrationsRouteImport.update({
+  id: '/api/integrations',
+  path: '/api/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHubRoute = ApiHubRouteImport.update({
+  id: '/api/hub',
+  path: '/api/hub',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHistoryRoute = ApiHistoryRouteImport.update({
   id: '/api/history',
   path: '/api/history',
@@ -399,6 +444,11 @@ const ApiEventsRoute = ApiEventsRouteImport.update({
   path: '/api/events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiEngineBootstrapRoute = ApiEngineBootstrapRouteImport.update({
+  id: '/api/engine-bootstrap',
+  path: '/api/engine-bootstrap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiContextUsageRoute = ApiContextUsageRouteImport.update({
   id: '/api/context-usage',
   path: '/api/context-usage',
@@ -407,6 +457,16 @@ const ApiContextUsageRoute = ApiContextUsageRouteImport.update({
 const ApiConnectionStatusRoute = ApiConnectionStatusRouteImport.update({
   id: '/api/connection-status',
   path: '/api/connection-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConfigPatchRoute = ApiConfigPatchRouteImport.update({
+  id: '/api/config-patch',
+  path: '/api/config-patch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConfigGetRoute = ApiConfigGetRouteImport.update({
+  id: '/api/config-get',
+  path: '/api/config-get',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiConductorStopRoute = ApiConductorStopRouteImport.update({
@@ -458,6 +518,11 @@ const ApiAgentsIndexRoute = ApiAgentsIndexRouteImport.update({
   id: '/api/agents/',
   path: '/api/agents/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUsersIdRoute = ApiUsersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiUsersRoute,
 } as any)
 const ApiTasksTaskIdRoute = ApiTasksTaskIdRouteImport.update({
   id: '/api/tasks/$taskId',
@@ -559,6 +624,16 @@ const ApiMcpReloadRoute = ApiMcpReloadRouteImport.update({
   path: '/api/mcp/reload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLineageSummaryRoute = ApiLineageSummaryRouteImport.update({
+  id: '/summary',
+  path: '/summary',
+  getParentRoute: () => ApiLineageRoute,
+} as any)
+const ApiLineageEventsRoute = ApiLineageEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => ApiLineageRoute,
+} as any)
 const ApiKnowledgeSearchRoute = ApiKnowledgeSearchRouteImport.update({
   id: '/api/knowledge/search',
   path: '/api/knowledge/search',
@@ -579,6 +654,11 @@ const ApiKnowledgeGraphRoute = ApiKnowledgeGraphRouteImport.update({
   path: '/api/knowledge/graph',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIntegrationsTestRoute = ApiIntegrationsTestRouteImport.update({
+  id: '/test',
+  path: '/test',
+  getParentRoute: () => ApiIntegrationsRoute,
+} as any)
 const ApiHermesProxySplatRoute = ApiHermesProxySplatRouteImport.update({
   id: '/api/hermes-proxy/$',
   path: '/api/hermes-proxy/$',
@@ -598,6 +678,16 @@ const ApiCrewsCrewIdRoute = ApiCrewsCrewIdRouteImport.update({
   id: '/api/crews/$crewId',
   path: '/api/crews/$crewId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthRegisterRoute = ApiAuthRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => ApiAuthRoute,
+} as any)
+const ApiAuthLogoutRoute = ApiAuthLogoutRouteImport.update({
+  id: '/logout',
+  path: '/logout',
+  getParentRoute: () => ApiAuthRoute,
 } as any)
 const ApiAgentsAgentIdRoute = ApiAgentsAgentIdRouteImport.update({
   id: '/api/agents/$agentId',
@@ -682,6 +772,7 @@ export interface FileRoutesByFullPath {
   '/files': typeof FilesRoute
   '/help': typeof HelpRoute
   '/jobs': typeof JobsRoute
+  '/lineage': typeof LineageRoute
   '/logs': typeof LogsRoute
   '/memory': typeof MemoryRoute
   '/operations': typeof OperationsRoute
@@ -692,13 +783,16 @@ export interface FileRoutesByFullPath {
   '/skills': typeof SkillsRoute
   '/tasks': typeof TasksRoute
   '/terminal': typeof TerminalRoute
-  '/api/auth': typeof ApiAuthRoute
+  '/api/auth': typeof ApiAuthRouteWithChildren
   '/api/auth-check': typeof ApiAuthCheckRoute
   '/api/chat-events': typeof ApiChatEventsRoute
   '/api/conductor-spawn': typeof ApiConductorSpawnRoute
   '/api/conductor-stop': typeof ApiConductorStopRoute
+  '/api/config-get': typeof ApiConfigGetRoute
+  '/api/config-patch': typeof ApiConfigPatchRoute
   '/api/connection-status': typeof ApiConnectionStatusRoute
   '/api/context-usage': typeof ApiContextUsageRoute
+  '/api/engine-bootstrap': typeof ApiEngineBootstrapRoute
   '/api/events': typeof ApiEventsRouteWithChildren
   '/api/files': typeof ApiFilesRoute
   '/api/gateway-status': typeof ApiGatewayStatusRoute
@@ -706,6 +800,9 @@ export interface FileRoutesByFullPath {
   '/api/hermes-jobs': typeof ApiHermesJobsRouteWithChildren
   '/api/hermes-runs': typeof ApiHermesRunsRouteWithChildren
   '/api/history': typeof ApiHistoryRoute
+  '/api/hub': typeof ApiHubRoute
+  '/api/integrations': typeof ApiIntegrationsRouteWithChildren
+  '/api/lineage': typeof ApiLineageRouteWithChildren
   '/api/memory': typeof ApiMemoryRouteWithChildren
   '/api/models': typeof ApiModelsRoute
   '/api/paths': typeof ApiPathsRoute
@@ -726,23 +823,30 @@ export interface FileRoutesByFullPath {
   '/api/terminal-input': typeof ApiTerminalInputRoute
   '/api/terminal-resize': typeof ApiTerminalResizeRoute
   '/api/terminal-stream': typeof ApiTerminalStreamRoute
+  '/api/users': typeof ApiUsersRouteWithChildren
   '/api/workspace': typeof ApiWorkspaceRoute
   '/chat/$sessionKey': typeof ChatSessionKeyRoute
   '/crews/$crewId': typeof CrewsCrewIdRoute
   '/settings/mcp': typeof SettingsMcpRoute
   '/settings/providers': typeof SettingsProvidersRoute
+  '/settings/users': typeof SettingsUsersRoute
   '/chat/': typeof ChatIndexRoute
   '/crews/': typeof CrewsIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/api/agents/$agentId': typeof ApiAgentsAgentIdRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/crews/$crewId': typeof ApiCrewsCrewIdRouteWithChildren
   '/api/events/replay': typeof ApiEventsReplayRoute
   '/api/hermes-jobs/$jobId': typeof ApiHermesJobsJobIdRoute
   '/api/hermes-proxy/$': typeof ApiHermesProxySplatRoute
+  '/api/integrations/test': typeof ApiIntegrationsTestRoute
   '/api/knowledge/graph': typeof ApiKnowledgeGraphRoute
   '/api/knowledge/list': typeof ApiKnowledgeListRoute
   '/api/knowledge/read': typeof ApiKnowledgeReadRoute
   '/api/knowledge/search': typeof ApiKnowledgeSearchRoute
+  '/api/lineage/events': typeof ApiLineageEventsRoute
+  '/api/lineage/summary': typeof ApiLineageSummaryRoute
   '/api/mcp/reload': typeof ApiMcpReloadRoute
   '/api/mcp/servers': typeof ApiMcpServersRoute
   '/api/memory/list': typeof ApiMemoryListRoute
@@ -763,6 +867,7 @@ export interface FileRoutesByFullPath {
   '/api/skills/settings': typeof ApiSkillsSettingsRoute
   '/api/skills/uninstall': typeof ApiSkillsUninstallRoute
   '/api/tasks/$taskId': typeof ApiTasksTaskIdRouteWithChildren
+  '/api/users/$id': typeof ApiUsersIdRoute
   '/api/agents/': typeof ApiAgentsIndexRoute
   '/api/audit/': typeof ApiAuditIndexRoute
   '/api/crews/': typeof ApiCrewsIndexRoute
@@ -793,6 +898,7 @@ export interface FileRoutesByTo {
   '/files': typeof FilesRoute
   '/help': typeof HelpRoute
   '/jobs': typeof JobsRoute
+  '/lineage': typeof LineageRoute
   '/logs': typeof LogsRoute
   '/memory': typeof MemoryRoute
   '/operations': typeof OperationsRoute
@@ -802,13 +908,16 @@ export interface FileRoutesByTo {
   '/skills': typeof SkillsRoute
   '/tasks': typeof TasksRoute
   '/terminal': typeof TerminalRoute
-  '/api/auth': typeof ApiAuthRoute
+  '/api/auth': typeof ApiAuthRouteWithChildren
   '/api/auth-check': typeof ApiAuthCheckRoute
   '/api/chat-events': typeof ApiChatEventsRoute
   '/api/conductor-spawn': typeof ApiConductorSpawnRoute
   '/api/conductor-stop': typeof ApiConductorStopRoute
+  '/api/config-get': typeof ApiConfigGetRoute
+  '/api/config-patch': typeof ApiConfigPatchRoute
   '/api/connection-status': typeof ApiConnectionStatusRoute
   '/api/context-usage': typeof ApiContextUsageRoute
+  '/api/engine-bootstrap': typeof ApiEngineBootstrapRoute
   '/api/events': typeof ApiEventsRouteWithChildren
   '/api/files': typeof ApiFilesRoute
   '/api/gateway-status': typeof ApiGatewayStatusRoute
@@ -816,6 +925,9 @@ export interface FileRoutesByTo {
   '/api/hermes-jobs': typeof ApiHermesJobsRouteWithChildren
   '/api/hermes-runs': typeof ApiHermesRunsRouteWithChildren
   '/api/history': typeof ApiHistoryRoute
+  '/api/hub': typeof ApiHubRoute
+  '/api/integrations': typeof ApiIntegrationsRouteWithChildren
+  '/api/lineage': typeof ApiLineageRouteWithChildren
   '/api/memory': typeof ApiMemoryRouteWithChildren
   '/api/models': typeof ApiModelsRoute
   '/api/paths': typeof ApiPathsRoute
@@ -836,23 +948,30 @@ export interface FileRoutesByTo {
   '/api/terminal-input': typeof ApiTerminalInputRoute
   '/api/terminal-resize': typeof ApiTerminalResizeRoute
   '/api/terminal-stream': typeof ApiTerminalStreamRoute
+  '/api/users': typeof ApiUsersRouteWithChildren
   '/api/workspace': typeof ApiWorkspaceRoute
   '/chat/$sessionKey': typeof ChatSessionKeyRoute
   '/crews/$crewId': typeof CrewsCrewIdRoute
   '/settings/mcp': typeof SettingsMcpRoute
   '/settings/providers': typeof SettingsProvidersRoute
+  '/settings/users': typeof SettingsUsersRoute
   '/chat': typeof ChatIndexRoute
   '/crews': typeof CrewsIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/api/agents/$agentId': typeof ApiAgentsAgentIdRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/crews/$crewId': typeof ApiCrewsCrewIdRouteWithChildren
   '/api/events/replay': typeof ApiEventsReplayRoute
   '/api/hermes-jobs/$jobId': typeof ApiHermesJobsJobIdRoute
   '/api/hermes-proxy/$': typeof ApiHermesProxySplatRoute
+  '/api/integrations/test': typeof ApiIntegrationsTestRoute
   '/api/knowledge/graph': typeof ApiKnowledgeGraphRoute
   '/api/knowledge/list': typeof ApiKnowledgeListRoute
   '/api/knowledge/read': typeof ApiKnowledgeReadRoute
   '/api/knowledge/search': typeof ApiKnowledgeSearchRoute
+  '/api/lineage/events': typeof ApiLineageEventsRoute
+  '/api/lineage/summary': typeof ApiLineageSummaryRoute
   '/api/mcp/reload': typeof ApiMcpReloadRoute
   '/api/mcp/servers': typeof ApiMcpServersRoute
   '/api/memory/list': typeof ApiMemoryListRoute
@@ -873,6 +992,7 @@ export interface FileRoutesByTo {
   '/api/skills/settings': typeof ApiSkillsSettingsRoute
   '/api/skills/uninstall': typeof ApiSkillsUninstallRoute
   '/api/tasks/$taskId': typeof ApiTasksTaskIdRouteWithChildren
+  '/api/users/$id': typeof ApiUsersIdRoute
   '/api/agents': typeof ApiAgentsIndexRoute
   '/api/audit': typeof ApiAuditIndexRoute
   '/api/crews': typeof ApiCrewsIndexRoute
@@ -904,6 +1024,7 @@ export interface FileRoutesById {
   '/files': typeof FilesRoute
   '/help': typeof HelpRoute
   '/jobs': typeof JobsRoute
+  '/lineage': typeof LineageRoute
   '/logs': typeof LogsRoute
   '/memory': typeof MemoryRoute
   '/operations': typeof OperationsRoute
@@ -914,13 +1035,16 @@ export interface FileRoutesById {
   '/skills': typeof SkillsRoute
   '/tasks': typeof TasksRoute
   '/terminal': typeof TerminalRoute
-  '/api/auth': typeof ApiAuthRoute
+  '/api/auth': typeof ApiAuthRouteWithChildren
   '/api/auth-check': typeof ApiAuthCheckRoute
   '/api/chat-events': typeof ApiChatEventsRoute
   '/api/conductor-spawn': typeof ApiConductorSpawnRoute
   '/api/conductor-stop': typeof ApiConductorStopRoute
+  '/api/config-get': typeof ApiConfigGetRoute
+  '/api/config-patch': typeof ApiConfigPatchRoute
   '/api/connection-status': typeof ApiConnectionStatusRoute
   '/api/context-usage': typeof ApiContextUsageRoute
+  '/api/engine-bootstrap': typeof ApiEngineBootstrapRoute
   '/api/events': typeof ApiEventsRouteWithChildren
   '/api/files': typeof ApiFilesRoute
   '/api/gateway-status': typeof ApiGatewayStatusRoute
@@ -928,6 +1052,9 @@ export interface FileRoutesById {
   '/api/hermes-jobs': typeof ApiHermesJobsRouteWithChildren
   '/api/hermes-runs': typeof ApiHermesRunsRouteWithChildren
   '/api/history': typeof ApiHistoryRoute
+  '/api/hub': typeof ApiHubRoute
+  '/api/integrations': typeof ApiIntegrationsRouteWithChildren
+  '/api/lineage': typeof ApiLineageRouteWithChildren
   '/api/memory': typeof ApiMemoryRouteWithChildren
   '/api/models': typeof ApiModelsRoute
   '/api/paths': typeof ApiPathsRoute
@@ -948,23 +1075,30 @@ export interface FileRoutesById {
   '/api/terminal-input': typeof ApiTerminalInputRoute
   '/api/terminal-resize': typeof ApiTerminalResizeRoute
   '/api/terminal-stream': typeof ApiTerminalStreamRoute
+  '/api/users': typeof ApiUsersRouteWithChildren
   '/api/workspace': typeof ApiWorkspaceRoute
   '/chat/$sessionKey': typeof ChatSessionKeyRoute
   '/crews/$crewId': typeof CrewsCrewIdRoute
   '/settings/mcp': typeof SettingsMcpRoute
   '/settings/providers': typeof SettingsProvidersRoute
+  '/settings/users': typeof SettingsUsersRoute
   '/chat/': typeof ChatIndexRoute
   '/crews/': typeof CrewsIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/api/agents/$agentId': typeof ApiAgentsAgentIdRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/crews/$crewId': typeof ApiCrewsCrewIdRouteWithChildren
   '/api/events/replay': typeof ApiEventsReplayRoute
   '/api/hermes-jobs/$jobId': typeof ApiHermesJobsJobIdRoute
   '/api/hermes-proxy/$': typeof ApiHermesProxySplatRoute
+  '/api/integrations/test': typeof ApiIntegrationsTestRoute
   '/api/knowledge/graph': typeof ApiKnowledgeGraphRoute
   '/api/knowledge/list': typeof ApiKnowledgeListRoute
   '/api/knowledge/read': typeof ApiKnowledgeReadRoute
   '/api/knowledge/search': typeof ApiKnowledgeSearchRoute
+  '/api/lineage/events': typeof ApiLineageEventsRoute
+  '/api/lineage/summary': typeof ApiLineageSummaryRoute
   '/api/mcp/reload': typeof ApiMcpReloadRoute
   '/api/mcp/servers': typeof ApiMcpServersRoute
   '/api/memory/list': typeof ApiMemoryListRoute
@@ -985,6 +1119,7 @@ export interface FileRoutesById {
   '/api/skills/settings': typeof ApiSkillsSettingsRoute
   '/api/skills/uninstall': typeof ApiSkillsUninstallRoute
   '/api/tasks/$taskId': typeof ApiTasksTaskIdRouteWithChildren
+  '/api/users/$id': typeof ApiUsersIdRoute
   '/api/agents/': typeof ApiAgentsIndexRoute
   '/api/audit/': typeof ApiAuditIndexRoute
   '/api/crews/': typeof ApiCrewsIndexRoute
@@ -1017,6 +1152,7 @@ export interface FileRouteTypes {
     | '/files'
     | '/help'
     | '/jobs'
+    | '/lineage'
     | '/logs'
     | '/memory'
     | '/operations'
@@ -1032,8 +1168,11 @@ export interface FileRouteTypes {
     | '/api/chat-events'
     | '/api/conductor-spawn'
     | '/api/conductor-stop'
+    | '/api/config-get'
+    | '/api/config-patch'
     | '/api/connection-status'
     | '/api/context-usage'
+    | '/api/engine-bootstrap'
     | '/api/events'
     | '/api/files'
     | '/api/gateway-status'
@@ -1041,6 +1180,9 @@ export interface FileRouteTypes {
     | '/api/hermes-jobs'
     | '/api/hermes-runs'
     | '/api/history'
+    | '/api/hub'
+    | '/api/integrations'
+    | '/api/lineage'
     | '/api/memory'
     | '/api/models'
     | '/api/paths'
@@ -1061,23 +1203,30 @@ export interface FileRouteTypes {
     | '/api/terminal-input'
     | '/api/terminal-resize'
     | '/api/terminal-stream'
+    | '/api/users'
     | '/api/workspace'
     | '/chat/$sessionKey'
     | '/crews/$crewId'
     | '/settings/mcp'
     | '/settings/providers'
+    | '/settings/users'
     | '/chat/'
     | '/crews/'
     | '/settings/'
     | '/api/agents/$agentId'
+    | '/api/auth/logout'
+    | '/api/auth/register'
     | '/api/crews/$crewId'
     | '/api/events/replay'
     | '/api/hermes-jobs/$jobId'
     | '/api/hermes-proxy/$'
+    | '/api/integrations/test'
     | '/api/knowledge/graph'
     | '/api/knowledge/list'
     | '/api/knowledge/read'
     | '/api/knowledge/search'
+    | '/api/lineage/events'
+    | '/api/lineage/summary'
     | '/api/mcp/reload'
     | '/api/mcp/servers'
     | '/api/memory/list'
@@ -1098,6 +1247,7 @@ export interface FileRouteTypes {
     | '/api/skills/settings'
     | '/api/skills/uninstall'
     | '/api/tasks/$taskId'
+    | '/api/users/$id'
     | '/api/agents/'
     | '/api/audit/'
     | '/api/crews/'
@@ -1128,6 +1278,7 @@ export interface FileRouteTypes {
     | '/files'
     | '/help'
     | '/jobs'
+    | '/lineage'
     | '/logs'
     | '/memory'
     | '/operations'
@@ -1142,8 +1293,11 @@ export interface FileRouteTypes {
     | '/api/chat-events'
     | '/api/conductor-spawn'
     | '/api/conductor-stop'
+    | '/api/config-get'
+    | '/api/config-patch'
     | '/api/connection-status'
     | '/api/context-usage'
+    | '/api/engine-bootstrap'
     | '/api/events'
     | '/api/files'
     | '/api/gateway-status'
@@ -1151,6 +1305,9 @@ export interface FileRouteTypes {
     | '/api/hermes-jobs'
     | '/api/hermes-runs'
     | '/api/history'
+    | '/api/hub'
+    | '/api/integrations'
+    | '/api/lineage'
     | '/api/memory'
     | '/api/models'
     | '/api/paths'
@@ -1171,23 +1328,30 @@ export interface FileRouteTypes {
     | '/api/terminal-input'
     | '/api/terminal-resize'
     | '/api/terminal-stream'
+    | '/api/users'
     | '/api/workspace'
     | '/chat/$sessionKey'
     | '/crews/$crewId'
     | '/settings/mcp'
     | '/settings/providers'
+    | '/settings/users'
     | '/chat'
     | '/crews'
     | '/settings'
     | '/api/agents/$agentId'
+    | '/api/auth/logout'
+    | '/api/auth/register'
     | '/api/crews/$crewId'
     | '/api/events/replay'
     | '/api/hermes-jobs/$jobId'
     | '/api/hermes-proxy/$'
+    | '/api/integrations/test'
     | '/api/knowledge/graph'
     | '/api/knowledge/list'
     | '/api/knowledge/read'
     | '/api/knowledge/search'
+    | '/api/lineage/events'
+    | '/api/lineage/summary'
     | '/api/mcp/reload'
     | '/api/mcp/servers'
     | '/api/memory/list'
@@ -1208,6 +1372,7 @@ export interface FileRouteTypes {
     | '/api/skills/settings'
     | '/api/skills/uninstall'
     | '/api/tasks/$taskId'
+    | '/api/users/$id'
     | '/api/agents'
     | '/api/audit'
     | '/api/crews'
@@ -1238,6 +1403,7 @@ export interface FileRouteTypes {
     | '/files'
     | '/help'
     | '/jobs'
+    | '/lineage'
     | '/logs'
     | '/memory'
     | '/operations'
@@ -1253,8 +1419,11 @@ export interface FileRouteTypes {
     | '/api/chat-events'
     | '/api/conductor-spawn'
     | '/api/conductor-stop'
+    | '/api/config-get'
+    | '/api/config-patch'
     | '/api/connection-status'
     | '/api/context-usage'
+    | '/api/engine-bootstrap'
     | '/api/events'
     | '/api/files'
     | '/api/gateway-status'
@@ -1262,6 +1431,9 @@ export interface FileRouteTypes {
     | '/api/hermes-jobs'
     | '/api/hermes-runs'
     | '/api/history'
+    | '/api/hub'
+    | '/api/integrations'
+    | '/api/lineage'
     | '/api/memory'
     | '/api/models'
     | '/api/paths'
@@ -1282,23 +1454,30 @@ export interface FileRouteTypes {
     | '/api/terminal-input'
     | '/api/terminal-resize'
     | '/api/terminal-stream'
+    | '/api/users'
     | '/api/workspace'
     | '/chat/$sessionKey'
     | '/crews/$crewId'
     | '/settings/mcp'
     | '/settings/providers'
+    | '/settings/users'
     | '/chat/'
     | '/crews/'
     | '/settings/'
     | '/api/agents/$agentId'
+    | '/api/auth/logout'
+    | '/api/auth/register'
     | '/api/crews/$crewId'
     | '/api/events/replay'
     | '/api/hermes-jobs/$jobId'
     | '/api/hermes-proxy/$'
+    | '/api/integrations/test'
     | '/api/knowledge/graph'
     | '/api/knowledge/list'
     | '/api/knowledge/read'
     | '/api/knowledge/search'
+    | '/api/lineage/events'
+    | '/api/lineage/summary'
     | '/api/mcp/reload'
     | '/api/mcp/servers'
     | '/api/memory/list'
@@ -1319,6 +1498,7 @@ export interface FileRouteTypes {
     | '/api/skills/settings'
     | '/api/skills/uninstall'
     | '/api/tasks/$taskId'
+    | '/api/users/$id'
     | '/api/agents/'
     | '/api/audit/'
     | '/api/crews/'
@@ -1350,6 +1530,7 @@ export interface RootRouteChildren {
   FilesRoute: typeof FilesRoute
   HelpRoute: typeof HelpRoute
   JobsRoute: typeof JobsRoute
+  LineageRoute: typeof LineageRoute
   LogsRoute: typeof LogsRoute
   MemoryRoute: typeof MemoryRoute
   OperationsRoute: typeof OperationsRoute
@@ -1360,13 +1541,16 @@ export interface RootRouteChildren {
   SkillsRoute: typeof SkillsRoute
   TasksRoute: typeof TasksRoute
   TerminalRoute: typeof TerminalRoute
-  ApiAuthRoute: typeof ApiAuthRoute
+  ApiAuthRoute: typeof ApiAuthRouteWithChildren
   ApiAuthCheckRoute: typeof ApiAuthCheckRoute
   ApiChatEventsRoute: typeof ApiChatEventsRoute
   ApiConductorSpawnRoute: typeof ApiConductorSpawnRoute
   ApiConductorStopRoute: typeof ApiConductorStopRoute
+  ApiConfigGetRoute: typeof ApiConfigGetRoute
+  ApiConfigPatchRoute: typeof ApiConfigPatchRoute
   ApiConnectionStatusRoute: typeof ApiConnectionStatusRoute
   ApiContextUsageRoute: typeof ApiContextUsageRoute
+  ApiEngineBootstrapRoute: typeof ApiEngineBootstrapRoute
   ApiEventsRoute: typeof ApiEventsRouteWithChildren
   ApiFilesRoute: typeof ApiFilesRoute
   ApiGatewayStatusRoute: typeof ApiGatewayStatusRoute
@@ -1374,6 +1558,9 @@ export interface RootRouteChildren {
   ApiHermesJobsRoute: typeof ApiHermesJobsRouteWithChildren
   ApiHermesRunsRoute: typeof ApiHermesRunsRouteWithChildren
   ApiHistoryRoute: typeof ApiHistoryRoute
+  ApiHubRoute: typeof ApiHubRoute
+  ApiIntegrationsRoute: typeof ApiIntegrationsRouteWithChildren
+  ApiLineageRoute: typeof ApiLineageRouteWithChildren
   ApiMemoryRoute: typeof ApiMemoryRouteWithChildren
   ApiModelsRoute: typeof ApiModelsRoute
   ApiPathsRoute: typeof ApiPathsRoute
@@ -1394,6 +1581,7 @@ export interface RootRouteChildren {
   ApiTerminalInputRoute: typeof ApiTerminalInputRoute
   ApiTerminalResizeRoute: typeof ApiTerminalResizeRoute
   ApiTerminalStreamRoute: typeof ApiTerminalStreamRoute
+  ApiUsersRoute: typeof ApiUsersRouteWithChildren
   ApiWorkspaceRoute: typeof ApiWorkspaceRoute
   ChatSessionKeyRoute: typeof ChatSessionKeyRoute
   CrewsCrewIdRoute: typeof CrewsCrewIdRoute
@@ -1500,6 +1688,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lineage': {
+      id: '/lineage'
+      path: '/lineage'
+      fullPath: '/lineage'
+      preLoaderRoute: typeof LineageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jobs': {
       id: '/jobs'
       path: '/jobs'
@@ -1598,6 +1793,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/users': {
+      id: '/settings/users'
+      path: '/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof SettingsUsersRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/settings/providers': {
       id: '/settings/providers'
       path: '/providers'
@@ -1631,6 +1833,13 @@ declare module '@tanstack/react-router' {
       path: '/api/workspace'
       fullPath: '/api/workspace'
       preLoaderRoute: typeof ApiWorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/users': {
+      id: '/api/users'
+      path: '/api/users'
+      fullPath: '/api/users'
+      preLoaderRoute: typeof ApiUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/terminal-stream': {
@@ -1773,6 +1982,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMemoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/lineage': {
+      id: '/api/lineage'
+      path: '/api/lineage'
+      fullPath: '/api/lineage'
+      preLoaderRoute: typeof ApiLineageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations': {
+      id: '/api/integrations'
+      path: '/api/integrations'
+      fullPath: '/api/integrations'
+      preLoaderRoute: typeof ApiIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/hub': {
+      id: '/api/hub'
+      path: '/api/hub'
+      fullPath: '/api/hub'
+      preLoaderRoute: typeof ApiHubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/history': {
       id: '/api/history'
       path: '/api/history'
@@ -1822,6 +2052,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/engine-bootstrap': {
+      id: '/api/engine-bootstrap'
+      path: '/api/engine-bootstrap'
+      fullPath: '/api/engine-bootstrap'
+      preLoaderRoute: typeof ApiEngineBootstrapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/context-usage': {
       id: '/api/context-usage'
       path: '/api/context-usage'
@@ -1834,6 +2071,20 @@ declare module '@tanstack/react-router' {
       path: '/api/connection-status'
       fullPath: '/api/connection-status'
       preLoaderRoute: typeof ApiConnectionStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/config-patch': {
+      id: '/api/config-patch'
+      path: '/api/config-patch'
+      fullPath: '/api/config-patch'
+      preLoaderRoute: typeof ApiConfigPatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/config-get': {
+      id: '/api/config-get'
+      path: '/api/config-get'
+      fullPath: '/api/config-get'
+      preLoaderRoute: typeof ApiConfigGetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/conductor-stop': {
@@ -1905,6 +2156,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/agents/'
       preLoaderRoute: typeof ApiAgentsIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/users/$id': {
+      id: '/api/users/$id'
+      path: '/$id'
+      fullPath: '/api/users/$id'
+      preLoaderRoute: typeof ApiUsersIdRouteImport
+      parentRoute: typeof ApiUsersRoute
     }
     '/api/tasks/$taskId': {
       id: '/api/tasks/$taskId'
@@ -2046,6 +2304,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMcpReloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/lineage/summary': {
+      id: '/api/lineage/summary'
+      path: '/summary'
+      fullPath: '/api/lineage/summary'
+      preLoaderRoute: typeof ApiLineageSummaryRouteImport
+      parentRoute: typeof ApiLineageRoute
+    }
+    '/api/lineage/events': {
+      id: '/api/lineage/events'
+      path: '/events'
+      fullPath: '/api/lineage/events'
+      preLoaderRoute: typeof ApiLineageEventsRouteImport
+      parentRoute: typeof ApiLineageRoute
+    }
     '/api/knowledge/search': {
       id: '/api/knowledge/search'
       path: '/api/knowledge/search'
@@ -2074,6 +2346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiKnowledgeGraphRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/test': {
+      id: '/api/integrations/test'
+      path: '/test'
+      fullPath: '/api/integrations/test'
+      preLoaderRoute: typeof ApiIntegrationsTestRouteImport
+      parentRoute: typeof ApiIntegrationsRoute
+    }
     '/api/hermes-proxy/$': {
       id: '/api/hermes-proxy/$'
       path: '/api/hermes-proxy/$'
@@ -2101,6 +2380,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/crews/$crewId'
       preLoaderRoute: typeof ApiCrewsCrewIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/register': {
+      id: '/api/auth/register'
+      path: '/register'
+      fullPath: '/api/auth/register'
+      preLoaderRoute: typeof ApiAuthRegisterRouteImport
+      parentRoute: typeof ApiAuthRoute
+    }
+    '/api/auth/logout': {
+      id: '/api/auth/logout'
+      path: '/logout'
+      fullPath: '/api/auth/logout'
+      preLoaderRoute: typeof ApiAuthLogoutRouteImport
+      parentRoute: typeof ApiAuthRoute
     }
     '/api/agents/$agentId': {
       id: '/api/agents/$agentId'
@@ -2199,18 +2492,33 @@ declare module '@tanstack/react-router' {
 interface SettingsRouteChildren {
   SettingsMcpRoute: typeof SettingsMcpRoute
   SettingsProvidersRoute: typeof SettingsProvidersRoute
+  SettingsUsersRoute: typeof SettingsUsersRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsMcpRoute: SettingsMcpRoute,
   SettingsProvidersRoute: SettingsProvidersRoute,
+  SettingsUsersRoute: SettingsUsersRoute,
   SettingsIndexRoute: SettingsIndexRoute,
 }
 
 const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
   SettingsRouteChildren,
 )
+
+interface ApiAuthRouteChildren {
+  ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
+  ApiAuthRegisterRoute: typeof ApiAuthRegisterRoute
+}
+
+const ApiAuthRouteChildren: ApiAuthRouteChildren = {
+  ApiAuthLogoutRoute: ApiAuthLogoutRoute,
+  ApiAuthRegisterRoute: ApiAuthRegisterRoute,
+}
+
+const ApiAuthRouteWithChildren =
+  ApiAuthRoute._addFileChildren(ApiAuthRouteChildren)
 
 interface ApiEventsRouteChildren {
   ApiEventsReplayRoute: typeof ApiEventsReplayRoute
@@ -2246,6 +2554,32 @@ const ApiHermesRunsRouteChildren: ApiHermesRunsRouteChildren = {
 
 const ApiHermesRunsRouteWithChildren = ApiHermesRunsRoute._addFileChildren(
   ApiHermesRunsRouteChildren,
+)
+
+interface ApiIntegrationsRouteChildren {
+  ApiIntegrationsTestRoute: typeof ApiIntegrationsTestRoute
+}
+
+const ApiIntegrationsRouteChildren: ApiIntegrationsRouteChildren = {
+  ApiIntegrationsTestRoute: ApiIntegrationsTestRoute,
+}
+
+const ApiIntegrationsRouteWithChildren = ApiIntegrationsRoute._addFileChildren(
+  ApiIntegrationsRouteChildren,
+)
+
+interface ApiLineageRouteChildren {
+  ApiLineageEventsRoute: typeof ApiLineageEventsRoute
+  ApiLineageSummaryRoute: typeof ApiLineageSummaryRoute
+}
+
+const ApiLineageRouteChildren: ApiLineageRouteChildren = {
+  ApiLineageEventsRoute: ApiLineageEventsRoute,
+  ApiLineageSummaryRoute: ApiLineageSummaryRoute,
+}
+
+const ApiLineageRouteWithChildren = ApiLineageRoute._addFileChildren(
+  ApiLineageRouteChildren,
 )
 
 interface ApiMemoryRouteChildren {
@@ -2300,6 +2634,18 @@ const ApiSkillsRouteWithChildren = ApiSkillsRoute._addFileChildren(
   ApiSkillsRouteChildren,
 )
 
+interface ApiUsersRouteChildren {
+  ApiUsersIdRoute: typeof ApiUsersIdRoute
+}
+
+const ApiUsersRouteChildren: ApiUsersRouteChildren = {
+  ApiUsersIdRoute: ApiUsersIdRoute,
+}
+
+const ApiUsersRouteWithChildren = ApiUsersRoute._addFileChildren(
+  ApiUsersRouteChildren,
+)
+
 interface ApiCrewsCrewIdRouteChildren {
   ApiCrewsCrewIdCloneRoute: typeof ApiCrewsCrewIdCloneRoute
   ApiCrewsCrewIdDispatchRoute: typeof ApiCrewsCrewIdDispatchRoute
@@ -2342,6 +2688,7 @@ const rootRouteChildren: RootRouteChildren = {
   FilesRoute: FilesRoute,
   HelpRoute: HelpRoute,
   JobsRoute: JobsRoute,
+  LineageRoute: LineageRoute,
   LogsRoute: LogsRoute,
   MemoryRoute: MemoryRoute,
   OperationsRoute: OperationsRoute,
@@ -2352,13 +2699,16 @@ const rootRouteChildren: RootRouteChildren = {
   SkillsRoute: SkillsRoute,
   TasksRoute: TasksRoute,
   TerminalRoute: TerminalRoute,
-  ApiAuthRoute: ApiAuthRoute,
+  ApiAuthRoute: ApiAuthRouteWithChildren,
   ApiAuthCheckRoute: ApiAuthCheckRoute,
   ApiChatEventsRoute: ApiChatEventsRoute,
   ApiConductorSpawnRoute: ApiConductorSpawnRoute,
   ApiConductorStopRoute: ApiConductorStopRoute,
+  ApiConfigGetRoute: ApiConfigGetRoute,
+  ApiConfigPatchRoute: ApiConfigPatchRoute,
   ApiConnectionStatusRoute: ApiConnectionStatusRoute,
   ApiContextUsageRoute: ApiContextUsageRoute,
+  ApiEngineBootstrapRoute: ApiEngineBootstrapRoute,
   ApiEventsRoute: ApiEventsRouteWithChildren,
   ApiFilesRoute: ApiFilesRoute,
   ApiGatewayStatusRoute: ApiGatewayStatusRoute,
@@ -2366,6 +2716,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHermesJobsRoute: ApiHermesJobsRouteWithChildren,
   ApiHermesRunsRoute: ApiHermesRunsRouteWithChildren,
   ApiHistoryRoute: ApiHistoryRoute,
+  ApiHubRoute: ApiHubRoute,
+  ApiIntegrationsRoute: ApiIntegrationsRouteWithChildren,
+  ApiLineageRoute: ApiLineageRouteWithChildren,
   ApiMemoryRoute: ApiMemoryRouteWithChildren,
   ApiModelsRoute: ApiModelsRoute,
   ApiPathsRoute: ApiPathsRoute,
@@ -2386,6 +2739,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTerminalInputRoute: ApiTerminalInputRoute,
   ApiTerminalResizeRoute: ApiTerminalResizeRoute,
   ApiTerminalStreamRoute: ApiTerminalStreamRoute,
+  ApiUsersRoute: ApiUsersRouteWithChildren,
   ApiWorkspaceRoute: ApiWorkspaceRoute,
   ChatSessionKeyRoute: ChatSessionKeyRoute,
   CrewsCrewIdRoute: CrewsCrewIdRoute,

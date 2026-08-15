@@ -4,7 +4,7 @@ import { OperationsScreen } from '@/screens/operations/operations-screen'
 
 export const Route = createFileRoute('/operations')({
   component: function OperationsRoute() {
-    usePageTitle('Operations')
+    usePageTitle('运行态')
     return <OperationsScreen />
   },
 })

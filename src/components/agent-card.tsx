@@ -54,9 +54,9 @@ function formatRuntimeCompact(runtimeSeconds: number): string {
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
 
-  if (hours > 0) return `${hours}h ${minutes}m`
-  if (minutes > 0) return `${minutes}m ${seconds}s`
-  return `${seconds}s`
+  if (hours > 0) return `${hours}小时 ${minutes}分`
+  if (minutes > 0) return `${minutes}分 ${seconds}秒`
+  return `${seconds}秒`
 }
 
 function formatTokenBadge(tokenCount: number): string {
@@ -79,7 +79,7 @@ function StatusIndicator({ status }: { status: AgentCardStatus }) {
           size={14}
           strokeWidth={1.8}
         />
-        <span className="text-[11px] font-medium text-emerald-300">Done</span>
+        <span className="text-[11px] font-medium text-emerald-300">完成</span>
       </span>
     )
   }
@@ -88,7 +88,7 @@ function StatusIndicator({ status }: { status: AgentCardStatus }) {
     return (
       <span className="inline-flex items-center gap-1 text-red-300">
         <HugeiconsIcon icon={Cancel01Icon} size={14} strokeWidth={1.8} />
-        <span className="text-[11px] font-medium text-red-300">Failed</span>
+        <span className="text-[11px] font-medium text-red-300">失败</span>
       </span>
     )
   }
@@ -99,7 +99,7 @@ function StatusIndicator({ status }: { status: AgentCardStatus }) {
         <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60" />
         <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
       </span>
-      <span className="text-[11px] font-medium text-emerald-300">Running</span>
+      <span className="text-[11px] font-medium text-emerald-300">运行中</span>
     </span>
   )
 }

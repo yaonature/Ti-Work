@@ -1,7 +1,8 @@
-import { Card } from '@/components/ds/card'
-import { StatusBadge } from '@/components/ds/status-badge'
 import type { OperationAgent, OperationAgentStatus } from '@/types/operation'
 import type { Status } from '@/components/ds/status-badge'
+import { Card } from '@/components/ds/card'
+import { StatusBadge } from '@/components/ds/status-badge'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 function agentStatusToStatus(s: OperationAgentStatus): Status {
   switch (s) {
@@ -14,14 +15,14 @@ function agentStatusToStatus(s: OperationAgentStatus): Status {
 
 function timeAgo(iso: string): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000
-  if (diff < 60) return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
+  if (diff < 60) return '刚刚'
+  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`
+  return `${Math.floor(diff / 86400)}天前`
 }
 
 interface AgentOutputsProps {
-  agents: OperationAgent[]
+  agents: Array<OperationAgent>
 }
 
 export function AgentOutputs({ agents }: AgentOutputsProps) {
@@ -35,7 +36,7 @@ export function AgentOutputs({ agents }: AgentOutputsProps) {
         }}
       >
         <p className="text-sm max-w-xs">
-          No agents running. Start a Crew or Conductor mission to see agent outputs here.
+          没有运行中的智能体。发起一个多智能体或 Conductor 任务后即可在此查看智能体输出。
         </p>
       </div>
     )
@@ -46,17 +47,19 @@ export function AgentOutputs({ agents }: AgentOutputsProps) {
       {agents.map((agent) => {
         const contextLabel =
           agent.source === 'crew' && agent.crewName
-            ? `Crew: ${agent.crewName}`
+            ? `多智能体：${agent.crewName}`
             : agent.missionGoal
-              ? `Mission: ${agent.missionGoal.slice(0, 80)}${agent.missionGoal.length > 80 ? '…' : ''}`
+              ? `任务：${agent.missionGoal.slice(0, 80)}${agent.missionGoal.length > 80 ? '…' : ''}`
               : agent.source === 'conductor'
                 ? 'Conductor'
-                : 'Standalone'
+                : '独立'
 
         const header = (
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg leading-none">{agent.emoji}</span>
+              <span className="leading-none text-lg">
+                <EmojiIcon emoji={agent.emoji} size={18} />
+              </span>
               <div className="min-w-0">
                 <div className="text-sm font-medium truncate" style={{ color: 'var(--theme-text)' }}>
                   {agent.name}
@@ -83,7 +86,7 @@ export function AgentOutputs({ agents }: AgentOutputsProps) {
                     minHeight: '3rem',
                   }}
                 >
-                  Last activity: {timeAgo(agent.lastActivity)}
+                  最近活动：{timeAgo(agent.lastActivity)}
                 </div>
                 <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--theme-muted)' }}>
                   {agent.model && (
@@ -98,8 +101,8 @@ export function AgentOutputs({ agents }: AgentOutputsProps) {
                       {agent.model}
                     </span>
                   )}
-                  <span>{agent.totalTokens.toLocaleString()} tokens</span>
-                  <span>{agent.taskCount} task{agent.taskCount !== 1 ? 's' : ''}</span>
+                  <span>{agent.totalTokens.toLocaleString()} token</span>
+                  <span>{agent.taskCount} 个任务</span>
                   {agent.totalCostUsd > 0 && (
                     <span>${agent.totalCostUsd.toFixed(4)}</span>
                   )}
@@ -114,7 +117,7 @@ export function AgentOutputs({ agents }: AgentOutputsProps) {
                   border: '1px solid var(--theme-border)',
                 }}
               >
-                No activity recorded yet.
+                暂无活动记录。
               </div>
             )}
           </Card>

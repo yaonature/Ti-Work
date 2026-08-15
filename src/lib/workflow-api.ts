@@ -1,7 +1,7 @@
 /**
  * Client-side API helpers for workflow management.
  */
-import type { Workflow, WorkflowTask, WorkflowEdge } from '@/types/workflow'
+import type { Workflow, WorkflowEdge, WorkflowTask } from '@/types/workflow'
 
 export type { Workflow, WorkflowTask, WorkflowEdge }
 
@@ -14,8 +14,8 @@ export async function fetchWorkflow(crewId: string): Promise<Workflow | null> {
 
 export async function saveWorkflow(
   crewId: string,
-  tasks: WorkflowTask[],
-  edges: WorkflowEdge[],
+  tasks: Array<WorkflowTask>,
+  edges: Array<WorkflowEdge>,
 ): Promise<Workflow> {
   const res = await fetch(`/api/crews/${crewId}/workflow`, {
     method: 'PUT',

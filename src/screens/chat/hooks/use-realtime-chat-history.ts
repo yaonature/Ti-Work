@@ -385,7 +385,9 @@ export function useRealtimeChatHistory({
   const mergeHistoryMessages = useChatStore((s) => s.mergeHistoryMessages)
   const clearSession = useChatStore((s) => s.clearSession)
   const lastEventAt = useChatStore((s) => s.lastEventAt)
-  const clearRealtimeBuffer = useChatStore((s) => s.clearRealtimeBuffer)
+  const clearRealtimeWhenConfirmed = useChatStore(
+    (s) => s.clearRealtimeWhenConfirmed,
+  )
   const realtimeMessages = useChatStore(
     (s) => s.realtimeMessages.get(effectiveSessionKey) ?? EMPTY_MESSAGES,
   )
@@ -428,7 +430,6 @@ export function useRealtimeChatHistory({
   const mergedMessages = useMemo(() => {
     if (effectiveSessionKey === 'new') return historyMessages
     return mergeHistoryMessages(effectiveSessionKey, historyMessages)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveSessionKey, historyMessages, mergeHistoryMessages, lastEventAt])
 
   useEffect(() => {
@@ -437,23 +438,21 @@ export function useRealtimeChatHistory({
     persistPortableHistory(mergedMessages)
   }, [mergedMessages, portableMode])
 
-  // History has caught up — cleanup realtime buffer outside render
-  // DISABLED: This was aggressively clearing realtime messages before history
-  // caught up, causing the "message appears then disappears" bug.
-  // TODO: Re-enable with smarter timing (e.g. only after history confirms the message)
+  // Drop the realtime buffer only once history has echoed every buffered
+  // message (id/nonce/text/signature match). This replaces the previously
+  // disabled "clear when lengths match" effect, which wiped realtime messages
+  // before history caught up and caused the "message appears then disappears"
+  // flicker. Unconfirmed messages (still streaming, or never echoed by the
+  // server) stay in the buffer so the merged view never loses them.
   useEffect(() => {
-    return // disabled
     if (portableMode) return
     if (!effectiveSessionKey || effectiveSessionKey === 'new') return
-    if (realtimeMessages.length === 0) return
-    if (mergedMessages.length !== historyMessages.length) return
-    clearRealtimeBuffer(effectiveSessionKey)
+    clearRealtimeWhenConfirmed(effectiveSessionKey, historyMessages)
   }, [
-    clearRealtimeBuffer,
+    clearRealtimeWhenConfirmed,
     effectiveSessionKey,
-    historyMessages.length,
-    mergedMessages.length,
-    realtimeMessages.length,
+    historyMessages,
+    portableMode,
   ])
 
   useEffect(() => {

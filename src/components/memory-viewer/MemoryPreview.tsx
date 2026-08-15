@@ -21,11 +21,11 @@ function MemoryPreview({ path, content }: MemoryPreviewProps) {
         <div className="flex items-center gap-2">
           <HugeiconsIcon icon={EyeIcon} size={20} strokeWidth={1.5} />
           <h2 className="text-sm font-medium text-balance text-primary-900">
-            Preview
+            预览
           </h2>
         </div>
         <p className="text-xs text-primary-600 text-pretty tabular-nums">
-          {path || 'Select a memory file to preview markdown.'}
+          {path || '选择记忆文件以预览 Markdown。'}
         </p>
       </header>
       <ScrollAreaRoot className="min-h-0 flex-1">

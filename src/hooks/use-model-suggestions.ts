@@ -47,7 +47,6 @@ type SessionDismissal = {
 }
 
 const GLOBAL_COOLDOWN_MS = 5 * 60 * 1000 // 5 minutes
-const _AUTO_DISMISS_MS = 15 * 1000 // 15 seconds
 
 function getModelTier(modelId: string): ModelTier {
   const normalized = modelId.toLowerCase()
@@ -158,24 +157,7 @@ function isSessionDismissed(sessionKey: string): boolean {
   return dismissals.some((d) => d.sessionKey === sessionKey)
 }
 
-export function useModelSuggestions(_opts: {
-  currentModel: string
-  sessionKey: string
-  messages: Array<Message>
-  availableModels: Array<string>
-}) {
-  // DISABLED: was causing infinite re-render loop (Maximum update depth exceeded)
-  // TODO: fix the dependency array / memoization and re-enable
-  return {
-    suggestion: null as Suggestion | null,
-    dismiss: () => {},
-    dismissForSession: () => {},
-  }
-}
-
-// -ignore -- disabled, will re-enable after fixing deps
-
-function _useModelSuggestionsDisabled({
+export function useModelSuggestions({
   currentModel,
   sessionKey,
   messages,
@@ -293,7 +275,6 @@ function _useModelSuggestionsDisabled({
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- messages.length as stable proxy
   }, [
     currentModel,
     sessionKey,
@@ -320,6 +301,3 @@ function _useModelSuggestionsDisabled({
     dismissForSession,
   }
 }
-
-// Preserve for future auto-dismiss feature
-void _AUTO_DISMISS_MS

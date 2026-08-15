@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { ProviderLogo } from '@/components/provider-logo'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 const KNOWN_PROVIDER_PREFIXES = [
   'openrouter',
@@ -50,47 +51,67 @@ type GatewayStatusResponse = {
 
 const PROVIDERS = [
   {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    logo: '/providers/deepseek.png',
+    desc: '国内模型，需要 API Key',
+    authType: 'api_key',
+    envKey: 'DEEPSEEK_API_KEY',
+    defaultModel: 'deepseek-v4-flash',
+  },
+  {
+    id: 'dashscope',
+    name: '通义千问 Qwen',
+    logo: '/providers/qwen.png',
+    desc: '阿里云百炼，需要 API Key',
+    authType: 'api_key',
+    envKey: 'DASHSCOPE_API_KEY',
+    defaultModel: 'qwen-max',
+  },
+  {
     id: 'nous',
-    name: 'Nous Portal',
+    name: 'Nous 门户',
     logo: '/providers/nous.png',
-    desc: 'Free via OAuth',
+    desc: 'OAuth 免费接入',
     authType: 'oauth',
   },
   {
     id: 'openai-codex',
     name: 'OpenAI Codex',
     logo: '/providers/openai.png',
-    desc: 'Free via ChatGPT Pro',
+    desc: 'ChatGPT Pro 免费使用',
     authType: 'oauth',
   },
   {
     id: 'anthropic',
     name: 'Anthropic',
     logo: '/providers/anthropic.png',
-    desc: 'API key required',
+    desc: '需要 API Key',
     authType: 'api_key',
     envKey: 'ANTHROPIC_API_KEY',
+    defaultModel: 'claude-sonnet-4-6',
   },
   {
     id: 'openrouter',
     name: 'OpenRouter',
     logo: '/providers/openrouter.png',
-    desc: 'API key required',
+    desc: '需要 API Key',
     authType: 'api_key',
     envKey: 'OPENROUTER_API_KEY',
+    defaultModel: 'openrouter/auto',
   },
   {
     id: 'ollama',
     name: 'Ollama',
     logo: '/providers/ollama.png',
-    desc: 'Local models, no key needed',
+    desc: '本地模型，无需密钥',
     authType: 'none',
   },
   {
     id: 'custom',
-    name: 'Custom (OpenAI-compat)',
+    name: '自定义（兼容 OpenAI）',
     logo: '/providers/openai.png',
-    desc: 'Any OpenAI-compatible endpoint',
+    desc: '任意 OpenAI 兼容接口',
     authType: 'custom',
   },
 ]
@@ -100,11 +121,11 @@ function getEnhancedFeatureNames(
 ): Array<string> {
   if (!capabilities) return []
   const features: Array<{ enabled?: boolean; label: string }> = [
-    { enabled: capabilities.sessions, label: 'Sessions' },
-    { enabled: capabilities.skills, label: 'Skills' },
-    { enabled: capabilities.memory, label: 'Memory' },
-    { enabled: capabilities.config, label: 'In-app config' },
-    { enabled: capabilities.jobs, label: 'Jobs' },
+    { enabled: capabilities.sessions, label: '会话' },
+    { enabled: capabilities.skills, label: '技能' },
+    { enabled: capabilities.memory, label: '记忆' },
+    { enabled: capabilities.config, label: '应用内配置' },
+    { enabled: capabilities.jobs, label: '任务' },
   ]
 
   return features
@@ -122,6 +143,7 @@ export function HermesOnboarding() {
     null,
   )
   const [backendMessage, setBackendMessage] = useState('')
+  const [autoStarting, setAutoStarting] = useState(false)
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
   const [apiKey, setApiKey] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
@@ -215,8 +237,8 @@ export function HermesOnboarding() {
         setBackendStatus('ready')
         setBackendMessage(
           data.capabilities.sessions
-            ? 'Backend connected. Core chat works, and Hermes gateway enhancements are available.'
-            : 'Backend connected. Core chat is ready.',
+            ? '后端已连接。基础对话可用，Hermes 执行引擎（网关）增强功能已就绪。'
+            : '后端已连接。基础对话已就绪。',
         )
         return
       }
@@ -224,33 +246,122 @@ export function HermesOnboarding() {
       if (data.capabilities?.health) {
         setBackendStatus('error')
         setBackendMessage(
-          'Backend is reachable, but /v1/chat/completions is not available yet.',
+          '后端可达，但 /v1/chat/completions 接口尚未就绪。',
         )
         return
       }
 
       setBackendStatus('error')
-      setBackendMessage('No compatible backend detected yet.')
+      setBackendMessage('尚未检测到兼容的后端。')
     } catch (err) {
       setBackendInfo(null)
       setBackendStatus('error')
       setBackendMessage(
-        err instanceof Error ? err.message : 'Connection check failed',
+        err instanceof Error ? err.message : '连接检查失败',
       )
     }
   }, [])
 
+  /** 一键启动执行引擎：由应用后台执行启动命令，用户无需手动操作。 */
+  const handleAutoStart = useCallback(async () => {
+    if (autoStarting) return
+    setAutoStarting(true)
+    setBackendStatus('checking')
+    setBackendMessage('正在启动执行引擎…')
+
+    try {
+      const res = await fetch('/api/start-agent', {
+        method: 'POST',
+        signal: AbortSignal.timeout(30_000),
+      })
+      const data = (await res.json()) as {
+        ok?: boolean
+        error?: string
+        message?: string
+      }
+      if (!data.ok) {
+        setBackendStatus('error')
+        setBackendMessage(data.error || '启动失败，请稍后重试。')
+        return
+      }
+
+      // 等待引擎就绪：首次安装会经历 安装→配置→启动，最长约 10 分钟
+      for (let i = 0; i < 300; i += 1) {
+        await new Promise((resolveWait) => setTimeout(resolveWait, 2_000))
+        try {
+          // 安装进度 → 展示当前阶段
+          const progRes = await fetch('/api/engine-bootstrap', {
+            cache: 'no-store',
+          })
+          if (progRes.ok) {
+            const progress = (await progRes.json()) as {
+              phase?: string
+              currentStage?: string | null
+              stageIndex?: number
+              stageCount?: number
+              error?: string | null
+            }
+            if (progress.phase === 'failed') {
+              setBackendStatus('error')
+              setBackendMessage(progress.error || '执行引擎安装失败，请重试。')
+              return
+            }
+            if (
+              progress.phase === 'installing' ||
+              progress.phase === 'configuring' ||
+              progress.phase === 'starting'
+            ) {
+              setBackendMessage(
+                progress.currentStage
+                  ? `正在安装执行引擎（${progress.stageIndex ?? 0}/${progress.stageCount ?? 0}）：${progress.currentStage}`
+                  : '正在安装执行引擎…',
+              )
+            }
+          }
+        } catch {
+          // 轮询失败不中断
+        }
+
+        try {
+          const statusRes = await fetch('/api/gateway-status')
+          if (!statusRes.ok) continue
+          const status = (await statusRes.json()) as GatewayStatusResponse
+          if (status.capabilities?.chatCompletions) {
+            setBackendInfo(status)
+            setBackendStatus('ready')
+            setBackendMessage('执行引擎已启动，后端已连接。')
+            return
+          }
+        } catch {
+          // 引擎尚未就绪，继续轮询
+        }
+      }
+
+      setBackendStatus('error')
+      setBackendMessage('执行引擎已启动，但尚未就绪。请稍后点击「重试」。')
+    } catch {
+      setBackendStatus('error')
+      setBackendMessage('启动请求失败，请重试。')
+    } finally {
+      setAutoStarting(false)
+    }
+  }, [autoStarting])
+
   const saveProviderConfig = useCallback(async () => {
     if (!selectedProvider) return true
     if (!canEditConfig) return true
-
     setSaving(true)
     setSaveError('')
 
     try {
       const prov = PROVIDERS.find((p) => p.id === selectedProvider)
+      // 扁平格式（与设置弹窗一致）：provider + model 顶层键，网关与 GET 均按此读取
+      const defaultModel = prov?.defaultModel ?? ''
       const body: Record<string, unknown> = {
-        config: { model: { provider: selectedProvider } },
+        config: {
+          provider: selectedProvider,
+          ...(defaultModel ? { model: defaultModel } : {}),
+        },
       }
 
       if (prov?.envKey && apiKey) {
@@ -265,13 +376,13 @@ export function HermesOnboarding() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      if (!res.ok) throw new Error(`Save failed: ${res.status}`)
+      if (!res.ok) throw new Error(`保存失败：${res.status}`)
 
       await loadCurrentConfig()
       await loadModels()
       return true
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save')
+      setSaveError(err instanceof Error ? err.message : '保存失败')
       return false
     } finally {
       setSaving(false)
@@ -299,14 +410,15 @@ export function HermesOnboarding() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           config: {
-            model: { provider: selectedProvider, default: modelToSave },
+            model: modelToSave,
+            provider: selectedProvider,
           },
         }),
       })
-      if (!res.ok) throw new Error(`Save failed: ${res.status}`)
+      if (!res.ok) throw new Error(`保存失败：${res.status}`)
       return true
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save model')
+      setSaveError(err instanceof Error ? err.message : '模型保存失败')
       return false
     }
   }, [canEditConfig, configuredModel, selectedModel, selectedProvider])
@@ -323,13 +435,13 @@ export function HermesOnboarding() {
           sessionKey: 'new',
           friendlyId: 'new',
           message:
-            'Reply with one short sentence confirming the backend connection works.',
+            '请用一句话确认后端连接是否正常。',
         }),
       })
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const reader = res.body?.getReader()
-      if (!reader) throw new Error('No stream returned')
+      if (!reader) throw new Error('未返回数据流')
 
       const decoder = new TextDecoder()
       let text = ''
@@ -346,11 +458,11 @@ export function HermesOnboarding() {
         }
       }
 
-      setTestMessage(text.slice(0, 240) || 'Chat test succeeded.')
+      setTestMessage(text.slice(0, 240) || '对话测试成功。')
       setTestStatus('success')
       void checkBackend()
     } catch (err) {
-      setTestMessage(err instanceof Error ? err.message : 'Connection failed')
+      setTestMessage(err instanceof Error ? err.message : '连接失败')
       setTestStatus('error')
     }
   }, [checkBackend])
@@ -374,7 +486,7 @@ export function HermesOnboarding() {
       }
 
       if (!res.ok || data.error) {
-        setOauthError(data.error || 'Failed to start OAuth')
+        setOauthError(data.error || 'OAuth 启动失败')
         setOauthStep('error')
         return
       }
@@ -413,23 +525,68 @@ export function HermesOnboarding() {
 
           if (pollData.status === 'error') {
             if (oauthPollRef.current) clearInterval(oauthPollRef.current)
-            setOauthError(pollData.message || 'Authentication failed')
+            setOauthError(pollData.message || '认证失败')
             setOauthStep('error')
           }
         } catch {}
       }, intervalMs)
     } catch (err) {
       setOauthError(
-        err instanceof Error ? err.message : 'Failed to start OAuth',
+        err instanceof Error ? err.message : 'OAuth 启动失败',
       )
       setOauthStep('error')
     }
   }, [loadModels, saveProviderConfig])
 
+  // 首启判定：仅当从未完成过引导 且 当前没有任何已配置的模型提供方时弹出。
+  // 已配置（如老用户升级）时直接标记完成并跳过引导，避免打断使用。
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (!localStorage.getItem(ONBOARDING_KEY)) {
-      setShow(true)
+    if (localStorage.getItem(ONBOARDING_KEY)) return
+
+    let cancelled = false
+
+    void (async () => {
+      let configured = false
+      try {
+        const res = await fetch('/api/hermes-config', {
+          signal: AbortSignal.timeout(5000),
+        })
+        if (res.ok) {
+          const data = (await res.json()) as {
+            activeModel?: string
+            activeProvider?: string
+            providers?: Array<{
+              authType?: string
+              configured?: boolean
+              authSource?: string
+            }>
+          }
+          const hasActiveModel = Boolean(
+            data.activeModel && data.activeProvider,
+          )
+          const hasKeyProvider = (data.providers ?? []).some(
+            (p) =>
+              p.authType === 'api_key' &&
+              p.configured === true &&
+              p.authSource !== 'none',
+          )
+          configured = hasActiveModel || hasKeyProvider
+        }
+      } catch {
+        // 检测失败时保守弹出引导（无后端更需指引）
+      }
+
+      if (cancelled) return
+      if (configured) {
+        localStorage.setItem(ONBOARDING_KEY, 'true')
+      } else {
+        setShow(true)
+      }
+    })()
+
+    return () => {
+      cancelled = true
     }
   }, [])
 
@@ -452,6 +609,18 @@ export function HermesOnboarding() {
       void loadCurrentConfig()
     }
   }, [loadCurrentConfig, show])
+
+  // 支持页面内"连接 Hermes 网关"按钮触发引导（如定时任务等增强功能的解锁入口）
+  useEffect(() => {
+    const openFromEvent = () => {
+      setShow(true)
+      setStep('connect')
+      void checkBackend()
+    }
+    window.addEventListener('hermes:open-onboarding', openFromEvent)
+    return () =>
+      window.removeEventListener('hermes:open-onboarding', openFromEvent)
+  }, [checkBackend])
 
   const complete = useCallback(() => {
     localStorage.setItem(ONBOARDING_KEY, 'true')
@@ -487,23 +656,32 @@ export function HermesOnboarding() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -20, scale: 0.97 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="w-full max-w-md rounded-2xl p-8"
+          className="relative w-full max-w-md rounded-2xl p-8"
           style={cardStyle}
         >
+          {step !== 'done' && (
+            <button
+              type="button"
+              aria-label="关闭引导"
+              onClick={complete}
+              className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-lg text-lg leading-none text-[var(--theme-muted)] transition-colors hover:bg-black/10 hover:text-[var(--theme-text)]"
+            >
+              ×
+            </button>
+          )}
           {step === 'welcome' && (
             <div className="space-y-4 text-center">
               <img
-                src="/hermes-avatar.webp"
-                alt="Hermes"
+                src="/ti-work-logo.svg"
+                alt="Ti Work"
                 className="mx-auto size-20 rounded-2xl"
                 style={{
                   filter: 'drop-shadow(0 8px 24px rgba(99,102,241,0.3))',
                 }}
               />
-              <h2 className="text-xl font-bold">Welcome to Hermes Studio</h2>
+              <h2 className="text-xl font-bold">欢迎使用 Ti Work</h2>
               <p className="text-sm" style={mutedStyle}>
-                Works with any OpenAI-compatible backend. Hermes gateway APIs
-                unlock sessions, memory, skills, and other extras automatically.
+                兼容任意 OpenAI 接口的后端。接入 Hermes 执行引擎（网关）后，会话、记忆、技能等增强功能将自动解锁。
               </p>
               <button
                 onClick={() => {
@@ -512,21 +690,22 @@ export function HermesOnboarding() {
                 }}
                 className="w-full rounded-xl bg-accent-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-600"
               >
-                Connect Backend
+                连接后端
               </button>
               <button onClick={complete} className="text-xs" style={mutedStyle}>
-                Skip setup
+                跳过设置
               </button>
             </div>
           )}
 
           {step === 'connect' && (
             <div className="space-y-4 text-center">
-              <div className="text-4xl">🔌</div>
-              <h2 className="text-lg font-bold">Connect Your Backend</h2>
+              <div className="text-4xl">
+                <EmojiIcon emoji="🔌" size={40} />
+              </div>
+              <h2 className="text-lg font-bold">连接你的后端</h2>
               <p className="text-sm" style={mutedStyle}>
-                Start by verifying that Hermes Studio can reach your
-                OpenAI-compatible backend.
+                先确认 Ti Work 能连通你的 OpenAI 兼容后端。
               </p>
 
               {backendStatus === 'checking' && (
@@ -535,7 +714,7 @@ export function HermesOnboarding() {
                   style={mutedStyle}
                 >
                   <span className="size-2 animate-pulse rounded-full bg-accent-500" />
-                  Checking backend capabilities...
+                  {autoStarting ? '正在启动执行引擎…' : '正在检查后端能力...'}
                 </div>
               )}
 
@@ -549,9 +728,9 @@ export function HermesOnboarding() {
                     className="rounded-xl p-3 text-left text-xs"
                     style={cardStyle}
                   >
-                    <p style={mutedStyle}>Backend URL</p>
+                    <p style={mutedStyle}>后端地址</p>
                     <p className="mt-1 font-mono">
-                      {backendInfo?.hermesUrl || 'Configured automatically'}
+                      {backendInfo?.hermesUrl || '自动配置'}
                     </p>
                   </div>
                 </div>
@@ -568,73 +747,99 @@ export function HermesOnboarding() {
                     style={{ ...cardStyle, borderColor: 'var(--theme-border)' }}
                   >
                     <p className="font-medium text-white">
-                      Compatible backends
+                      Hermes 网关是什么？
                     </p>
                     <p className="mt-2" style={mutedStyle}>
-                      Use any backend that exposes{' '}
-                      <code>/v1/chat/completions</code>. If you point Hermes
-                      Workspace at a Hermes gateway, enhanced features unlock
-                      automatically.
+                      Ti Work 需要一个「模型后端」才能对话。Hermes 网关是
+                      Ti Work 的执行引擎：连接后，定时任务、会话、记忆等增强功能会自动解锁。
                     </p>
-                    <div
-                      className="mt-3 rounded-lg px-3 py-2 font-mono text-[11px]"
-                      style={{ background: 'rgba(0,0,0,0.2)' }}
-                    >
-                      pnpm dev
-                    </div>
-                    <div
-                      className="mt-2 rounded-lg px-3 py-2 font-mono text-[11px]"
-                      style={{ background: 'rgba(0,0,0,0.2)' }}
-                    >
-                      hermes --gateway
-                    </div>
+                    <p className="mt-2" style={mutedStyle}>
+                      点击下方按钮，Ti Work 会自动在后台启动执行引擎，无需手动配置。
+                    </p>
                   </div>
+                  <button
+                    onClick={() => void handleAutoStart()}
+                    disabled={autoStarting}
+                    className="w-full rounded-xl bg-accent-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-600 disabled:opacity-60"
+                  >
+                    {autoStarting ? '正在启动…' : '一键启动执行引擎'}
+                  </button>
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => void checkBackend()}
-                  className="flex-1 rounded-xl border py-3 text-sm font-semibold transition-colors"
-                  style={{ borderColor: 'var(--theme-border)' }}
-                >
-                  Retry
-                </button>
-                <button
-                  onClick={() => {
-                    setStep('provider')
-                    void loadModels()
-                  }}
-                  disabled={backendStatus !== 'ready'}
-                  className="flex-1 rounded-xl bg-accent-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-600 disabled:opacity-50"
-                >
-                  Continue
-                </button>
-              </div>
+              {backendStatus === 'error' ? (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setStep('welcome')}
+                      className="flex-1 rounded-xl border py-3 text-sm font-semibold transition-colors"
+                      style={{ borderColor: 'var(--theme-border)' }}
+                    >
+                      ← 返回
+                    </button>
+                    <button
+                      onClick={() => void checkBackend()}
+                      disabled={autoStarting}
+                      className="flex-1 rounded-xl border py-3 text-sm font-semibold transition-colors disabled:opacity-50"
+                      style={{ borderColor: 'var(--theme-border)' }}
+                    >
+                      重试
+                    </button>
+                  </div>
+                  <button
+                    onClick={complete}
+                    className="mx-auto block text-xs"
+                    style={mutedStyle}
+                  >
+                    暂时跳过，直接进入工作区
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => void checkBackend()}
+                    disabled={backendStatus === 'checking'}
+                    className="flex-1 rounded-xl border py-3 text-sm font-semibold transition-colors disabled:opacity-50"
+                    style={{ borderColor: 'var(--theme-border)' }}
+                  >
+                    重试
+                  </button>
+                  <button
+                    onClick={() => {
+                      setStep('provider')
+                      void loadModels()
+                    }}
+                    disabled={backendStatus !== 'ready'}
+                    className="flex-1 rounded-xl bg-accent-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-600 disabled:opacity-50"
+                  >
+                    继续
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
           {step === 'provider' && (
             <div className="space-y-4">
               <h2 className="text-center text-lg font-bold">
-                Choose Provider and Model
+                选择模型服务商与模型
               </h2>
               <p className="text-center text-xs" style={mutedStyle}>
                 {canEditConfig
-                  ? 'Save provider settings here, then choose a model before testing chat.'
-                  : 'This backend manages provider settings outside Hermes Studio. Confirm the model you expect to use, then test chat.'}
+                  ? '在此保存服务商设置，然后选择模型后再测试对话。'
+                  : '该后端在 Ti Work 之外管理服务商设置。确认你要使用的模型后测试对话。'}
               </p>
 
               <div className="rounded-xl p-3 text-xs" style={cardStyle}>
-                <p style={mutedStyle}>Backend mode</p>
+                <p style={mutedStyle}>后端模式</p>
                 <p className="mt-1">
                   {backendInfo?.capabilities?.sessions
-                    ? 'Hermes gateway detected'
-                    : 'Portable OpenAI-compatible backend'}
+                    ? '已检测到 Hermes 执行引擎（网关）'
+                    : '便携式 OpenAI 兼容后端'}
                 </p>
                 {configuredModel ? (
                   <p className="mt-2" style={mutedStyle}>
-                    Current model:{' '}
+                    当前模型：{' '}
                     <span className="font-mono text-accent-400">
                       {configuredModel}
                     </span>
@@ -689,7 +894,7 @@ export function HermesOnboarding() {
                         onClick={startNousOAuth}
                         className="w-full rounded-lg bg-accent-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-600"
                       >
-                        Connect with Nous Portal
+                        通过 Nous 门户连接
                       </button>
                     )}
                     {oauthStep === 'loading' && (
@@ -698,7 +903,7 @@ export function HermesOnboarding() {
                         style={mutedStyle}
                       >
                         <span className="size-2 animate-pulse rounded-full bg-accent-500" />
-                        Starting OAuth flow...
+                        正在启动 OAuth 授权...
                       </div>
                     )}
                     {oauthStep === 'waiting' && (
@@ -708,12 +913,12 @@ export function HermesOnboarding() {
                           style={mutedStyle}
                         >
                           <span className="size-2 animate-pulse rounded-full bg-yellow-400" />
-                          Waiting for approval...
+                          等待授权确认...
                         </div>
                         {oauthUserCode ? (
                           <div className="space-y-1 text-center">
                             <p className="text-xs" style={mutedStyle}>
-                              Your code
+                              授权码
                             </p>
                             <p className="text-2xl font-mono font-bold tracking-widest">
                               {oauthUserCode}
@@ -728,27 +933,29 @@ export function HermesOnboarding() {
                             className="w-full rounded-lg border py-2 text-xs font-medium"
                             style={{ borderColor: 'var(--theme-border)' }}
                           >
-                            Open Nous Portal ↗
+                            打开 Nous 门户 ↗
                           </button>
                         ) : null}
                       </div>
                     )}
                     {oauthStep === 'success' && (
                       <div className="flex items-center gap-2 text-sm text-green-500">
-                        <span>✓</span>
-                        <span>Authenticated successfully.</span>
+                        <span>
+                          <EmojiIcon emoji="✓" size={14} />
+                        </span>
+                        <span>认证成功。</span>
                       </div>
                     )}
                     {oauthStep === 'error' && (
                       <div className="space-y-2">
                         <p className="text-xs text-red-400">
-                          {oauthError || 'Authentication failed'}
+                          {oauthError || '认证失败'}
                         </p>
                         <button
                           onClick={startNousOAuth}
                           className="w-full rounded-lg bg-accent-500 py-2 text-xs font-medium text-white"
                         >
-                          Retry
+                          重试
                         </button>
                       </div>
                     )}
@@ -763,7 +970,7 @@ export function HermesOnboarding() {
                     className="space-y-2 rounded-xl p-4 text-left"
                     style={{ ...cardStyle, borderColor: 'var(--theme-border)' }}
                   >
-                    <p className="text-sm font-medium">Run in your terminal</p>
+                    <p className="text-sm font-medium">在终端中执行</p>
                     <div
                       className="rounded-lg px-3 py-2 font-mono text-xs"
                       style={{ background: 'rgba(0,0,0,0.2)' }}
@@ -771,8 +978,7 @@ export function HermesOnboarding() {
                       hermes auth login openai-codex
                     </div>
                     <p className="text-xs" style={mutedStyle}>
-                      After the login flow completes, click below to refresh
-                      provider settings.
+                      登录流程完成后，点击下方刷新服务商设置。
                     </p>
                     <button
                       onClick={async () => {
@@ -781,7 +987,7 @@ export function HermesOnboarding() {
                       }}
                       className="w-full rounded-lg bg-accent-500 py-2 text-xs font-medium text-white"
                     >
-                      I&apos;ve authenticated
+                      我已认证
                     </button>
                   </div>
                 )}
@@ -795,8 +1001,8 @@ export function HermesOnboarding() {
                         style={mutedStyle}
                       >
                         {selectedProvider === 'ollama'
-                          ? 'Ollama URL'
-                          : 'Base URL'}
+                          ? 'Ollama 地址'
+                          : '基础地址'}
                       </label>
                       <input
                         type="text"
@@ -818,7 +1024,7 @@ export function HermesOnboarding() {
                         className="mb-1 block text-xs font-medium"
                         style={mutedStyle}
                       >
-                        API Key
+                        API 密钥
                       </label>
                       <input
                         type="password"
@@ -838,7 +1044,7 @@ export function HermesOnboarding() {
                   className="mb-1 block text-xs font-medium"
                   style={mutedStyle}
                 >
-                  Model
+                  模型
                 </label>
                 {availableModels.length > 0 ? (
                   <select
@@ -867,16 +1073,14 @@ export function HermesOnboarding() {
                 )}
                 <p className="mt-2 text-xs" style={mutedStyle}>
                   {canFetchModels
-                    ? 'Models were fetched from the backend when available.'
-                    : 'If your backend does not expose /v1/models, enter the model name manually.'}
+                    ? '模型列表已从后端获取。'
+                    : '如果后端不提供 /v1/models 接口，请手动输入模型名称。'}
                 </p>
               </div>
 
               {!canEditConfig ? (
                 <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-200">
-                  In-app provider editing is unavailable on this backend. That
-                  is optional. If the backend is already configured, continue to
-                  the chat test.
+                  该后端不支持在应用内编辑服务商设置，这并非必需。如果后端已配置完成，可直接进入对话测试。
                 </div>
               ) : null}
 
@@ -895,7 +1099,7 @@ export function HermesOnboarding() {
                     }
                     className="flex-1 rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
                   >
-                    {saving ? 'Saving...' : 'Save Settings'}
+                    {saving ? '保存中...' : '保存设置'}
                   </button>
                 ) : null}
                 <button
@@ -920,7 +1124,7 @@ export function HermesOnboarding() {
                   disabled={!backendSupportsChat}
                   className="flex-1 rounded-xl bg-accent-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-600 disabled:opacity-50"
                 >
-                  Continue →
+                  继续 →
                 </button>
               </div>
             </div>
@@ -928,24 +1132,25 @@ export function HermesOnboarding() {
 
           {step === 'test' && (
             <div className="space-y-4 text-center">
-              <div className="text-4xl">🧪</div>
-              <h2 className="text-lg font-bold">Test Chat</h2>
+              <div className="text-4xl">
+                <EmojiIcon emoji="🧪" size={40} />
+              </div>
+              <h2 className="text-lg font-bold">测试对话</h2>
               <p className="text-sm" style={mutedStyle}>
-                Verify that core chat works first. Enhanced Hermes features are
-                optional and appear automatically when supported.
+                先确认基础对话可用。Hermes 增强功能为可选能力，后端支持时自动出现。
               </p>
 
               <div
                 className="rounded-xl p-3 text-left text-xs"
                 style={cardStyle}
               >
-                <p style={mutedStyle}>Backend</p>
+                <p style={mutedStyle}>后端</p>
                 <p className="mt-1 font-mono">
-                  {backendInfo?.hermesUrl || 'Configured automatically'}
+                  {backendInfo?.hermesUrl || '自动配置'}
                 </p>
                 {selectedModel || configuredModel ? (
                   <p className="mt-2" style={mutedStyle}>
-                    Model:{' '}
+                    模型：{' '}
                     <span className="font-mono text-accent-400">
                       {stripProviderPrefix(selectedModel || configuredModel)}
                     </span>
@@ -958,7 +1163,7 @@ export function HermesOnboarding() {
                   onClick={testConnection}
                   className="w-full rounded-xl bg-accent-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-600"
                 >
-                  Send Test Message
+                  发送测试消息
                 </button>
               ) : null}
 
@@ -968,7 +1173,7 @@ export function HermesOnboarding() {
                   style={mutedStyle}
                 >
                   <span className="size-2 animate-pulse rounded-full bg-accent-500" />
-                  Waiting for the backend response...
+                  正在等待后端响应...
                 </div>
               ) : null}
 
@@ -979,7 +1184,7 @@ export function HermesOnboarding() {
                     style={cardStyle}
                   >
                     <span className="font-medium text-green-500">
-                      Assistant:
+                      助手：
                     </span>{' '}
                     <span>{testMessage}</span>
                   </div>
@@ -987,7 +1192,7 @@ export function HermesOnboarding() {
                     onClick={() => setStep('done')}
                     className="w-full rounded-xl bg-green-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700"
                   >
-                    Continue
+                    继续
                   </button>
                 </div>
               ) : null}
@@ -996,7 +1201,7 @@ export function HermesOnboarding() {
                 <div className="space-y-3">
                   <div className="rounded-xl border border-red-500/30 bg-red-900/20 p-3 text-left text-sm">
                     <p className="mb-1 font-medium text-red-400">
-                      Chat test failed
+                      对话测试失败
                     </p>
                     <p className="text-xs" style={mutedStyle}>
                       {testMessage}
@@ -1004,16 +1209,15 @@ export function HermesOnboarding() {
                     {testMessage.includes('401') ||
                     testMessage.toLowerCase().includes('key') ? (
                       <p className="mt-2 text-xs text-yellow-400">
-                        Check your provider credentials and account access.
+                        请检查服务商凭据与账号权限。
                       </p>
                     ) : testMessage.toLowerCase().includes('model') ? (
                       <p className="mt-2 text-xs text-yellow-400">
-                        Confirm the selected model exists on this backend.
+                        请确认所选模型在该后端存在。
                       </p>
                     ) : (
                       <p className="mt-2 text-xs text-yellow-400">
-                        Confirm the backend is running and still reachable from
-                        Hermes Studio.
+                        请确认后端仍在运行且可从 Ti Work 访问。
                       </p>
                     )}
                   </div>
@@ -1022,14 +1226,14 @@ export function HermesOnboarding() {
                       onClick={testConnection}
                       className="flex-1 rounded-lg bg-accent-500 py-2 text-xs font-medium text-white"
                     >
-                      Retry
+                      重试
                     </button>
                     <button
                       onClick={() => setStep('provider')}
                       className="flex-1 rounded-lg border py-2 text-xs font-medium"
                       style={{ borderColor: 'var(--theme-border)' }}
                     >
-                      ← Back
+                      ← 返回
                     </button>
                   </div>
                   <button
@@ -1037,7 +1241,7 @@ export function HermesOnboarding() {
                     className="mx-auto block text-xs"
                     style={mutedStyle}
                   >
-                    Skip for now
+                    暂时跳过
                   </button>
                 </div>
               ) : null}
@@ -1046,48 +1250,56 @@ export function HermesOnboarding() {
 
           {step === 'done' && (
             <div className="space-y-4 text-center">
-              <div className="text-5xl">🎉</div>
-              <h2 className="text-xl font-bold">Workspace Ready</h2>
+              <div className="text-5xl">
+                <EmojiIcon emoji="🎉" size={48} />
+              </div>
+              <h2 className="text-xl font-bold">工作区就绪</h2>
               <p className="text-sm" style={mutedStyle}>
-                Core chat is set up.{' '}
+                基础对话已配置完成。{' '}
                 {enhancedFeatures.length > 0
-                  ? 'This backend also exposes Hermes gateway enhancements.'
-                  : 'If you later connect a Hermes gateway, enhanced features unlock automatically.'}
+                  ? '该后端同时提供 Hermes 执行引擎（网关）增强功能。'
+                  : '后续连接 Hermes 执行引擎（网关）时，增强功能将自动解锁。'}
               </p>
               <div
                 className="grid grid-cols-3 gap-2 text-xs"
                 style={mutedStyle}
               >
                 <div className="rounded-xl p-2" style={cardStyle}>
-                  <div className="mb-1 text-lg">💬</div>
-                  <div>Chat Ready</div>
+                  <div className="mb-1 text-lg">
+                    <EmojiIcon emoji="💬" size={18} />
+                  </div>
+                  <div>对话就绪</div>
                 </div>
                 <div className="rounded-xl p-2" style={cardStyle}>
-                  <div className="mb-1 text-lg">🔗</div>
+                  <div className="mb-1 text-lg">
+                    <EmojiIcon emoji="🔗" size={18} />
+                  </div>
                   <div>
-                    {enhancedFeatures.length > 0 ? 'Enhanced' : 'Portable'}
+                    {enhancedFeatures.length > 0 ? '增强' : '便携'}
                   </div>
                 </div>
                 <div className="rounded-xl p-2" style={cardStyle}>
-                  <div className="mb-1 text-lg">🧠</div>
+                  <div className="mb-1 text-lg">
+                    <EmojiIcon emoji="🧠" size={18} />
+                  </div>
                   <div>
                     {enhancedFeatures.length > 0
                       ? enhancedFeatures.length
-                      : 'Optional'}{' '}
-                    Extras
+                      : '可选'}{' '}
+                    扩展
                   </div>
                 </div>
               </div>
               {enhancedFeatures.length > 0 ? (
                 <p className="text-xs" style={mutedStyle}>
-                  Available now: {enhancedFeatures.join(', ')}.
+                  当前可用：{enhancedFeatures.join('、')}。
                 </p>
               ) : null}
               <button
                 onClick={complete}
                 className="w-full rounded-xl bg-accent-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-600"
               >
-                Open Workspace
+                进入工作区
               </button>
             </div>
           )}

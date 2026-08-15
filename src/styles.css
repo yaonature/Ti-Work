@@ -5,33 +5,23 @@
   --tabbar-h: 0px;
 }
 
-/* Hide scrollbars until scroll (cross-browser) */
+/* Hide scrollbars everywhere but keep scrolling (cross-browser) */
 * {
-  scrollbar-width: thin;
+  scrollbar-width: none;
   scrollbar-color: transparent transparent;
 }
-*:hover {
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
-}
-.dark *:hover {
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-}
 *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  display: none;
+  width: 0;
+  height: 0;
 }
 *::-webkit-scrollbar-track {
+  display: none;
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
+  display: none;
   background-color: transparent;
-  border-radius: 9999px;
-}
-*:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
-}
-.dark *:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .root {
@@ -140,6 +130,7 @@
 }
 
 [data-theme='hermes-os'] .kpi-card:hover,
+[data-theme='ti-work'] .kpi-card:hover,
 [data-theme='ops-dark'] .kpi-card:hover,
 [data-theme='premium-dark'] .kpi-card:hover,
 [data-theme='sunset-brand'] .kpi-card:hover {
@@ -692,26 +683,27 @@ code {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* Agent Status Strip — visible only in hermes-os theme */
+/* Agent Status Strip — visible only in hermes-os / ti-work themes */
 .agent-status-strip {
   display: none;
   height: 0;
   overflow: hidden;
 }
-[data-theme='hermes-os'] .agent-status-strip {
+[data-theme='hermes-os'] .agent-status-strip,
+[data-theme='ti-work'] .agent-status-strip {
   display: flex;
   height: 30px;
   align-items: center;
   flex-shrink: 0;
-  background: linear-gradient(90deg, #060b16 0%, #070d1a 60%, #060b16 100%);
-  border-bottom: 1px solid rgba(56, 189, 248, 0.18);
-  box-shadow: 0 1px 12px rgba(56, 189, 248, 0.06), 0 0 0 0 transparent;
+  background: linear-gradient(90deg, var(--theme-sidebar) 0%, var(--theme-panel) 60%, var(--theme-sidebar) 100%);
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-accent) 18%, transparent);
+  box-shadow: 0 1px 12px color-mix(in srgb, var(--theme-accent) 6%, transparent), 0 0 0 0 transparent;
   padding: 0 1rem;
   gap: 1rem;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: 0.04em;
-  color: rgba(103, 232, 249, 0.7);
+  color: color-mix(in srgb, var(--theme-accent) 85%, white);
   z-index: 50;
   position: relative;
 }
@@ -766,6 +758,111 @@ code {
   --glow-blue: 0 0 18px rgba(56, 189, 248, 0.18), 0 0 36px rgba(56, 189, 248, 0.08);
   --glow-violet: 0 0 18px rgba(129, 140, 248, 0.18), 0 0 36px rgba(129, 140, 248, 0.08);
   --glow-cyan: 0 0 18px rgba(103, 232, 249, 0.18), 0 0 36px rgba(103, 232, 249, 0.08);
+}
+
+/* ── Ti Work (CC Switch brand blue, default theme) ──
+   Palette mapping per docs/development-guide.md §4.2: background #1D1D20 / card #24242D /
+   secondary #2A2A32 / border #3A3A40 / primary #148AFF family (three gray levels + brand blue) */
+[data-theme='ti-work'] {
+  --statusbar-h: 30px;
+  --theme-bg: #1d1d20;
+  --theme-sidebar: #19191d;
+  --theme-panel: #24242d;
+  --theme-card: #24242d;
+  --theme-card2: #2a2a32;
+  --theme-hover: #2a2a32;
+  --theme-border: #3a3a40;
+  --theme-border-subtle: #2e2e35;
+  --theme-text: #fafafa;
+  --theme-muted: #a1a1aa;
+  --theme-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --theme-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --theme-shadow-3: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --theme-glass: rgba(29, 29, 32, 0.78);
+  --theme-focus: #148aff;
+  --theme-accent: #148aff;
+  --theme-accent-secondary: #409cff;
+  --theme-accent-subtle: rgba(20, 138, 255, 0.1);
+  --theme-accent-border: rgba(20, 138, 255, 0.28);
+  --theme-active: #409cff;
+  --theme-link: #409cff;
+  --theme-success: #10b981;
+  --theme-warning: #f59e0b;
+  --theme-danger: #ef4444;
+  --theme-stripe: rgba(58, 58, 64, 0.5);
+  --theme-header-bg: #19191d;
+  --theme-header-border: #3a3a40;
+  --chat-user-bg: #2a2a32;
+  --chat-user-border: #3a3a40;
+  --chat-user-foreground: #fafafa;
+  --chat-assistant-bg: #24242d;
+  --chat-assistant-border: #33333a;
+  --chat-assistant-foreground: #fafafa;
+  --composer-bg: #19191d;
+  --composer-border: #3a3a40;
+  --composer-placeholder: #6e6e76;
+  --tool-card-bg: #24242d;
+  --tool-card-border: #3a3a40;
+  --tool-card-title: #fafafa;
+  --tool-card-muted: #a1a1aa;
+  --code-bg: #16161a;
+  --code-border: #2e2e35;
+  --code-foreground: #e4e4e7;
+  --theme-input: #19191d;
+  --glow-blue: 0 0 18px rgba(20, 138, 255, 0.18), 0 0 36px rgba(20, 138, 255, 0.08);
+  --glow-violet: 0 0 18px rgba(20, 138, 255, 0.12), 0 0 36px rgba(20, 138, 255, 0.05);
+  --glow-cyan: 0 0 18px rgba(20, 138, 255, 0.1), 0 0 36px rgba(20, 138, 255, 0.04);
+}
+
+/* Ti Work 浅色版 — CC Switch light（#0A84FF 品牌蓝，白底） */
+[data-theme='ti-work'][data-mode='light'] {
+  --theme-bg: #ffffff;
+  --theme-sidebar: #fafafa;
+  --theme-panel: #ffffff;
+  --theme-card: #ffffff;
+  --theme-card2: #f4f4f5;
+  --theme-hover: #f4f4f5;
+  --theme-border: #e4e4e7;
+  --theme-border-subtle: #f0f0f2;
+  --theme-text: #09090b;
+  --theme-muted: #71717a;
+  --theme-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --theme-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --theme-shadow-3: 0 12px 32px rgba(0, 0, 0, 0.12);
+  --theme-glass: rgba(255, 255, 255, 0.78);
+  --theme-focus: #148aff;
+  --theme-accent: #0a84ff;
+  --theme-accent-secondary: #409cff;
+  --theme-accent-subtle: rgba(10, 132, 255, 0.1);
+  --theme-accent-border: rgba(10, 132, 255, 0.28);
+  --theme-active: #148aff;
+  --theme-link: #0a84ff;
+  --theme-success: #10b981;
+  --theme-warning: #f59e0b;
+  --theme-danger: #ef4444;
+  --theme-stripe: rgba(228, 228, 231, 0.5);
+  --theme-header-bg: #ffffff;
+  --theme-header-border: #e4e4e7;
+  --chat-user-bg: #f4f4f5;
+  --chat-user-border: #e4e4e7;
+  --chat-user-foreground: #09090b;
+  --chat-assistant-bg: #ffffff;
+  --chat-assistant-border: #eef0f2;
+  --chat-assistant-foreground: #09090b;
+  --composer-bg: #ffffff;
+  --composer-border: #e4e4e7;
+  --composer-placeholder: #a1a1aa;
+  --tool-card-bg: #ffffff;
+  --tool-card-border: #e4e4e7;
+  --tool-card-title: #09090b;
+  --tool-card-muted: #71717a;
+  --code-bg: #f4f4f5;
+  --code-border: #e4e4e7;
+  --code-foreground: #2c2c2e;
+  --theme-input: #ffffff;
+  --glow-blue: 0 0 18px rgba(10, 132, 255, 0.15), 0 0 36px rgba(10, 132, 255, 0.06);
+  --glow-violet: 0 0 18px rgba(10, 132, 255, 0.1), 0 0 36px rgba(10, 132, 255, 0.04);
+  --glow-cyan: 0 0 18px rgba(10, 132, 255, 0.08), 0 0 36px rgba(10, 132, 255, 0.03);
 }
 
 [data-theme='hermes-official'] {
@@ -961,6 +1058,10 @@ code {
 [data-theme='hermes-os'] body,
 [data-theme='hermes-os'] #root,
 [data-theme='hermes-os'] .dark,
+[data-theme='ti-work'] html,
+[data-theme='ti-work'] body,
+[data-theme='ti-work'] #root,
+[data-theme='ti-work'] .dark,
 [data-theme='hermes-official'] html,
 [data-theme='hermes-official'] body,
 [data-theme='hermes-official'] #root,
@@ -988,6 +1089,7 @@ code {
    Dark: 50=darkest surface, 950=lightest text (already set above) */
 
 [data-theme='hermes-os'],
+[data-theme='ti-work'],
 [data-theme='hermes-official'],
 [data-theme='hermes-classic'],
 [data-theme='hermes-slate'],
@@ -1032,77 +1134,83 @@ code {
   transition-duration: 0.05s !important;
 }
 
-/* ── Hermes OS Theme Overrides ──────────────────────────────────────────
-   Premium cinematic overrides for the hermes-os theme.
-   All rules below only apply when [data-theme='hermes-os'] is active.
+/* ── Hermes OS & Ti Work Theme Overrides ────────────────────────────────
+   Premium cinematic overrides for the hermes-os / ti-work themes.
+   Hard-coded cyan has been theme-var-ized: --theme-accent is #38bdf8 under hermes-os
+   and brand blue #148AFF under ti-work; both themes render consistently.
    ─────────────────────────────────────────────────────────────────────── */
 
 /* Sidebar: glassmorphism + luminous left border on active items */
-[data-theme='hermes-os'] aside {
-  border-right-color: rgba(56, 189, 248, 0.1) !important;
+[data-theme='hermes-os'] aside,
+[data-theme='ti-work'] aside {
+  border-right-color: color-mix(in srgb, var(--theme-accent) 10%, transparent) !important;
 }
 
-/* Active nav item: electric blue accent bar */
-[data-theme='hermes-os'] .bg-accent-500\/10 {
-  background: rgba(56, 189, 248, 0.07) !important;
-  border-left: 2px solid rgba(56, 189, 248, 0.7);
-  color: #38bdf8 !important;
+/* Active nav item: accent bar */
+[data-theme='hermes-os'] .bg-accent-500\/10,
+[data-theme='ti-work'] .bg-accent-500\/10 {
+  background: color-mix(in srgb, var(--theme-accent) 7%, transparent) !important;
+  border-left: 2px solid color-mix(in srgb, var(--theme-accent) 70%, transparent);
+  color: var(--theme-accent) !important;
 }
 
 /* Nav icon color for active items */
-[data-theme='hermes-os'] .bg-accent-500\/10 svg {
-  color: #38bdf8 !important;
+[data-theme='hermes-os'] .bg-accent-500\/10 svg,
+[data-theme='ti-work'] .bg-accent-500\/10 svg {
+  color: var(--theme-accent) !important;
   opacity: 1;
 }
 
-/* Accent color remaps for hermes-os */
-[data-theme='hermes-os'] .text-accent-500 {
-  color: #38bdf8 !important;
+/* Accent color remaps */
+[data-theme='hermes-os'] .text-accent-500,
+[data-theme='ti-work'] .text-accent-500 {
+  color: var(--theme-accent) !important;
 }
-[data-theme='hermes-os'] .bg-accent-500 {
-  background-color: #38bdf8 !important;
+[data-theme='hermes-os'] .bg-accent-500,
+[data-theme='ti-work'] .bg-accent-500 {
+  background-color: var(--theme-accent) !important;
 }
-[data-theme='hermes-os'] .hover\:bg-accent-600:hover {
-  background-color: #0ea5e9 !important;
+[data-theme='hermes-os'] .hover\:bg-accent-600:hover,
+[data-theme='ti-work'] .hover\:bg-accent-600:hover {
+  background-color: color-mix(in srgb, var(--theme-accent) 78%, #000) !important;
 }
 
 /* Composer: terminal-style look */
-[data-theme='hermes-os'] .composer-input {
+[data-theme='hermes-os'] .composer-input,
+[data-theme='ti-work'] .composer-input {
   background: var(--composer-bg) !important;
-  border-color: rgba(56, 189, 248, 0.15) !important;
+  border-color: color-mix(in srgb, var(--theme-accent) 15%, transparent) !important;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 0.875rem;
 }
-[data-theme='hermes-os'] .composer-input:focus-within {
-  border-color: rgba(56, 189, 248, 0.5) !important;
+[data-theme='hermes-os'] .composer-input:focus-within,
+[data-theme='ti-work'] .composer-input:focus-within {
+  border-color: color-mix(in srgb, var(--theme-accent) 50%, transparent) !important;
   box-shadow:
-    0 0 0 1px rgba(56, 189, 248, 0.2),
-    0 0 20px rgba(56, 189, 248, 0.08),
-    0 0 40px rgba(56, 189, 248, 0.04) !important;
+    0 0 0 1px color-mix(in srgb, var(--theme-accent) 20%, transparent),
+    0 0 20px color-mix(in srgb, var(--theme-accent) 8%, transparent),
+    0 0 40px color-mix(in srgb, var(--theme-accent) 4%, transparent) !important;
 }
 
 /* Card / panel: subtle glass effect */
-[data-theme='hermes-os'] .kpi-card {
+[data-theme='hermes-os'] .kpi-card,
+[data-theme='ti-work'] .kpi-card {
   background: var(--theme-card);
-  border-color: rgba(56, 189, 248, 0.1);
+  border-color: color-mix(in srgb, var(--theme-accent) 10%, transparent);
 }
-[data-theme='hermes-os'] .kpi-card:hover {
-  border-color: rgba(56, 189, 248, 0.3);
+[data-theme='hermes-os'] .kpi-card:hover,
+[data-theme='ti-work'] .kpi-card:hover {
+  border-color: color-mix(in srgb, var(--theme-accent) 30%, transparent);
   box-shadow:
     var(--theme-shadow-2),
-    0 0 24px rgba(56, 189, 248, 0.1);
+    0 0 24px color-mix(in srgb, var(--theme-accent) 10%, transparent);
 }
 
-/* Scrollbars: tinted cyan in hermes-os */
-[data-theme='hermes-os'] *:hover {
-  scrollbar-color: rgba(56, 189, 248, 0.2) transparent;
-}
-[data-theme='hermes-os'] *:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(56, 189, 248, 0.2);
-}
+/* Scrollbars hidden globally (see top of file) */
 
 /* Header branding in sidebar: upgrade to Space Grotesk */
-[data-theme='hermes-os'] aside .font-semibold {
+[data-theme='hermes-os'] aside .font-semibold,
+[data-theme='ti-work'] aside .font-semibold {
   font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   letter-spacing: -0.02em;
 }

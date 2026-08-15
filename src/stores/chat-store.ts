@@ -118,6 +118,17 @@ type ChatState = {
   getStreamingState: (sessionKey: string) => StreamingState | null
   clearSession: (sessionKey: string) => void
   clearRealtimeBuffer: (sessionKey: string) => void
+  /**
+   * Drop the realtime buffer for a session only after every buffered message
+   * has been confirmed by a history round-trip (id/nonce/text/signature match).
+   * Buffered messages that history has not yet echoed are preserved so the
+   * merged view never flickers, and never-repeated server messages remain
+   * visible instead of being silently dropped.
+   */
+  clearRealtimeWhenConfirmed: (
+    sessionKey: string,
+    historyMessages: Array<ChatMessage>,
+  ) => void
   clearStreamingSession: (sessionKey: string) => void
   clearAllStreaming: () => void
   mergeHistoryMessages: (
@@ -293,7 +304,7 @@ function stripFinalTagsFromMessage(msg: ChatMessage): ChatMessage {
       modified = true
       return { ...part, text: stripped }
     })
-    nextMessage.content = nextContent as typeof msg.content
+    nextMessage.content = nextContent
   }
 
   for (const key of ['text', 'body', 'message'] as const) {
@@ -890,7 +901,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             timestamp: getMessageEventTime(cleanedMessage) ?? now,
             __receiveTime: now,
             __realtimeSequence: realtimeMessageSequence++,
-            __streamingStatus: 'complete' as any,
+            __streamingStatus: 'complete',
             ...(streamToolCallsToEmbed
               ? { __streamToolCalls: streamToolCallsToEmbed }
               : {}),
@@ -905,14 +916,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
             content.push({
               type: 'thinking',
               thinking: streaming.thinking,
-            } as ThinkingContent)
+            })
           }
 
           if (cleanStreamText) {
             content.push({
               type: 'text',
               text: cleanStreamText,
-            } as TextContent)
+            })
           }
 
           for (const toolCall of streaming.toolCalls) {
@@ -921,7 +932,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
               id: toolCall.id,
               name: toolCall.name,
               arguments: toolCall.args as Record<string, unknown> | undefined,
-            } as ToolCallContent)
+            })
           }
 
           completeMessage = {
@@ -1023,6 +1034,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ realtimeMessages: messages })
   },
 
+  clearRealtimeWhenConfirmed: (sessionKey, historyMessages) => {
+    const realtimeMessages = get().realtimeMessages.get(sessionKey) ?? []
+    if (realtimeMessages.length === 0) return
+
+    const allConfirmed = realtimeMessages.every((rtMsg) =>
+      historyMessages.some((histMsg) => matchesRealtimeMessage(histMsg, rtMsg)),
+    )
+    if (!allConfirmed) return
+
+    const messages = new Map(get().realtimeMessages)
+    messages.delete(sessionKey)
+    set({ realtimeMessages: messages })
+  },
+
   clearStreamingSession: (sessionKey) => {
     const streaming = new Map(get().streamingState)
     if (!streaming.has(sessionKey)) return
@@ -1040,68 +1065,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     if (realtimeMessages.length === 0) {
       return sortMessagesChronologically(historyMessages)
-    }
-
-    const matchesRealtimeMessage = (
-      histMsg: ChatMessage,
-      rtMsg: ChatMessage,
-    ): boolean => {
-      const rtId = getMessageId(rtMsg)
-      const rtText = extractMessageText(rtMsg)
-      const rtNonce = getClientNonce(rtMsg)
-      const rtSignature = messageMultipartSignature(rtMsg)
-      const histId = getMessageId(histMsg)
-      if (rtId && histId && rtId === histId) {
-        return true
-      }
-
-      const histNonce = getClientNonce(histMsg)
-      if (rtNonce && histNonce && rtNonce === histNonce) {
-        return true
-      }
-
-      if (histMsg.role === rtMsg.role && rtText) {
-        const histText = extractMessageText(histMsg)
-        if (histText === rtText) return true
-      }
-
-      const histRaw = histMsg as Record<string, unknown>
-      const histIsOptimistic =
-        normalizeString(histRaw.status) === 'sending' ||
-        normalizeString(histRaw.__optimisticId).length > 0
-
-      if (histIsOptimistic && histMsg.role === rtMsg.role) {
-        if (rtText) {
-          const histText = extractMessageText(histMsg)
-          if (histText === rtText) return true
-          if (histText && rtText.startsWith(histText)) return true
-        }
-        const rtAttachments = Array.isArray((rtMsg as any).attachments)
-          ? ((rtMsg as any).attachments as Array<Record<string, unknown>>)
-          : []
-        const histAttachments = Array.isArray((histMsg as any).attachments)
-          ? ((histMsg as any).attachments as Array<Record<string, unknown>>)
-          : []
-        if (
-          rtAttachments.length > 0 &&
-          rtAttachments.length == histAttachments.length
-        ) {
-          const rtSig = rtAttachments
-            .map((a) => `${normalizeString(a.name)}:${String(a.size ?? '')}`)
-            .sort()
-            .join('|')
-          const histSig = histAttachments
-            .map((a) => `${normalizeString(a.name)}:${String(a.size ?? '')}`)
-            .sort()
-            .join('|')
-          if (rtSig && rtSig === histSig) return true
-        }
-      }
-
-      return (
-        rtSignature.length > 0 &&
-        rtSignature === messageMultipartSignature(histMsg)
-      )
     }
 
     const mergedHistoryMessages = historyMessages.map((histMsg) => {
@@ -1140,6 +1103,84 @@ export const useChatStore = create<ChatState>((set, get) => ({
     ])
   },
 }))
+
+/**
+ * Determine whether a history message is the confirmed copy of a realtime
+ * (optimistic/streamed) message. Matching precedence:
+ *   1. identical message id
+ *   2. identical client nonce
+ *   3. identical role + text
+ *   4. optimistic history placeholder matching a realtime message by text,
+ *      prefix, or attachment signature
+ *   5. identical multipart signature
+ * Used by both mergeHistoryMessages (dedup) and clearRealtimeWhenConfirmed
+ * (buffer cleanup once history has echoed every realtime message).
+ */
+function matchesRealtimeMessage(
+  histMsg: ChatMessage,
+  rtMsg: ChatMessage,
+): boolean {
+  const rtId = getMessageId(rtMsg)
+  const rtText = extractMessageText(rtMsg)
+  const rtNonce = getClientNonce(rtMsg)
+  const rtSignature = messageMultipartSignature(rtMsg)
+  const histId = getMessageId(histMsg)
+  if (rtId && histId && rtId === histId) {
+    return true
+  }
+
+  const histNonce = getClientNonce(histMsg)
+  if (rtNonce && histNonce && rtNonce === histNonce) {
+    return true
+  }
+
+  if (histMsg.role === rtMsg.role && rtText) {
+    const histText = extractMessageText(histMsg)
+    if (histText === rtText) return true
+  }
+
+  const histRaw = histMsg as Record<string, unknown>
+  const histIsOptimistic =
+    normalizeString(histRaw.status) === 'sending' ||
+    normalizeString(histRaw.__optimisticId).length > 0
+
+  if (histIsOptimistic && histMsg.role === rtMsg.role) {
+    if (rtText) {
+      const histText = extractMessageText(histMsg)
+      if (histText === rtText) return true
+      if (histText && rtText.startsWith(histText)) return true
+    }
+    const rtAttachments = getAttachments(rtMsg)
+    const histAttachments = getAttachments(histMsg)
+    if (
+      rtAttachments.length > 0 &&
+      rtAttachments.length == histAttachments.length
+    ) {
+      const rtSig = rtAttachments
+        .map((a) => `${normalizeString(a.name)}:${String(a.size ?? '')}`)
+        .sort()
+        .join('|')
+      const histSig = histAttachments
+        .map((a) => `${normalizeString(a.name)}:${String(a.size ?? '')}`)
+        .sort()
+        .join('|')
+      if (rtSig && rtSig === histSig) return true
+    }
+  }
+
+  return (
+    rtSignature.length > 0 && rtSignature === messageMultipartSignature(histMsg)
+  )
+}
+
+function getAttachments(
+  msg: ChatMessage,
+): Array<Record<string, unknown>> {
+  const raw = msg as ChatMessage & { attachments?: unknown }
+  return Array.isArray(raw.attachments)
+    ? (raw.attachments)
+    : []
+}
 
 function extractTextFromContent(
   content: Array<MessageContent> | undefined,
@@ -1189,7 +1230,7 @@ function ensureAssistantTextContent(msg: ChatMessage): ChatMessage {
 
   return {
     ...msg,
-    content: [{ type: 'text', text } as TextContent],
+    content: [{ type: 'text', text }],
   }
 }
 

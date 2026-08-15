@@ -28,7 +28,7 @@ function Thinking({ content }: ThinkingProps) {
             />
           }
         >
-          <span className="text-sm font-medium text-primary-900">Thinking</span>
+          <span className="text-sm font-medium text-primary-900">思考中</span>
           <HugeiconsIcon
             icon={ArrowDown01Icon}
             size={14}

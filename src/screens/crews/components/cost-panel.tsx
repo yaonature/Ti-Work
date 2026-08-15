@@ -3,16 +3,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { BarChartIcon, CoinsIcon, Delete01Icon } from '@hugeicons/core-free-icons'
-import { fetchCrewUsage, resetUsage } from '@/lib/cost-api'
 import type { CrewUsage } from '@/lib/cost-api'
 import type { CrewMember } from '@/lib/crews-api'
+import { fetchCrewUsage, resetUsage } from '@/lib/cost-api'
 import { AGENT_PERSONAS } from '@/lib/agent-personas'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
 interface CostPanelProps {
   crewId: string
-  members: CrewMember[]
+  members: Array<CrewMember>
 }
 
 function formatTokens(n: number): string {
@@ -62,7 +62,7 @@ function UsageTable({
   members,
 }: {
   usage: CrewUsage
-  members: CrewMember[]
+  members: Array<CrewMember>
 }) {
   const memberMap = Object.fromEntries(members.map((m) => [m.sessionKey, m]))
   const rows = Object.values(usage.members).sort(
@@ -77,19 +77,19 @@ function UsageTable({
       {/* Table header */}
       <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-4 border-b border-[var(--theme-border)] px-4 py-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-muted)]">
-          Agent
+          智能体
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-muted)] text-right">
-          Model
+          模型
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-muted)] text-right">
-          Input
+          输入
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-muted)] text-right">
-          Output
+          输出
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-muted)] text-right">
-          Est. Cost
+          预估成本
         </span>
       </div>
 
@@ -144,8 +144,7 @@ function UsageTable({
 
       {hasZeroRows && (
         <div className="px-4 py-2 text-[10px] text-[var(--theme-muted)]">
-          Entries showing — require Hermes enhanced mode. Token data is not
-          available in portable mode.
+          这些记录需要 Hermes 增强模式——便携模式下无法获取 Token 数据。
         </div>
       )}
     </div>
@@ -165,9 +164,9 @@ export function CostPanel({ crewId, members }: CostPanelProps) {
     mutationFn: () => resetUsage(crewId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['crew-usage', crewId] })
-      toast('Usage data cleared')
+      toast('用量数据已清空')
     },
-    onError: () => toast('Failed to clear usage', { type: 'error' }),
+    onError: () => toast('清空用量失败', { type: 'error' }),
   })
 
   const usage = usageQuery.data
@@ -175,7 +174,7 @@ export function CostPanel({ crewId, members }: CostPanelProps) {
   if (usageQuery.isLoading) {
     return (
       <div className="flex h-40 items-center justify-center text-sm text-[var(--theme-muted)]">
-        Loading usage…
+        加载用量中…
       </div>
     )
   }
@@ -192,11 +191,10 @@ export function CostPanel({ crewId, members }: CostPanelProps) {
         </div>
         <div>
           <p className="text-sm font-medium text-[var(--theme-text)]">
-            No usage data yet
+            暂无用量数据
           </p>
           <p className="mt-1 max-w-xs text-xs text-[var(--theme-muted)]">
-            Token counts are captured after each agent run completes.
-            Requires Hermes enhanced mode.
+            每次智能体运行后记录 Token 用量。需要 Hermes 增强模式。
           </p>
         </div>
       </div>
@@ -210,7 +208,7 @@ export function CostPanel({ crewId, members }: CostPanelProps) {
       {/* KPI strip */}
       <div className="grid grid-cols-3 gap-3">
         <KpiCard
-          label="Total Tokens"
+          label="总 Token"
           value={formatTokens(totalTokens)}
           icon={
             <HugeiconsIcon
@@ -222,7 +220,7 @@ export function CostPanel({ crewId, members }: CostPanelProps) {
           }
         />
         <KpiCard
-          label="Input / Output"
+          label="输入 / 输出"
           value={`${formatTokens(usage.totalInputTokens)} / ${formatTokens(usage.totalOutputTokens)}`}
           icon={
             <HugeiconsIcon
@@ -234,7 +232,7 @@ export function CostPanel({ crewId, members }: CostPanelProps) {
           }
         />
         <KpiCard
-          label="Est. Total Cost"
+          label="预估总成本"
           value={formatCost(usage.totalEstimatedCostUsd)}
           accent={
             usage.totalEstimatedCostUsd > 0
@@ -255,7 +253,7 @@ export function CostPanel({ crewId, members }: CostPanelProps) {
       {/* Per-member table */}
       <div>
         <h2 className="mb-2 text-xs font-medium uppercase tracking-wider text-[var(--theme-muted)]">
-          Per-Agent Breakdown
+          按智能体明细
         </h2>
         <UsageTable usage={usage} members={members} />
       </div>
@@ -263,9 +261,9 @@ export function CostPanel({ crewId, members }: CostPanelProps) {
       {/* Footer: reset + notes */}
       <div className="flex items-center justify-between">
         <p className="text-[10px] text-[var(--theme-muted)]">
-          Cumulative since session start.{' '}
-          <span title="Prices sourced from provider published rates. Estimates only.">
-            Costs are estimates.
+          自会话开始累计。{' '}
+          <span title="价格基于服务提供方公布的费率，仅供参考。">
+            成本为估算值。
           </span>
         </p>
         <button
@@ -274,7 +272,7 @@ export function CostPanel({ crewId, members }: CostPanelProps) {
           className="flex items-center gap-1.5 rounded-lg border border-[var(--theme-border)] px-2.5 py-1.5 text-[10px] text-[var(--theme-muted)] transition-colors hover:border-[var(--theme-danger)] hover:text-[var(--theme-danger)] disabled:opacity-50"
         >
           <HugeiconsIcon icon={Delete01Icon} size={11} />
-          Clear usage
+          清空用量
         </button>
       </div>
     </div>

@@ -5,6 +5,7 @@ import {
   Alert02Icon,
   CheckmarkCircle02Icon,
   Copy01Icon,
+  RefreshIcon,
   ViewIcon,
   ViewOffIcon,
 } from '@hugeicons/core-free-icons'
@@ -12,6 +13,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 /* ── Provider Definitions ── */
 
@@ -19,7 +21,7 @@ type Provider = {
   id: string
   name: string
   description: string
-  badge?: 'Recommended' | 'Popular'
+  badge?: '推荐' | '热门'
   logo: React.ReactNode
   placeholder: string
   helpUrl: string
@@ -87,41 +89,41 @@ const PROVIDERS: Array<Provider> = [
     id: 'anthropic',
     name: 'Anthropic (Claude)',
     description:
-      'Best for complex reasoning, long-form writing and precise instructions',
-    badge: 'Recommended',
+      '适合复杂推理、长文本写作和高精度指令场景',
+    badge: '推荐',
     logo: <AnthropicLogo className="size-8" />,
     placeholder: 'sk-ant-...',
     helpUrl: 'https://console.anthropic.com/settings/keys',
-    helpLabel: 'Get API key →',
+    helpLabel: '获取 API Key →',
   },
   {
     id: 'openrouter',
     name: 'OpenRouter',
     description:
-      'One Hermes connection to 200+ AI models. Ideal for flexibility and experimentation',
-    badge: 'Popular',
+      '通过一个 API 访问 200+ AI 模型，适合灵活试验和多模型切换',
+    badge: '热门',
     logo: <OpenRouterLogo className="size-8" />,
     placeholder: 'sk-or-v1-...',
     helpUrl: 'https://openrouter.ai/keys',
-    helpLabel: 'Get API key →',
+    helpLabel: '获取 API Key →',
   },
   {
     id: 'google',
     name: 'Google (Gemini)',
-    description: 'Strong with images, documents and large amounts of context',
+    description: '擅长图像、文档和超长上下文处理',
     logo: <GoogleLogo className="size-8" />,
     placeholder: 'AI...',
     helpUrl: 'https://aistudio.google.com/apikey',
-    helpLabel: 'Get API key →',
+    helpLabel: '获取 API Key →',
   },
   {
     id: 'openai',
     name: 'OpenAI (GPT)',
-    description: 'An all-rounder for chat, coding, and everyday tasks',
+    description: '适合会话、编码与日常工作任务的全能型选择',
     logo: <OpenAILogo className="size-8" />,
     placeholder: 'sk-...',
     helpUrl: 'https://platform.openai.com/api-keys',
-    helpLabel: 'Get API key →',
+    helpLabel: '获取 API Key →',
   },
 ]
 
@@ -132,6 +134,49 @@ type ProviderSelectStepProps = {
   onSkip?: () => void
 }
 
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'warning'
+
+/**
+ * 轮询 GET /api/models，确认给定 provider 已出现在 configuredProviders 中。
+ * 返回 true 表示网关已加载该 provider；false 表示超时（网关未重载/模型未就绪）。
+ */
+async function pollForProvider(
+  providerId: string,
+  timeoutMs = 12_000,
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs
+  const interval = 1_500
+
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch('/api/models')
+      if (res.ok) {
+        const data = (await res.json()) as {
+          configuredProviders?: Array<string>
+        }
+        const configured = Array.isArray(data.configuredProviders)
+          ? data.configuredProviders
+          : []
+        if (
+          configured.some((p) => p.toLowerCase() === providerId.toLowerCase())
+        ) {
+          return true
+        }
+      }
+    } catch {
+      // network blip — keep polling
+    }
+
+    const remaining = deadline - Date.now()
+    if (remaining <= 0) break
+    await new Promise((r) =>
+      globalThis.setTimeout(r, Math.min(interval, remaining)),
+    )
+  }
+
+  return false
+}
+
 export function ProviderSelectStep({
   onComplete,
   onSkip,
@@ -139,37 +184,61 @@ export function ProviderSelectStep({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [apiKey, setApiKey] = useState('')
   const [showKey, setShowKey] = useState(false)
-  const [validating, setValidating] = useState(false)
-  const [validated, setValidated] = useState<boolean | null>(null)
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [error, setError] = useState<string | null>(null)
 
   const selected = PROVIDERS.find((p) => p.id === selectedId)
 
-  const handleValidate = async () => {
+  const handleSaveAndVerify = async () => {
     if (!selectedId || !apiKey.trim()) return
-    setValidating(true)
+    setSaveStatus('saving')
     setError(null)
-    setValidated(null)
+
+    const raw = JSON.stringify(
+      {
+        auth: {
+          profiles: {
+            [`${selectedId}:default`]: {
+              provider: selectedId,
+              apiKey: apiKey.trim(),
+            },
+          },
+        },
+      },
+      null,
+      2,
+    )
 
     try {
-      const res = await fetch('/api/validate-provider', {
+      const res = await fetch('/api/config-patch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ providerId: selectedId, apiKey: apiKey.trim() }),
-        signal: AbortSignal.timeout(15000),
+        body: JSON.stringify({
+          raw,
+          reason: 'Ti Work 首启：添加 API 密钥',
+        }),
+        signal: AbortSignal.timeout(15_000),
       })
       const data = (await res.json()) as { ok?: boolean; error?: string }
-      if (data.ok) {
-        setValidated(true)
+      if (!data.ok) {
+        setSaveStatus('error')
+        setError(data.error || '保存失败，请稍后重试')
+        return
+      }
+
+      // 网关热重载后确认该 provider 的模型是否可用
+      const found = await pollForProvider(selectedId)
+      if (found) {
+        setSaveStatus('saved')
       } else {
-        setValidated(false)
-        setError(data.error || 'Invalid API key')
+        setSaveStatus('warning')
+        setError(
+          'API Key 已保存，但网关可能尚未加载其模型。可在设置页检查，或重启应用后生效。',
+        )
       }
     } catch {
-      setValidated(false)
-      setError('Validation failed — check your connection')
-    } finally {
-      setValidating(false)
+      setSaveStatus('error')
+      setError('保存失败，请检查当前连接后重试')
     }
   }
 
@@ -184,7 +253,7 @@ export function ProviderSelectStep({
       const text = await navigator.clipboard.readText()
       if (text) {
         setApiKey(text)
-        setValidated(null)
+        setSaveStatus('idle')
         setError(null)
       }
     } catch {
@@ -192,16 +261,18 @@ export function ProviderSelectStep({
     }
   }
 
+  const isBusy = saveStatus === 'saving'
+  const isSaved = saveStatus === 'saved'
+
   return (
     <div className="w-full">
       {/* Header */}
       <div className="mb-6 text-center">
         <h2 className="mb-2 text-2xl font-semibold text-primary-900">
-          Choose AI Provider
+          配置你的 AI 提供方
         </h2>
         <p className="text-sm text-primary-600">
-          Pick the AI provider you want to start with. You can switch or add
-          more providers later.
+          选择提供方并粘贴 API Key，保存后即可开始使用。后续可在设置中随时切换或添加。
         </p>
       </div>
 
@@ -216,7 +287,7 @@ export function ProviderSelectStep({
               onClick={() => {
                 setSelectedId(provider.id)
                 setApiKey('')
-                setValidated(null)
+                setSaveStatus('idle')
                 setError(null)
               }}
               className={cn(
@@ -253,7 +324,7 @@ export function ProviderSelectStep({
                     <span
                       className={cn(
                         'rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                        provider.badge === 'Recommended'
+                        provider.badge === '推荐'
                           ? 'bg-accent-100 text-accent-700'
                           : 'bg-purple-100 text-purple-700',
                       )}
@@ -296,7 +367,7 @@ export function ProviderSelectStep({
                 value={apiKey}
                 onChange={(e) => {
                   setApiKey(e.target.value)
-                  setValidated(null)
+                  setSaveStatus('idle')
                   setError(null)
                 }}
                 className="h-10 pr-20 font-mono text-xs"
@@ -306,7 +377,7 @@ export function ProviderSelectStep({
                   type="button"
                   onClick={() => setShowKey(!showKey)}
                   className="inline-flex size-8 items-center justify-center rounded-md text-primary-400 hover:text-primary-600"
-                  title={showKey ? 'Hide' : 'Show'}
+                  title={showKey ? '隐藏' : '显示'}
                 >
                   <HugeiconsIcon
                     icon={showKey ? ViewOffIcon : ViewIcon}
@@ -318,7 +389,7 @@ export function ProviderSelectStep({
                   type="button"
                   onClick={handlePaste}
                   className="inline-flex size-8 items-center justify-center rounded-md text-primary-400 hover:text-primary-600"
-                  title="Paste from clipboard"
+                  title="从剪贴板粘贴"
                 >
                   <HugeiconsIcon
                     icon={Copy01Icon}
@@ -331,27 +402,40 @@ export function ProviderSelectStep({
             <Button
               variant="secondary"
               size="default"
-              onClick={handleValidate}
-              disabled={!apiKey.trim() || validating}
+              onClick={() => void handleSaveAndVerify()}
+              disabled={!apiKey.trim() || isBusy}
               className="shrink-0"
             >
-              {validating ? 'Checking...' : 'Validate'}
+              {isBusy ? (
+                <>
+                  <HugeiconsIcon icon={RefreshIcon} className="size-4 animate-spin" />
+                  保存中
+                </>
+              ) : (
+                '保存并验证'
+              )}
             </Button>
           </div>
 
-          {/* Validation feedback */}
-          {validated === true && (
+          {/* Feedback */}
+          {isSaved && (
             <div className="mt-2 flex items-center gap-1.5 text-xs text-green-700">
               <HugeiconsIcon
                 icon={CheckmarkCircle02Icon}
                 size={14}
                 strokeWidth={2}
               />
-              <span>API key is valid!</span>
+              <span>API Key 已保存，模型可用。</span>
             </div>
           )}
-          {error && (
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-red-600">
+          {saveStatus === 'warning' && (
+            <div className="mt-2 flex items-start gap-1.5 text-xs text-amber-600">
+              <HugeiconsIcon icon={Alert02Icon} size={14} strokeWidth={2} />
+              <span>{error}</span>
+            </div>
+          )}
+          {saveStatus === 'error' && (
+            <div className="mt-2 flex items-start gap-1.5 text-xs text-red-600">
               <HugeiconsIcon icon={Alert02Icon} size={14} strokeWidth={2} />
               <span>{error}</span>
             </div>
@@ -362,20 +446,31 @@ export function ProviderSelectStep({
       {/* Actions */}
       <div className="flex gap-3">
         {onSkip && (
-          <Button variant="secondary" onClick={onSkip} className="flex-1">
-            Skip for Now
+          <Button
+            variant="secondary"
+            onClick={onSkip}
+            disabled={isBusy}
+            className="flex-1"
+          >
+            暂时跳过
           </Button>
         )}
         <Button
           variant="default"
           onClick={handleContinue}
-          disabled={!selectedId || !apiKey.trim()}
+          disabled={!selectedId || !apiKey.trim() || isBusy || !isSaved}
           className={cn(
             'flex-1 bg-accent-500 hover:bg-accent-600',
-            validated === true && 'bg-green-600 hover:bg-green-700',
+            isSaved && 'bg-green-600 hover:bg-green-700',
           )}
         >
-          {validated === true ? 'Continue ✓' : 'Continue'}
+          {isSaved ? (
+            <>
+              继续 <EmojiIcon emoji="✓" size={14} />
+            </>
+          ) : (
+            '继续'
+          )}
         </Button>
       </div>
     </div>

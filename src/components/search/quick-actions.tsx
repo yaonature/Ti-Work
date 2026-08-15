@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 type QuickAction = {
   id: string
@@ -57,7 +58,9 @@ export function QuickActions({
                 'hover:border-accent-500/35 hover:bg-accent-500/15',
               )}
             >
-              <span className="text-base leading-none">{action.emoji}</span>
+              <span className="text-base leading-none">
+                <EmojiIcon emoji={action.emoji} size={16} />
+              </span>
               <span className="mt-2 text-sm font-medium text-foreground text-balance">
                 {action.label}
               </span>

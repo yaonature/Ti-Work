@@ -8,11 +8,11 @@ export type EnhancedFeature =
   | 'jobs'
 
 const FEATURE_LABELS: Record<EnhancedFeature, string> = {
-  sessions: 'Sessions',
-  skills: 'Skills',
-  memory: 'Memory',
-  config: 'Configuration',
-  jobs: 'Jobs',
+  sessions: '会话',
+  skills: '技能',
+  memory: '记忆',
+  config: '配置',
+  jobs: '定时任务',
 }
 
 function normalizeFeature(
@@ -46,7 +46,7 @@ export function getFeatureLabel(feature: EnhancedFeature | string): string {
 export function getUnavailableReason(
   feature: EnhancedFeature | string,
 ): string {
-  return `${getFeatureLabel(feature)} requires a Hermes gateway with enhanced API support.`
+  return `${getFeatureLabel(feature)}需要连接支持增强 API 的 Hermes 网关。`
 }
 
 export function createCapabilityUnavailablePayload(

@@ -15,7 +15,7 @@ export const PROVIDER_CATALOG: Array<ProviderInfo> = [
   {
     id: 'anthropic',
     name: 'Anthropic',
-    description: 'Claude models — Haiku, Sonnet, and Opus.',
+    description: 'Claude 模型系列，包括 Haiku、Sonnet 和 Opus。',
     authTypes: ['api-key', 'cli-token'],
     docsUrl: 'https://console.anthropic.com/settings/keys',
     configExample: JSON.stringify(
@@ -25,6 +25,7 @@ export const PROVIDER_CATALOG: Array<ProviderInfo> = [
             'anthropic:default': {
               provider: 'anthropic',
               apiKey: 'sk-your-key-here',
+              model: 'deepseek-v4-flash',
             },
           },
         },
@@ -36,7 +37,7 @@ export const PROVIDER_CATALOG: Array<ProviderInfo> = [
   {
     id: 'openai',
     name: 'OpenAI',
-    description: 'GPT and reasoning models for chat and tools.',
+    description: '适用于会话与工具调用的 GPT 与推理模型。',
     authTypes: ['api-key'],
     docsUrl: 'https://platform.openai.com/api-keys',
     configExample: JSON.stringify(
@@ -57,7 +58,7 @@ export const PROVIDER_CATALOG: Array<ProviderInfo> = [
   {
     id: 'google',
     name: 'Google',
-    description: 'Gemini models with API key or OAuth.',
+    description: '支持 API Key 或 OAuth 的 Gemini 模型。',
     authTypes: ['api-key', 'oauth'],
     docsUrl: 'https://aistudio.google.com/app/apikey',
     configExample: JSON.stringify(
@@ -76,9 +77,54 @@ export const PROVIDER_CATALOG: Array<ProviderInfo> = [
     ),
   },
   {
+    id: 'deepseek',
+    name: 'DeepSeek（深度求索）',
+    description: '国内大模型：DeepSeek V4 Flash / Pro 系列，中文与办公场景能力强。',
+    authTypes: ['api-key'],
+    docsUrl: 'https://platform.deepseek.com/api_keys',
+    configExample: JSON.stringify(
+      {
+        auth: {
+          profiles: {
+            'deepseek:default': {
+              provider: 'deepseek',
+              baseUrl: 'https://api.deepseek.com/v1',
+              apiKey: 'sk-your-key-here',
+              model: 'deepseek-v4-flash',
+            },
+          },
+        },
+      },
+      null,
+      2,
+    ),
+  },
+  {
+    id: 'dashscope',
+    name: '通义千问 Qwen（阿里云百炼）',
+    description: '阿里云百炼通义千问 Qwen 系列：qwen-max / qwen-plus 等，OpenAI 兼容接口。',
+    authTypes: ['api-key'],
+    docsUrl: 'https://bailian.console.aliyun.com/',
+    configExample: JSON.stringify(
+      {
+        auth: {
+          profiles: {
+            'dashscope:default': {
+              provider: 'dashscope',
+              baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+              apiKey: 'sk-your-key-here',
+            },
+          },
+        },
+      },
+      null,
+      2,
+    ),
+  },
+  {
     id: 'openrouter',
     name: 'OpenRouter',
-    description: 'Unified access to many providers through one API.',
+    description: '通过一个 API 统一接入多个模型提供方。',
     authTypes: ['api-key'],
     docsUrl: 'https://openrouter.ai/keys',
     configExample: JSON.stringify(
@@ -99,7 +145,7 @@ export const PROVIDER_CATALOG: Array<ProviderInfo> = [
   {
     id: 'minimax',
     name: 'MiniMax',
-    description: 'MiniMax foundation models and multimodal APIs.',
+    description: 'MiniMax 基础模型与多模态 API。',
     authTypes: ['api-key'],
     docsUrl: 'https://www.minimax.io/platform',
     configExample: JSON.stringify(
@@ -120,7 +166,7 @@ export const PROVIDER_CATALOG: Array<ProviderInfo> = [
   {
     id: 'ollama',
     name: 'Ollama',
-    description: 'Local models running on your machine via Ollama.',
+    description: '通过 Ollama 在本机运行的本地模型。',
     authTypes: ['local'],
     docsUrl: 'https://ollama.com/download',
     configExample: JSON.stringify(
@@ -156,7 +202,7 @@ export function getProviderDisplayName(providerId: string): string {
   if (provider) return provider.name
 
   const normalized = normalizeProviderId(providerId)
-  if (!normalized) return 'Unknown Provider'
+  if (!normalized) return '未知提供方'
 
   return normalized
     .split(/[-_\s]+/)
@@ -170,8 +216,8 @@ export function getProviderDisplayName(providerId: string): string {
 export function getAuthTypeLabel(authType: ProviderAuthType): string {
   if (authType === 'api-key') return 'API Key'
   if (authType === 'oauth') return 'OAuth'
-  if (authType === 'cli-token') return 'CLI Token'
-  return 'Local'
+  if (authType === 'cli-token') return 'CLI 令牌'
+  return '本地'
 }
 
 export function buildConfigExample(

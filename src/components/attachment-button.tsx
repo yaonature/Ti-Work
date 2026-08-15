@@ -81,7 +81,7 @@ function isCanvasSupported(): boolean {
  */
 async function compressImage(file: File): Promise<string> {
   if (!isCanvasSupported()) {
-    throw new Error('Image compression not available in this browser')
+    throw new Error('此浏览器不支持图片压缩')
   }
 
   return new Promise((resolve, reject) => {
@@ -116,7 +116,7 @@ async function compressImage(file: File): Promise<string> {
         const ctx = canvas.getContext('2d')
         if (!ctx) {
           cleanup()
-          reject(new Error('Failed to get canvas context'))
+          reject(new Error('获取画布上下文失败'))
           return
         }
 
@@ -142,7 +142,7 @@ async function compressImage(file: File): Promise<string> {
         const base64 = dataUrl.split(',')[1]
         if (!base64) {
           cleanup()
-          reject(new Error('Failed to encode image'))
+          reject(new Error('图片编码失败'))
           return
         }
 
@@ -151,14 +151,14 @@ async function compressImage(file: File): Promise<string> {
       } catch (err) {
         cleanup()
         reject(
-          err instanceof Error ? err : new Error('Image compression failed'),
+          err instanceof Error ? err : new Error('图片压缩失败'),
         )
       }
     }
 
     img.onerror = () => {
       cleanup()
-      reject(new Error('Failed to load image'))
+      reject(new Error('图片加载失败'))
     }
 
     img.src = objectUrl
@@ -210,7 +210,7 @@ export function AttachmentButton({
           type: 'image',
           base64: null,
           error:
-            'Unsupported file type. Please use PNG, JPG, GIF, or WebP images.',
+            '不支持的文件类型。请使用 PNG、JPG、GIF 或 WebP 图片。',
         })
         return
       }
@@ -223,7 +223,7 @@ export function AttachmentButton({
           preview: null,
           type: 'image',
           base64: null,
-          error: 'Image is too large. Maximum size is 10MB.',
+          error: '图片过大。最大 10MB。',
         })
         return
       }
@@ -246,7 +246,7 @@ export function AttachmentButton({
           preview: null,
           type: 'image',
           base64: null,
-          error: err instanceof Error ? err.message : 'Failed to process image',
+          error: err instanceof Error ? err.message : '处理图片失败',
         })
       }
     },
@@ -269,7 +269,7 @@ export function AttachmentButton({
         onClick={handleClick}
         disabled={disabled}
         className="rounded-full"
-        aria-label="Attach image"
+        aria-label="附加图片"
         type="button"
       >
         <HugeiconsIcon icon={PlusSignIcon} size={20} strokeWidth={1.5} />

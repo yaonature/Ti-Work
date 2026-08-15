@@ -1,7 +1,8 @@
-import { Card } from '@/components/ds/card'
-import { StatusBadge } from '@/components/ds/status-badge'
 import type { HermesTask, TaskPriority } from '@/types/task'
 import type { Status } from '@/components/ds/status-badge'
+import { Card } from '@/components/ds/card'
+import { StatusBadge } from '@/components/ds/status-badge'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 const PRIORITY_STATUS: Record<TaskPriority, Status> = {
   high: 'error',
@@ -9,10 +10,22 @@ const PRIORITY_STATUS: Record<TaskPriority, Status> = {
   low: 'idle',
 }
 
+const PRIORITY_LABELS: Record<TaskPriority, string> = {
+  high: '高',
+  medium: '中',
+  low: '低',
+}
+
 const SOURCE_ICON: Record<HermesTask['sourceType'], string> = {
   manual: '✏️',
   conductor: '🎯',
   crew: '👥',
+}
+
+const SOURCE_LABELS: Record<HermesTask['sourceType'], string> = {
+  manual: '手动',
+  conductor: '编排',
+  crew: '多智能体团队',
 }
 
 interface TaskCardProps {
@@ -41,8 +54,8 @@ export function TaskCard({ task, onEdit, onDragStart }: TaskCardProps) {
             >
               {task.title}
             </span>
-            <span className="text-xs flex-shrink-0" title={task.sourceType}>
-              {SOURCE_ICON[task.sourceType]}
+            <span className="text-xs flex-shrink-0" title={SOURCE_LABELS[task.sourceType]}>
+              <EmojiIcon emoji={SOURCE_ICON[task.sourceType]} size={12} />
             </span>
           </div>
 
@@ -56,7 +69,7 @@ export function TaskCard({ task, onEdit, onDragStart }: TaskCardProps) {
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
-              } as React.CSSProperties}
+              }}
             >
               {task.description}
             </p>
@@ -64,7 +77,7 @@ export function TaskCard({ task, onEdit, onDragStart }: TaskCardProps) {
 
           {/* Priority badge + assignee */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <StatusBadge status={PRIORITY_STATUS[task.priority]} label={task.priority} size="sm" />
+            <StatusBadge status={PRIORITY_STATUS[task.priority]} label={PRIORITY_LABELS[task.priority]} size="sm" />
             {task.assignee && (
               <span
                 className="text-xs px-2 py-0.5 rounded-full"

@@ -49,15 +49,15 @@ export function TerminalPanel({ isMobile }: TerminalPanelProps) {
   const [tabs, setTabs] = useState<Array<TerminalTabState>>(() => {
     const stored = window.localStorage.getItem(TABS_KEY)
     if (!stored) {
-      return [{ id: crypto.randomUUID(), title: 'Terminal 1' }]
+      return [{ id: crypto.randomUUID(), title: '终端 1' }]
     }
     try {
       const parsed = JSON.parse(stored) as Array<TerminalTabState>
       return parsed.length
         ? parsed
-        : [{ id: crypto.randomUUID(), title: 'Terminal 1' }]
+        : [{ id: crypto.randomUUID(), title: '终端 1' }]
     } catch {
-      return [{ id: crypto.randomUUID(), title: 'Terminal 1' }]
+      return [{ id: crypto.randomUUID(), title: '终端 1' }]
     }
   })
   const [activeTabId, setActiveTabId] = useState(() => {
@@ -100,7 +100,7 @@ export function TerminalPanel({ isMobile }: TerminalPanelProps) {
   const handleAddTab = useCallback(() => {
     const newTab: TerminalTabState = {
       id: crypto.randomUUID(),
-      title: `Terminal ${tabs.length + 1}`,
+      title: `终端 ${tabs.length + 1}`,
     }
     setTabs((prev) => [...prev, newTab])
     setActiveTabId(newTab.id)
@@ -352,7 +352,7 @@ export function TerminalPanel({ isMobile }: TerminalPanelProps) {
             size={18}
             strokeWidth={1.4}
           />
-          Terminal
+          终端
         </div>
         <Button
           size="sm"
@@ -360,7 +360,7 @@ export function TerminalPanel({ isMobile }: TerminalPanelProps) {
           onClick={handleToggleOpen}
           className="text-xs"
         >
-          {isOpen ? 'Hide' : 'Show'}
+          {isOpen ? '隐藏' : '显示'}
         </Button>
       </div>
 
@@ -420,7 +420,7 @@ export function TerminalPanel({ isMobile }: TerminalPanelProps) {
                 <HugeiconsIcon icon={Search01Icon} size={14} />
                 <input
                   className="rounded border border-primary-200 bg-transparent px-2 py-1 text-xs focus:outline-none"
-                  placeholder="Search output"
+                  placeholder="搜索输出"
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') {
                       handleSearch(

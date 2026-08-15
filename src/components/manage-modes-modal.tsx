@@ -3,6 +3,7 @@ import { RenameDialog } from './rename-mode-dialog'
 import type { Mode } from '@/hooks/use-modes'
 import { cn } from '@/lib/utils'
 import { useModes } from '@/hooks/use-modes'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 type ManageModesModalProps = {
   onClose: () => void
@@ -73,22 +74,22 @@ export function ManageModesModal({
           role="dialog"
           aria-labelledby="manage-modes-title"
           aria-modal="true"
-          className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-primary-200 bg-surface p-6 shadow-xl"
+          className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-[20px] border border-[var(--theme-border)] bg-[var(--theme-panel)] p-6 shadow-[var(--theme-shadow-3)]"
         >
           <h2
             id="manage-modes-title"
-            className="mb-4 text-lg font-semibold text-primary-900"
+            className="mb-4 text-lg font-semibold text-[var(--theme-text)]"
           >
-            Manage Modes
+            管理模式
           </h2>
-          <p className="mb-6 text-sm text-primary-500">No modes saved.</p>
+          <p className="mb-6 text-sm text-[var(--theme-muted)]">当前还没有已保存模式。</p>
           <div className="flex justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-400"
+              className="rounded-lg bg-accent-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-400"
             >
-              Close
+              关闭
             </button>
           </div>
         </div>
@@ -111,13 +112,13 @@ export function ManageModesModal({
         role="dialog"
         aria-labelledby="manage-modes-title"
         aria-modal="true"
-        className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-primary-200 bg-surface p-6 shadow-xl"
+        className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-[20px] border border-[var(--theme-border)] bg-[var(--theme-panel)] p-6 shadow-[var(--theme-shadow-3)]"
       >
         <h2
           id="manage-modes-title"
-          className="mb-4 text-lg font-semibold text-primary-900"
+          className="mb-4 text-lg font-semibold text-[var(--theme-text)]"
         >
-          Manage Modes
+          管理模式
         </h2>
 
         <div className="mb-6 max-h-[24rem] space-y-3 overflow-y-auto">
@@ -129,17 +130,17 @@ export function ManageModesModal({
             return (
               <div
                 key={mode.id}
-                className="rounded-lg border border-primary-200 bg-primary-50 p-4"
+                className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] p-4"
               >
                 <div className="mb-2 flex items-start justify-between">
-                  <h3 className="font-medium text-primary-900">
+                  <h3 className="font-medium text-[var(--theme-text)]">
                     {mode.name}
                     {modelUnavailable && (
                       <span
                         className="ml-2 text-xs text-red-600"
-                        title="Model unavailable"
+                        title="模型不可用"
                       >
-                        ⚠️ Model unavailable
+                        <> <EmojiIcon emoji="⚠️" size={12} /> 模型不可用</>
                       </span>
                     )}
                   </h3>
@@ -147,48 +148,48 @@ export function ManageModesModal({
                     <button
                       type="button"
                       onClick={() => setModeToRename(mode)}
-                      className="rounded-lg border border-primary-200 bg-surface px-3 py-1 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-400"
-                      aria-label={`Rename ${mode.name}`}
+                      className="rounded-lg border border-accent-200 bg-transparent px-3 py-1 text-xs font-medium text-accent-800 transition-colors hover:bg-accent-50 focus:outline-none focus:ring-2 focus:ring-accent-400"
+                      aria-label={`重命名 ${mode.name}`}
                     >
-                      Rename
+                      重命名
                     </button>
                     <button
                       type="button"
                       onClick={() => setModeToDelete(mode)}
-                      className="rounded-lg border border-red-200 bg-surface px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400"
-                      aria-label={`Delete ${mode.name}`}
+                      className="rounded-lg border border-red-200 bg-transparent px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400"
+                      aria-label={`删除 ${mode.name}`}
                     >
-                      Delete
+                      删除
                     </button>
                   </div>
                 </div>
 
-                <div className="space-y-1 text-xs text-primary-600">
+                <div className="space-y-1 text-xs text-[var(--theme-muted)]">
                   {mode.preferredModel && (
                     <div>
-                      <span className="font-medium">Model:</span>{' '}
+                      <span className="font-medium">模型：</span>{' '}
                       <span className={cn(modelUnavailable && 'text-red-600')}>
                         {mode.preferredModel}
                       </span>
                     </div>
                   )}
                   <div>
-                    <span className="font-medium">Smart Suggestions:</span>{' '}
-                    {mode.smartSuggestionsEnabled ? 'On' : 'Off'}
+                    <span className="font-medium">智能建议：</span>{' '}
+                    {mode.smartSuggestionsEnabled ? '开启' : '关闭'}
                   </div>
                   <div>
-                    <span className="font-medium">Only Suggest Cheaper:</span>{' '}
-                    {mode.onlySuggestCheaper ? 'On' : 'Off'}
+                    <span className="font-medium">仅推荐更便宜模型：</span>{' '}
+                    {mode.onlySuggestCheaper ? '开启' : '关闭'}
                   </div>
                   {mode.preferredBudgetModel && (
                     <div>
-                      <span className="font-medium">Budget Model:</span>{' '}
+                      <span className="font-medium">预算模型：</span>{' '}
                       {mode.preferredBudgetModel}
                     </div>
                   )}
                   {mode.preferredPremiumModel && (
                     <div>
-                      <span className="font-medium">Premium Model:</span>{' '}
+                      <span className="font-medium">高阶模型：</span>{' '}
                       {mode.preferredPremiumModel}
                     </div>
                   )}
@@ -202,9 +203,9 @@ export function ManageModesModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-400"
+            className="rounded-lg bg-accent-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-400"
           >
-            Close
+            关闭
           </button>
         </div>
       </div>
@@ -229,32 +230,31 @@ export function ManageModesModal({
             role="dialog"
             aria-labelledby="delete-mode-title"
             aria-modal="true"
-            className="fixed left-1/2 top-1/2 z-[60] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-primary-200 bg-surface p-6 shadow-xl"
+            className="fixed left-1/2 top-1/2 z-[60] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[20px] border border-[var(--theme-border)] bg-[var(--theme-panel)] p-6 shadow-[var(--theme-shadow-3)]"
           >
             <h2
               id="delete-mode-title"
-              className="mb-2 text-lg font-semibold text-primary-900"
+              className="mb-2 text-lg font-semibold text-[var(--theme-text)]"
             >
-              Delete Mode
+              删除模式
             </h2>
-            <p className="mb-6 text-sm text-primary-600">
-              Are you sure you want to delete "{modeToDelete.name}"? This action
-              cannot be undone.
+            <p className="mb-6 text-sm text-[var(--theme-muted)]">
+              确定要删除“{modeToDelete.name}”吗？此操作无法撤销。
             </p>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setModeToDelete(null)}
-                className="rounded-lg border border-primary-200 bg-surface px-4 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-400"
+                className="rounded-lg border border-accent-200 bg-transparent px-4 py-2 text-sm font-medium text-accent-800 transition-colors hover:bg-accent-50 focus:outline-none focus:ring-2 focus:ring-accent-400"
               >
-                Cancel
+                取消
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(modeToDelete)}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
               >
-                Delete
+                删除
               </button>
             </div>
           </div>

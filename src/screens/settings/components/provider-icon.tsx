@@ -27,6 +27,8 @@ function getIcon(providerId: string): ProviderIconName {
   if (normalized === 'google') return LanguageSkillIcon
   if (normalized === 'openrouter') return GlobeIcon
   if (normalized === 'minimax') return FlashIcon
+  if (normalized === 'deepseek') return FlashIcon
+  if (normalized === 'dashscope') return CloudIcon
   if (normalized === 'ollama') return ComputerIcon
   return CloudIcon
 }

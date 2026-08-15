@@ -4,7 +4,7 @@ import { DocsScreen } from '@/screens/docs/docs-screen'
 
 export const Route = createFileRoute('/docs')({
   component: function DocsRoute() {
-    usePageTitle('Documentation')
+    usePageTitle('文档')
     return <DocsScreen />
   },
 })

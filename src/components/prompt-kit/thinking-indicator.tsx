@@ -50,10 +50,10 @@ function ThinkingIndicator({
             className="opacity-60"
           />
           <span className="text-xs font-medium">
-            {isStreaming ? 'Thinking live' : 'Thought process'}
+            {isStreaming ? '实时思考中' : '思考过程'}
           </span>
           {isStreaming ? (
-            <LoadingIndicator ariaLabel="Assistant thinking" />
+            <LoadingIndicator ariaLabel="助手思考中" />
           ) : null}
           <HugeiconsIcon
             icon={ArrowDown01Icon}

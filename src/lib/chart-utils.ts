@@ -28,9 +28,9 @@ export type SessionUsage = {
  * no gaps. Timestamps may be seconds or milliseconds — auto-detected.
  */
 export function buildDayBuckets(
-  sessions: SessionUsage[],
+  sessions: Array<SessionUsage>,
   now = Date.now(),
-): DayBucket[] {
+): Array<DayBucket> {
   const buckets = new Map<string, DayBucket>()
 
   for (let i = CHART_DAYS - 1; i >= 0; i--) {

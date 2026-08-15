@@ -30,16 +30,16 @@ type SlashCommandMenuHandle = {
 }
 
 const SLASH_COMMANDS: Array<SlashCommandDefinition> = [
-  { command: '/new', description: 'Start new session' },
-  { command: '/clear', description: 'Clear screen and start fresh' },
-  { command: '/model', description: 'Show or change the current model' },
-  { command: '/fast', description: 'Toggle Fast Mode (priority queue for OpenAI/Anthropic)' },
-  { command: '/compress', description: 'Compress context — optionally /compress <focus topic>' },
-  { command: '/debug', description: 'Run diagnostics and show debug info' },
-  { command: '/save', description: 'Save the current conversation' },
-  { command: '/skills', description: 'Browse and manage skills' },
-  { command: '/skin', description: 'Change the display theme' },
-  { command: '/help', description: 'Show available commands' },
+  { command: '/new', description: '开始新会话' },
+  { command: '/clear', description: '清空当前界面并重新开始' },
+  { command: '/model', description: '查看或切换当前模型' },
+  { command: '/fast', description: '切换快速模式（OpenAI/Anthropic 优先队列）' },
+  { command: '/compress', description: '压缩上下文，可选：/compress <关注主题>' },
+  { command: '/debug', description: '运行诊断并显示调试信息' },
+  { command: '/save', description: '保存当前对话' },
+  { command: '/skills', description: '浏览并管理技能' },
+  { command: '/skin', description: '切换显示主题' },
+  { command: '/help', description: '显示可用命令' },
 ]
 
 const SlashCommandMenu = forwardRef(function SlashCommandMenu(
@@ -120,7 +120,7 @@ const SlashCommandMenu = forwardRef(function SlashCommandMenu(
         >
           {filteredCommands.length === 0 ? (
             <div className="px-3 py-2 text-sm text-primary-600">
-              No commands found
+              未找到匹配命令
             </div>
           ) : (
             <CommandList className="max-h-60 min-h-0">

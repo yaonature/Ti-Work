@@ -4,7 +4,7 @@ import { HelpScreen } from '@/screens/help/help-screen'
 
 export const Route = createFileRoute('/help')({
   component: function HelpRoute() {
-    usePageTitle('Help')
+    usePageTitle('帮助')
     return <HelpScreen />
   },
 })

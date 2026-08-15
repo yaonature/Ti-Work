@@ -1,11 +1,11 @@
 {
-  "name": "Hermes Studio",
-  "short_name": "Hermes",
-  "description": "Native web control surface for Hermes Agent",
+  "name": "Ti Work",
+  "short_name": "Ti Work",
+  "description": "Ti Work — enterprise AI agent workflow management platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0A0E1A",
-  "theme_color": "#6366F1",
+  "background_color": "#1D1D20",
+  "theme_color": "#148AFF",
   "categories": ["productivity", "utilities"],
   "icons": [
     {

@@ -126,24 +126,24 @@ export function WorkspaceShell() {
 
   // Derive active session from URL
   const mobilePageTitle = (() => {
-    if (pathname.startsWith('/terminal')) return 'Terminal'
-    if (pathname.startsWith('/files')) return 'Files'
-    if (pathname.startsWith('/jobs')) return 'Jobs'
-    if (pathname.startsWith('/memory')) return 'Memory'
-    if (pathname.startsWith('/skills')) return 'Skills'
-    if (pathname.startsWith('/agents')) return 'Agents'
-    if (pathname.startsWith('/conductor')) return 'Conductor'
-    if (pathname.startsWith('/operations')) return 'Operations'
-    if (pathname.startsWith('/tasks')) return 'Tasks'
-    if (pathname.startsWith('/patterns')) return 'Patterns & Corrections'
-    if (pathname.startsWith('/analytics')) return 'Analytics'
-    if (pathname.startsWith('/session-history')) return 'Session History'
-    if (pathname.startsWith('/audit')) return 'Audit Trail'
-    if (pathname.startsWith('/logs')) return 'Logs'
-    if (pathname.startsWith('/profiles')) return 'Profiles'
-    if (pathname.startsWith('/settings')) return 'Settings'
-    if (pathname.startsWith('/debug')) return 'Debug'
-    if (pathname.startsWith('/activity')) return 'Activity'
+    if (pathname.startsWith('/terminal')) return '终端'
+    if (pathname.startsWith('/files')) return '文件'
+    if (pathname.startsWith('/jobs')) return '任务'
+    if (pathname.startsWith('/memory')) return '记忆'
+    if (pathname.startsWith('/skills')) return '技能'
+    if (pathname.startsWith('/agents')) return '智能体'
+    if (pathname.startsWith('/conductor')) return '任务编排'
+    if (pathname.startsWith('/operations')) return '运维视图'
+    if (pathname.startsWith('/tasks')) return '任务'
+    if (pathname.startsWith('/patterns')) return '模式与纠正'
+    if (pathname.startsWith('/analytics')) return '分析'
+    if (pathname.startsWith('/session-history')) return '会话历史'
+    if (pathname.startsWith('/audit')) return '审计记录'
+    if (pathname.startsWith('/logs')) return '日志'
+    if (pathname.startsWith('/profiles')) return '用户档案'
+    if (pathname.startsWith('/settings')) return '设置'
+    if (pathname.startsWith('/debug')) return '调试'
+    if (pathname.startsWith('/activity')) return '活动'
     return null
   })()
 
@@ -169,7 +169,7 @@ export function WorkspaceShell() {
   const sessionsError = sessionsQuery.isError
     ? sessionsQuery.error instanceof Error
       ? sessionsQuery.error.message
-      : 'Failed to load sessions'
+      : '加载会话失败'
     : null
 
   const refetchSessions = useCallback(() => {
@@ -255,6 +255,58 @@ export function WorkspaceShell() {
       window.removeEventListener(SIDEBAR_TOGGLE_EVENT, handleToggleEvent)
   }, [isMobile, setSidebarCollapsed, toggleSidebar])
 
+  // 应用启动即尝试拉起执行引擎（与生产一致）。
+  // Electron 版由主进程 engineManager.ensure() 先行尝试，这里统一兜底：
+  // Web 版触发 /api/start-agent；Electron 版在主进程找不到引擎时由该请求
+  // 进入自动安装（bootstrap）。全部幂等（健康检查先行 + 服务端去重），
+  // 失败静默，由重连横幅承接连接引导。
+  const engineAutoStartRef = useRef(false)
+  useEffect(() => {
+    if (!isClient || engineAutoStartRef.current) return
+    engineAutoStartRef.current = true
+
+    let cancelled = false
+    const backendReady = async (): Promise<boolean> => {
+      try {
+        const res = await fetch('/api/gateway-status', { cache: 'no-store' })
+        if (!res.ok) return false
+        const data = (await res.json()) as {
+          capabilities?: { chatCompletions?: boolean }
+        }
+        return Boolean(data.capabilities?.chatCompletions)
+      } catch {
+        return false
+      }
+    }
+
+    void (async () => {
+      const readyBeforeStart = await backendReady()
+      if (readyBeforeStart) return
+
+      try {
+        const res = await fetch('/api/start-agent', {
+          method: 'POST',
+          signal: AbortSignal.timeout(30_000),
+        })
+        const data = (await res.json()) as { ok?: boolean; message?: string; error?: string }
+        if (!data.ok || cancelled) return
+      } catch {
+        return // 静默失败：横幅会展示连接引导
+      }
+
+      // 引擎拉起后等待就绪，尽快让界面感知连接
+      for (let i = 0; i < 20; i += 1) {
+        if (cancelled) return
+        await new Promise((resolveWait) => setTimeout(resolveWait, 1_000))
+        if (await backendReady()) return
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isClient])
+
   // Show login screen if auth is required and not authenticated
   if (authState.authRequired && !authState.authenticated) {
     return <LoginScreen />
@@ -293,7 +345,7 @@ export function WorkspaceShell() {
                 className="text-[13px] font-medium select-none"
                 style={{ color: 'var(--theme-accent, #B98A44)' }}
               >
-                Hermes
+                Ti Work
               </span>
             </div>
             {/* Right spacer to balance */}
@@ -357,7 +409,7 @@ export function WorkspaceShell() {
               }}
             >
               {isMobile && isOnTerminalRoute && (
-                <MobilePageHeader title="Terminal" />
+                <MobilePageHeader title="终端" />
               )}
               <div className="flex-1 min-h-0 overflow-hidden">
                 <Suspense fallback={null}>
@@ -386,8 +438,8 @@ export function WorkspaceShell() {
                 mobilePageTitle && <MobilePageHeader title={mobilePageTitle} />}
               <ErrorBoundary
                 className="h-full min-h-0 flex-1"
-                title="Something went wrong"
-                description="This page failed to render. Reload to try again."
+                title="页面渲染失败"
+                description="当前页面未能正常渲染，请刷新后重试。"
               >
                 <Outlet />
               </ErrorBoundary>
@@ -404,7 +456,7 @@ export function WorkspaceShell() {
         {showDesktopSidebarBackdrop ? (
           <button
             type="button"
-            aria-label="Collapse navigation sidebar"
+            aria-label="收起导航侧栏"
             onClick={() => setSidebarCollapsed(true)}
             className={DESKTOP_SIDEBAR_BACKDROP_CLASS}
           />

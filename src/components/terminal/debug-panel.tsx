@@ -3,6 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { motion } from 'motion/react'
 import { BrailleSpinner } from '@/components/ui/braille-spinner'
 import { Button } from '@/components/ui/button'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { cn } from '@/lib/utils'
 
 export type DebugAnalysis = {
@@ -34,15 +35,15 @@ export function DebugPanel({
         'absolute inset-y-0 right-0 z-40 flex h-full w-[400px] max-w-full translate-x-0 flex-col border-l border-primary-700/40 bg-[#0d0d0d] text-primary-100 shadow-2xl transition-transform duration-200',
       )}
       role="complementary"
-      aria-label="Debug analyzer"
+      aria-label="调试分析器"
     >
       <div className="flex items-center gap-2 border-b border-primary-700/40 px-4 py-3">
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-medium text-primary-100 text-balance">
-            Debug Analyzer
+            调试分析器
           </h3>
           <p className="text-xs text-primary-400 text-pretty">
-            AI-assisted issue diagnosis for the active terminal
+            为当前终端提供 AI 辅助问题诊断
           </p>
         </div>
         <Button
@@ -50,7 +51,7 @@ export function DebugPanel({
           variant="ghost"
           className="text-primary-300 hover:bg-primary-900 hover:text-primary-100"
           onClick={onClose}
-          aria-label="Close debug analyzer panel"
+          aria-label="关闭调试分析器面板"
         >
           <HugeiconsIcon icon={Cancel01Icon} size={20} strokeWidth={1.5} />
         </Button>
@@ -65,7 +66,7 @@ export function DebugPanel({
               speed={100}
               className="text-primary-400"
             />
-            <span className="text-pretty">Analyzing...</span>
+            <span className="text-pretty">分析中...</span>
           </div>
         ) : null}
 
@@ -73,7 +74,7 @@ export function DebugPanel({
           <div className="space-y-4">
             <section className="rounded-lg border border-accent-500/40 bg-accent-500/10 p-3">
               <h4 className="text-xs font-medium text-accent-200 text-balance">
-                Summary
+                摘要
               </h4>
               <p className="mt-1 text-sm text-accent-100 text-pretty">
                 {analysis.summary}
@@ -82,7 +83,7 @@ export function DebugPanel({
 
             <section className="rounded-lg border border-primary-700/50 bg-primary-900/40 p-3">
               <h4 className="text-xs font-medium text-primary-300 text-balance">
-                Root Cause
+                根因
               </h4>
               <p className="mt-1 text-sm text-primary-100 text-pretty">
                 {analysis.rootCause}
@@ -91,7 +92,7 @@ export function DebugPanel({
 
             <section>
               <h4 className="text-xs font-medium text-primary-300 text-balance">
-                Suggested Commands
+                建议命令
               </h4>
               {analysis.suggestedCommands.length > 0 ? (
                 <ul className="mt-2 space-y-2">
@@ -114,7 +115,7 @@ export function DebugPanel({
                                 onRunCommand(item.command)
                               }}
                             >
-                              ▶ Run
+                              <> <EmojiIcon emoji="▶" size={12} /> 运行</>
                             </Button>
                           </div>
                           <p className="mt-2 text-xs text-primary-400 text-pretty">
@@ -127,7 +128,7 @@ export function DebugPanel({
                 </ul>
               ) : (
                 <p className="mt-2 text-xs text-primary-500 text-pretty">
-                  No command suggestions were returned.
+                  当前没有返回可执行的建议命令。
                 </p>
               )}
             </section>
@@ -135,7 +136,7 @@ export function DebugPanel({
             {analysis.docsLink ? (
               <section className="rounded-lg border border-primary-700/50 bg-primary-900/30 p-3">
                 <h4 className="text-xs font-medium text-primary-300 text-balance">
-                  Documentation
+                  文档
                 </h4>
                 <a
                   href={analysis.docsLink}
@@ -152,7 +153,7 @@ export function DebugPanel({
 
         {!isLoading && !analysis ? (
           <p className="text-sm text-primary-500 text-pretty">
-            Click Debug to analyze the most recent terminal output.
+            点击“调试”即可分析最近一次终端输出。
           </p>
         ) : null}
       </div>

@@ -4,7 +4,7 @@ import { ProfilesScreen } from '@/screens/profiles/profiles-screen'
 
 export const Route = createFileRoute('/profiles')({
   component: function ProfilesRoute() {
-    usePageTitle('Profiles')
+    usePageTitle('配置档案')
     return <ProfilesScreen />
   },
 })

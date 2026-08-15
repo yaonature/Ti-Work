@@ -61,7 +61,7 @@ export const SaveModeDialog = memo(function SaveModeDialog({
   const handleSave = useCallback(() => {
     const trimmed = name.trim()
     if (!trimmed) {
-      setError('Mode name is required')
+      setError('请填写模式名称')
       return
     }
 
@@ -96,22 +96,22 @@ export const SaveModeDialog = memo(function SaveModeDialog({
         role="dialog"
         aria-labelledby="save-mode-title"
         aria-modal="true"
-        className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-primary-200 bg-surface p-6 shadow-xl"
+        className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[20px] border border-[var(--theme-border)] bg-[var(--theme-panel)] p-6 shadow-[var(--theme-shadow-3)]"
       >
         <h2
           id="save-mode-title"
-          className="mb-4 text-lg font-semibold text-primary-900"
+          className="mb-4 text-lg font-semibold text-[var(--theme-text)]"
         >
-          Save Mode
+          保存模式
         </h2>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label
               htmlFor="mode-name"
-              className="mb-2 block text-sm font-medium text-primary-700"
+              className="mb-2 block text-sm font-medium text-[var(--theme-text)]"
             >
-              Mode Name
+              模式名称
             </label>
             <input
               ref={inputRef}
@@ -123,11 +123,11 @@ export const SaveModeDialog = memo(function SaveModeDialog({
                 setError(null)
               }}
               className={cn(
-                'w-full rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900 placeholder-primary-400 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400',
+                'w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none focus:ring-2 focus:ring-accent-400',
                 error &&
                   'border-red-500 focus:border-red-500 focus:ring-red-500',
               )}
-              placeholder="e.g., Work Mode"
+              placeholder="例如：工作模式"
               maxLength={50}
               aria-invalid={!!error}
               aria-describedby={error ? 'mode-name-error' : undefined}
@@ -144,18 +144,17 @@ export const SaveModeDialog = memo(function SaveModeDialog({
           </div>
 
           <div className="mb-6">
-            <label className="flex items-center gap-2 text-sm text-primary-700">
+            <label className="flex items-center gap-2 text-sm text-[var(--theme-text)]">
               <input
                 type="checkbox"
                 checked={includeModel}
                 onChange={(e) => setIncludeModel(e.target.checked)}
-                className="size-4 rounded border-primary-300 text-primary-600 focus:ring-2 focus:ring-primary-400 focus:ring-offset-0"
+                className="size-4 rounded border-[var(--theme-border)] text-[var(--theme-accent)] focus:ring-2 focus:ring-accent-400 focus:ring-offset-0"
               />
-              <span>Include current model ({currentModel || 'none'})</span>
+              <span>包含当前模型（{currentModel || '无'}）</span>
             </label>
-            <p className="ml-6 mt-1 text-xs text-primary-500">
-              If unchecked, applying this mode will only update settings (not
-              model).
+            <p className="ml-6 mt-1 text-xs text-[var(--theme-muted)]">
+              如果不勾选，应用此模式时只会更新设置，不会切换模型。
             </p>
           </div>
 
@@ -163,15 +162,15 @@ export const SaveModeDialog = memo(function SaveModeDialog({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-primary-200 bg-surface px-4 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-400"
+              className="rounded-lg border border-accent-200 bg-transparent px-4 py-2 text-sm font-medium text-accent-800 transition-colors hover:bg-accent-50 focus:outline-none focus:ring-2 focus:ring-accent-400"
             >
-              Cancel
+              取消
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-400"
+              className="rounded-lg bg-accent-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-400"
             >
-              Save Mode
+              保存模式
             </button>
           </div>
         </form>

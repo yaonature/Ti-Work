@@ -6,6 +6,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { EmojiIcon } from '@/components/emoji-icon'
 import type { ConductorSettings } from '@/types/conductor'
 import { cn } from '@/lib/utils'
 
@@ -16,13 +17,13 @@ type AvailableModel = {
 }
 
 function getModelDisplayName(model: AvailableModel | undefined, modelId: string | null | undefined): string {
-  if (!modelId) return 'Default (auto)'
+  if (!modelId) return '默认（自动）'
   return model?.name?.trim() || model?.id?.trim() || modelId
 }
 
 function getProviderLabel(provider: string | null | undefined): string {
   const raw = provider?.trim()
-  if (!raw) return 'Unknown'
+  if (!raw) return '未知'
   return raw
     .split(/[-_\s]+/)
     .filter(Boolean)
@@ -30,8 +31,8 @@ function getProviderLabel(provider: string | null | undefined): string {
     .join(' ')
 }
 
-function groupModelsByProvider(models: AvailableModel[]) {
-  const groups = new Map<string, AvailableModel[]>()
+function groupModelsByProvider(models: Array<AvailableModel>) {
+  const groups = new Map<string, Array<AvailableModel>>()
   for (const model of models) {
     const provider = getProviderLabel(model.provider)
     const existing = groups.get(provider)
@@ -61,7 +62,7 @@ function ModelSelectorDropdown({
   label: string
   value: string
   onChange: (nextValue: string) => void
-  models: AvailableModel[]
+  models: Array<AvailableModel>
   disabled?: boolean
 }) {
   const [open, setOpen] = useState(false)
@@ -112,7 +113,7 @@ function ModelSelectorDropdown({
                 style={{ color: 'var(--theme-text)' }}
               >
                 <span className={cn('size-2 rounded-full', !value ? 'bg-emerald-500' : 'bg-neutral-400')} />
-                <span className="min-w-0 flex-1 truncate">Default (auto)</span>
+                <span className="min-w-0 flex-1 truncate">默认（自动）</span>
               </button>
               {groupedModels.map((group) => (
                 <div key={group.provider} className="mt-2 first:mt-3">
@@ -163,7 +164,7 @@ export function ConductorSettingsDrawer({
     queryKey: ['conductor', 'models'],
     queryFn: async () => {
       const res = await fetch('/api/models')
-      const data = (await res.json()) as { ok?: boolean; models?: AvailableModel[] }
+      const data = (await res.json()) as { ok?: boolean; models?: Array<AvailableModel> }
       return data.models ?? []
     },
     enabled: open,
@@ -178,27 +179,29 @@ export function ConductorSettingsDrawer({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative z-10 flex w-full max-w-md flex-col overflow-y-auto border-l p-6" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-bg)' }}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--theme-text)' }}>Conductor Settings</h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 transition-colors" style={{ color: 'var(--theme-muted)' }}>✕</button>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--theme-text)' }}>Conductor 设置</h2>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 transition-colors" style={{ color: 'var(--theme-muted)' }}>
+            <EmojiIcon emoji="✕" size={14} />
+          </button>
         </div>
 
         <div className="mt-6 space-y-6">
           <ModelSelectorDropdown
-            label="Orchestrator Model"
+            label="编排模型"
             value={settings.orchestratorModel}
             onChange={(v) => onUpdate({ orchestratorModel: v })}
             models={availableModels}
           />
 
           <ModelSelectorDropdown
-            label="Worker Model"
+            label="工作模型"
             value={settings.workerModel}
             onChange={(v) => onUpdate({ workerModel: v })}
             models={availableModels}
           />
 
           <div className="space-y-2">
-            <span className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>Projects Directory</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>项目目录</span>
             <input
               type="text"
               value={settings.projectsDir}
@@ -207,11 +210,11 @@ export function ConductorSettingsDrawer({
               className="w-full rounded-2xl border px-4 py-3 text-sm"
               style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-bg)', color: 'var(--theme-text)' }}
             />
-            <p className="text-xs" style={{ color: 'var(--theme-muted)' }}>Where workers write output. Empty = /tmp.</p>
+            <p className="text-xs" style={{ color: 'var(--theme-muted)' }}>工作智能体输出写入的位置。留空表示 /tmp。</p>
           </div>
 
           <div className="space-y-2">
-            <span className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>Max Parallel Workers</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>最大并行智能体数</span>
             <div className="flex items-center gap-4">
               <input
                 type="range"
@@ -227,8 +230,8 @@ export function ConductorSettingsDrawer({
 
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>Supervised Mode</span>
-              <p className="text-xs" style={{ color: 'var(--theme-muted)' }}>Require approval before each task.</p>
+              <span className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>监督模式</span>
+              <p className="text-xs" style={{ color: 'var(--theme-muted)' }}>每个任务执行前需要审批。</p>
             </div>
             <button
               type="button"

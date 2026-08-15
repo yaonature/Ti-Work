@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { usePageTitle } from '@/hooks/use-page-title'
 import {
   ScrollAreaCorner,
@@ -435,24 +436,24 @@ function DiffModal({
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--theme-border)]  px-5 py-3">
             <div className="min-w-0">
               <DialogTitle className="text-sm font-semibold text-[var(--theme-text)]  truncate">
-                Review changes — {fileName}
+                审阅更改 — {fileName}
               </DialogTitle>
               <DialogDescription className="mt-0.5 text-xs text-[var(--theme-muted)] ">
                 <span className="text-emerald-600 font-medium">
-                  +{addedCount} added
+                  +{addedCount} 处新增
                 </span>
                 {' · '}
                 <span className="text-red-600 font-medium">
-                  −{removedCount} removed
+                  −{removedCount} 处删除
                 </span>
               </DialogDescription>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <Button variant="outline" size="sm" onClick={onCancel}>
-                Cancel
+                取消
               </Button>
               <Button size="sm" onClick={onSave}>
-                Save anyway
+                仍然保存
               </Button>
             </div>
           </div>
@@ -462,7 +463,7 @@ function DiffModal({
             {/* Left — original */}
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
               <div className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-[var(--theme-muted)]  bg-[var(--theme-panel)] border-b border-[var(--theme-border)]  uppercase tracking-wide">
-                Original
+                原始版本
               </div>
               <div className="flex-1 overflow-auto">
                 <div className="font-mono text-[11px] leading-relaxed">
@@ -508,7 +509,7 @@ function DiffModal({
             {/* Right — new */}
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
               <div className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-[var(--theme-muted)]  bg-[var(--theme-panel)] border-b border-[var(--theme-border)]  uppercase tracking-wide">
-                New
+                新版本
               </div>
               <div className="flex-1 overflow-auto">
                 <div className="font-mono text-[11px] leading-relaxed">
@@ -614,12 +615,14 @@ function TreeNode({
               isExpanded ? 'rotate-90' : 'rotate-0',
             )}
           >
-            ▶
+            <EmojiIcon emoji="▶" size={12} />
           </span>
         ) : (
           <span className="w-3 shrink-0" />
         )}
-        <span className="shrink-0 text-base leading-none">{icon}</span>
+        <span className="shrink-0 text-base leading-none">
+          <EmojiIcon emoji={icon} size={16} />
+        </span>
         <span className="truncate">{entry.name}</span>
       </button>
 
@@ -653,7 +656,7 @@ function Breadcrumb({ path }: { path: string }) {
   const parts = path ? path.split('/').filter(Boolean) : []
   return (
     <div className="flex items-center gap-1 truncate text-xs text-[var(--theme-muted)]  min-w-0">
-      <span className="shrink-0">workspace</span>
+      <span className="shrink-0">工作区</span>
       {parts.map((part, i) => (
         <span key={i} className="flex items-center gap-1 min-w-0">
           <span className="shrink-0 text-[var(--theme-muted)] ">
@@ -805,8 +808,10 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
         {diffModal}
         <div className="flex h-full items-center justify-center text-center text-[var(--theme-muted)] ">
           <div>
-            <div className="text-5xl mb-3 opacity-40">📂</div>
-            <p className="text-sm">Select a file to preview or edit</p>
+            <div className="text-5xl mb-3 opacity-40">
+              <EmojiIcon emoji="📂" size={36} />
+            </div>
+            <p className="text-sm">选择要预览或编辑的文件</p>
           </div>
         </div>
       </>
@@ -819,10 +824,12 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
         {diffModal}
         <div className="flex h-full items-center justify-center text-center text-[var(--theme-muted)] ">
           <div>
-            <div className="text-5xl mb-3 opacity-40">📁</div>
+            <div className="text-5xl mb-3 opacity-40">
+              <EmojiIcon emoji="📁" size={36} />
+            </div>
             <p className="text-sm font-medium">{selectedEntry.name}</p>
             <p className="text-xs mt-1 opacity-70">
-              Select a file inside to preview
+              选择文件夹内的文件进行预览
             </p>
           </div>
         </div>
@@ -835,7 +842,9 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
   const header = (
     <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--theme-border)]  px-4 py-2.5">
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-lg">{getFileIcon(selectedEntry)}</span>
+        <span className="text-lg">
+          <EmojiIcon emoji={getFileIcon(selectedEntry)} size={18} />
+        </span>
         <span className="truncate text-sm font-semibold text-[var(--theme-text)] ">
           {selectedEntry.name}
         </span>
@@ -847,7 +856,7 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
             variant="outline"
             onClick={() => setRawMode((v) => !v)}
           >
-            {rawMode ? 'Preview' : 'Raw'}
+            {rawMode ? '预览' : '原文'}
           </Button>
         )}
         {isEditable && (
@@ -857,7 +866,15 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
             disabled={!dirty || saving}
             onClick={handleSave}
           >
-            {saving ? 'Saving…' : savedOk ? '✓ Saved' : 'Save'}
+            {saving ? (
+              '保存中…'
+            ) : savedOk ? (
+              <>
+                <EmojiIcon emoji="✓" size={12} /> 已保存
+              </>
+            ) : (
+              '保存'
+            )}
           </Button>
         )}
       </div>
@@ -870,10 +887,10 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
         <span>{formatBytes(selectedEntry.size)}</span>
       )}
       {selectedEntry.modifiedAt && (
-        <span>Modified {formatDate(selectedEntry.modifiedAt)}</span>
+        <span>修改于 {formatDate(selectedEntry.modifiedAt)}</span>
       )}
       {dirty && (
-        <span className="text-accent-500 font-medium">Unsaved changes</span>
+        <span className="text-accent-500 font-medium">未保存的更改</span>
       )}
     </div>
   )
@@ -887,7 +904,7 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
         <div className="flex h-full flex-col">
           {header}
           <div className="flex flex-1 items-center justify-center text-sm text-[var(--theme-muted)] dark:text-neutral-500">
-            Loading…
+            加载中…
           </div>
           {footer}
         </div>
@@ -926,7 +943,7 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
                 className="max-h-full max-w-full rounded-lg border border-[var(--theme-border)]  shadow-sm object-contain"
               />
             ) : (
-              <div className="text-sm text-[var(--theme-muted)]">No preview</div>
+              <div className="text-sm text-[var(--theme-muted)]">无预览</div>
             )}
           </div>
           {footer}
@@ -945,7 +962,6 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
           {header}
           <ScrollAreaRoot className="flex-1 min-h-0">
             <ScrollAreaViewport>
-              {/* eslint-disable-next-line react/no-danger */}
               <div
                 className="markdown-preview px-6 py-5 text-sm text-[var(--theme-text)] "
                 dangerouslySetInnerHTML={{ __html: mdHtml }}
@@ -975,7 +991,6 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
             <ScrollAreaViewport>
               <pre
                 className="code-viewer px-4 py-4 text-xs font-mono leading-relaxed text-[var(--theme-text)] "
-                // eslint-disable-next-line react/no-danger
                 dangerouslySetInnerHTML={{ __html: displayHtml }}
               />
             </ScrollAreaViewport>
@@ -1027,7 +1042,7 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function FilesScreen() {
-  usePageTitle('Files')
+  usePageTitle('文件')
 
   const [entries, setEntries] = useState<Array<FileEntry>>([])
   const [treeLoading, setTreeLoading] = useState(false)
@@ -1052,14 +1067,14 @@ export function FilesScreen() {
       })
       if (!res.ok)
         throw new Error(
-          `HTTP ${res.status} — check that HERMES_WORKSPACE_DIR is set`,
+          `HTTP ${res.status} — 请检查是否已设置 HERMES_WORKSPACE_DIR`,
         )
       const data = (await res.json()) as FilesListResponse
       setEntries(Array.isArray(data.entries) ? data.entries : [])
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         setTreeError(
-          'Could not load files — request timed out. Check that HERMES_WORKSPACE_DIR is set.',
+          '无法加载文件 — 请求超时。请检查是否已设置 HERMES_WORKSPACE_DIR。',
         )
       } else {
         setTreeError(err instanceof Error ? err.message : String(err))
@@ -1210,18 +1225,18 @@ export function FilesScreen() {
             <button
               type="button"
               onClick={openNewFolderPrompt}
-              title="New folder"
+              title="新建文件夹"
               className="rounded p-1 text-sm text-[var(--theme-muted)] hover:bg-[var(--theme-hover)]  hover:text-[var(--theme-muted)]  transition-colors leading-none"
             >
-              📁+
+              <EmojiIcon emoji="📁" size={14} /> +
             </button>
             <button
               type="button"
               onClick={() => void loadTree()}
-              title="Refresh"
+              title="刷新"
               className="rounded p-1 text-lg text-[var(--theme-muted)] hover:bg-[var(--theme-hover)]  hover:text-[var(--theme-muted)]  transition-colors leading-none"
             >
-              ↺
+              <EmojiIcon emoji="↺" size={14} />
             </button>
           </div>
         </div>
@@ -1231,13 +1246,13 @@ export function FilesScreen() {
           <ScrollAreaViewport className="px-1 py-1">
             {treeLoading ? (
               <div className="px-3 py-2 text-xs text-[var(--theme-muted)] dark:text-neutral-500">
-                Loading…
+                加载中…
               </div>
             ) : treeError ? (
               <div className="px-3 py-2 text-xs text-red-500">{treeError}</div>
             ) : entries.length === 0 ? (
               <div className="px-3 py-2 text-xs text-[var(--theme-muted)] dark:text-neutral-500">
-                Workspace is empty
+                工作区为空
               </div>
             ) : (
               entries
@@ -1289,7 +1304,7 @@ export function FilesScreen() {
               setContextMenu(null)
             }}
           >
-            ✏️ Rename
+            <EmojiIcon emoji="✏️" size={14} /> 重命名
           </button>
           {contextMenu.entry.type === 'folder' ? (
             <button
@@ -1303,7 +1318,7 @@ export function FilesScreen() {
                 setContextMenu(null)
               }}
             >
-              📁 New folder inside
+              <EmojiIcon emoji="📁" size={14} /> 新建子文件夹
             </button>
           ) : (
             <button
@@ -1313,7 +1328,7 @@ export function FilesScreen() {
                 setContextMenu(null)
               }}
             >
-              ⬇️ Download
+              <EmojiIcon emoji="⬇️" size={14} /> 下载
             </button>
           )}
           <button
@@ -1323,7 +1338,7 @@ export function FilesScreen() {
               setContextMenu(null)
             }}
           >
-            🗑️ Delete
+            <EmojiIcon emoji="🗑️" size={14} /> 删除
           </button>
         </div>
       ) : null}
@@ -1338,12 +1353,12 @@ export function FilesScreen() {
         <DialogContent>
           <div className="p-5 space-y-3">
             <DialogTitle>
-              {promptState?.mode === 'rename' ? 'Rename' : 'New Folder'}
+              {promptState?.mode === 'rename' ? '重命名' : '新建文件夹'}
             </DialogTitle>
             <DialogDescription>
               {promptState?.mode === 'rename'
-                ? 'Enter a new name.'
-                : 'Enter a folder name to create.'}
+                ? '请输入新名称。'
+                : '请输入要创建的文件夹名称。'}
             </DialogDescription>
             <input
               value={promptValue}
@@ -1355,8 +1370,8 @@ export function FilesScreen() {
               autoFocus
             />
             <div className="flex justify-end gap-2 pt-2">
-              <DialogClose render={<Button variant="outline">Cancel</Button>} />
-              <Button onClick={() => void handlePromptSubmit()}>Save</Button>
+              <DialogClose render={<Button variant="outline">取消</Button>} />
+              <Button onClick={() => void handlePromptSubmit()}>保存</Button>
             </div>
           </div>
         </DialogContent>
@@ -1372,22 +1387,20 @@ export function FilesScreen() {
         <DialogContent>
           <div className="p-5 space-y-3">
             <DialogTitle>
-              Delete {deleteConfirm?.type === 'folder' ? 'Folder' : 'File'}
+              删除{deleteConfirm?.type === 'folder' ? '文件夹' : '文件'}
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete{' '}
-              <strong>{deleteConfirm?.name}</strong>?
-              {deleteConfirm?.type === 'folder' &&
-                ' This will delete all contents inside.'}{' '}
-              This action cannot be undone.
+              确定要删除 <strong>{deleteConfirm?.name}</strong> 吗？
+              {deleteConfirm?.type === 'folder' && ' 这将删除其中全部内容。'}{' '}
+              此操作无法撤销。
             </DialogDescription>
             <div className="flex justify-end gap-2 pt-2">
-              <DialogClose render={<Button variant="outline">Cancel</Button>} />
+              <DialogClose render={<Button variant="outline">取消</Button>} />
               <Button
                 variant="destructive"
                 onClick={() => void handleDeleteConfirmed()}
               >
-                Delete
+                删除
               </Button>
             </div>
           </div>

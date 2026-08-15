@@ -19,16 +19,16 @@ type OverflowItem = {
 }
 
 const SYSTEM_ITEMS: Array<OverflowItem> = [
-  { icon: File01Icon, label: 'Files', to: '/files' },
-  { icon: ComputerTerminal01Icon, label: 'Terminal', to: '/terminal' },
-  { icon: BrainIcon, label: 'Memory', to: '/memory' },
+  { icon: File01Icon, label: '文件', to: '/files' },
+  { icon: ComputerTerminal01Icon, label: '终端', to: '/terminal' },
+  { icon: BrainIcon, label: '记忆', to: '/memory' },
 ]
 
 const HERMES_ITEMS: Array<OverflowItem> = [
-  { icon: MessageMultiple01Icon, label: 'Chat', to: '/chat' },
-  { icon: PuzzleIcon, label: 'Skills', to: '/skills' },
-  { icon: UserGroupIcon, label: 'Profiles', to: '/profiles' },
-  { icon: Settings01Icon, label: 'Settings', to: '/settings' },
+  { icon: MessageMultiple01Icon, label: '会话', to: '/chat' },
+  { icon: PuzzleIcon, label: '技能', to: '/skills' },
+  { icon: UserGroupIcon, label: '用户档案', to: '/profiles' },
+  { icon: Settings01Icon, label: '设置', to: '/settings' },
 ]
 
 type Props = {
@@ -98,7 +98,7 @@ export function DashboardOverflowPanel({ open, onClose }: Props) {
       <button
         type="button"
         className="absolute inset-0 bg-black/40 animate-in fade-in duration-200"
-        aria-label="Close overflow panel"
+        aria-label="关闭溢出面板"
         onClick={onClose}
       />
 
@@ -106,7 +106,7 @@ export function DashboardOverflowPanel({ open, onClose }: Props) {
         <div className="mb-3 h-1.5 w-10 rounded-full bg-[var(--theme-border)] mx-auto" />
         <div className="space-y-4">
           <OverflowGrid
-            title="System"
+            title="系统"
             items={SYSTEM_ITEMS}
             onSelect={handleSelect}
           />

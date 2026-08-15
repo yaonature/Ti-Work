@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDown01Icon, Idea01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { EmojiIcon } from '@/components/emoji-icon'
 import {
   getMessageTimestamp,
   getToolCallsFromMessage,
@@ -190,7 +191,7 @@ function mapToolCallToToolPart(
   // Extract error text — check content first, then top-level text
   let errorText: string | undefined
   if (isError) {
-    errorText = extractToolResultText(resultMessage) || 'Unknown error'
+    errorText = extractToolResultText(resultMessage) || '未知错误'
   }
 
   // Build output: prefer structured details, fall back to content text
@@ -318,7 +319,7 @@ function readExecNotification(message: ChatMessage): ExecNotification | null {
       : null
   const ok = typeof raw.ok === 'boolean' ? raw.ok : null
   return {
-    name: name || 'Exec',
+    name: name || '执行',
     exitCode,
     ok,
   }
@@ -346,38 +347,58 @@ function fileNameFromPath(value: string): string {
 }
 
 const TOOL_DISPLAY_LABELS: Record<string, string> = {
-  browser_click: '🖱 Click Element',
-  browser_type: '⌨ Type Text',
-  browser_press: '⏎ Press Key',
-  browser_scroll: '↕ Scroll',
-  browser_back: '← Back',
-  browser_get_images: '🖼 Get Images',
-  browser_vision: '👁 Vision Capture',
-  browser_close: '✕ Close Browser',
-  execute_code: '🐍 Execute Code',
-  process: '⚙ Process',
-  'multi_tool_use.parallel': '⚡ Parallel Tools',
-  todo: '☑ Todo',
-  cronjob: '⏰ Cron Job',
-  delegate_task: '👥 Delegate Task',
-  mixture_of_agents: '🧠 Mixture of Agents',
-  session_search: '🔍 Search Sessions',
-  clarify: '❓ Clarify',
-  skill_manage: '📦 Manage Skill',
-  vision_analyze: '👁 Analyze Image',
-  image_generate: '🎨 Generate Image',
-  send_message: '💬 Send Message',
-  text_to_speech: '🔊 Text to Speech',
-  honcho_profile: '👤 Honcho Profile',
-  honcho_search: '🔎 Honcho Search',
-  honcho_context: '📋 Honcho Context',
-  ha_list_entities: '🏠 HA Entities',
-  ha_get_state: '🏠 HA State',
-  ha_list_services: '🏠 HA Services',
-  web_search: '🌐 Web Search',
-  web_extract: '📄 Web Extract',
-  browser_navigate: '🌐 Open Page',
-  browser_snapshot: '📸 Snapshot',
+  browser_click: '🖱 点击元素',
+  browser_type: '⌨ 输入文本',
+  browser_press: '⏎ 按键',
+  browser_scroll: '↕ 滚动',
+  browser_back: '← 返回',
+  browser_get_images: '🖼 获取图片',
+  browser_vision: '👁 视觉捕捉',
+  browser_close: '✕ 关闭浏览器',
+  execute_code: '🐍 执行代码',
+  process: '⚙ 进程',
+  'multi_tool_use.parallel': '⚡ 并行工具',
+  todo: '☑ 待办',
+  cronjob: '⏰ 定时任务',
+  delegate_task: '👥 委派任务',
+  mixture_of_agents: '🧠 多智能体混合',
+  session_search: '🔍 搜索会话',
+  clarify: '❓ 澄清',
+  skill_manage: '📦 管理技能',
+  vision_analyze: '👁 分析图片',
+  image_generate: '🎨 生成图片',
+  send_message: '💬 发送消息',
+  text_to_speech: '🔊 文本转语音',
+  honcho_profile: '👤 Honcho 资料',
+  honcho_search: '🔎 Honcho 搜索',
+  honcho_context: '📋 Honcho 上下文',
+  ha_list_entities: '🏠 HA 实体',
+  ha_get_state: '🏠 HA 状态',
+  ha_list_services: '🏠 HA 服务',
+  web_search: '🌐 网络搜索',
+  web_extract: '📄 网页提取',
+  browser_navigate: '🌐 打开页面',
+  browser_snapshot: '📸 快照',
+}
+
+/** 应保留为纯文本（不转为 SVG 图标）的前缀符号 */
+const KEEP_LABEL_TEXT_ICONS = new Set(['⏎', '←'])
+
+/** 从 label 开头提取 emoji/符号字符作为图标，其余为文本 */
+function splitLabelPrefix(label: string): { icon: string | null; text: string } {
+  if (!label) return { icon: null, text: label }
+  const firstChar = Array.from(label)[0] ?? ''
+  if (KEEP_LABEL_TEXT_ICONS.has(firstChar)) {
+    return { icon: null, text: label }
+  }
+  // eslint-disable-next-line no-misleading-character-class
+  if (/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{25A0}-\u{25FF}]/u.test(firstChar)) {
+    return {
+      icon: firstChar,
+      text: label.slice(firstChar.length).replace(/^\s+/, ''),
+    }
+  }
+  return { icon: null, text: label }
 }
 
 function formatToolDisplayLabel(
@@ -391,12 +412,12 @@ function formatToolDisplayLabel(
 
   if (lowerName === 'read' || lowerName === 'read_file') {
     const filePath = readStringArg(args, 'file_path', 'path', 'target_file')
-    return filePath ? `read ${fileNameFromPath(filePath)}` : 'read file'
+    return filePath ? `读取 ${fileNameFromPath(filePath)}` : '读取文件'
   }
 
   if (lowerName === 'edit' || lowerName === 'patch_file') {
     const filePath = readStringArg(args, 'file_path', 'path', 'target_file')
-    return filePath ? `edit ${fileNameFromPath(filePath)}` : 'edit file'
+    return filePath ? `编辑 ${fileNameFromPath(filePath)}` : '编辑文件'
   }
 
   if (
@@ -405,31 +426,31 @@ function formatToolDisplayLabel(
     lowerName === 'create_file'
   ) {
     const filePath = readStringArg(args, 'file_path', 'path', 'target_file')
-    return filePath ? `write ${fileNameFromPath(filePath)}` : 'write file'
+    return filePath ? `写入 ${fileNameFromPath(filePath)}` : '写入文件'
   }
 
   if (lowerName === 'search_files') {
     const pattern = readStringArg(args, 'pattern', 'query', 'regex')
-    return pattern ? `search "${pattern}"` : 'search files'
+    return pattern ? `搜索 "${pattern}"` : '搜索文件'
   }
 
   if (lowerName === 'browser' || lowerName === 'browser_navigate') {
     const action = readStringArg(args, 'action', 'url')
-    return action ? `browser ${action}` : 'browser'
+    return action ? `浏览器 ${action}` : '浏览器'
   }
 
   if (lowerName === 'terminal' || lowerName === 'exec') {
     const cmd = readStringArg(args, 'command', 'cmd')
     return cmd
-      ? `exec ${cmd.length > 30 ? cmd.slice(0, 27) + '…' : cmd}`
-      : 'exec'
+      ? `执行 ${cmd.length > 30 ? cmd.slice(0, 27) + '…' : cmd}`
+      : '执行'
   }
 
-  if (lowerName === 'memory_search') return 'memory search'
-  if (lowerName === 'save_memory') return 'save memory'
-  if (lowerName === 'memory_get') return 'memory get'
-  if (lowerName === 'web_fetch') return 'web fetch'
-  if (lowerName === 'skill_view') return 'view skill'
+  if (lowerName === 'memory_search') return '记忆搜索'
+  if (lowerName === 'save_memory') return '保存记忆'
+  if (lowerName === 'memory_get') return '读取记忆'
+  if (lowerName === 'web_fetch') return '网页抓取'
+  if (lowerName === 'skill_view') return '查看技能'
 
   return lowerName.replace(/_/g, ' ')
 }
@@ -735,36 +756,36 @@ const TOOL_EMOJI_ICONS: Record<string, string> = {
 }
 
 const TOOL_VERBS: Record<string, string> = {
-  web_search: 'Searching',
-  search: 'Searching',
-  search_files: 'Searching',
-  terminal: 'Executing',
-  exec: 'Executing',
-  shell: 'Executing',
-  bash: 'Executing',
-  Read: 'Reading',
-  read: 'Reading',
-  read_file: 'Reading',
-  file_read: 'Reading',
-  Write: 'Writing',
-  write: 'Writing',
-  write_file: 'Writing',
-  file_write: 'Writing',
-  Edit: 'Writing',
-  edit: 'Writing',
-  memory: 'Remembering',
-  memory_search: 'Remembering',
-  memory_get: 'Remembering',
-  save_memory: 'Remembering',
-  browser: 'Browsing',
-  browser_navigate: 'Browsing',
-  navigate: 'Browsing',
-  image: 'Analyzing',
-  vision: 'Analyzing',
-  delegate: 'Delegating',
-  spawn: 'Delegating',
-  tts: 'Speaking',
-  speak: 'Speaking',
+  web_search: '正在搜索',
+  search: '正在搜索',
+  search_files: '正在搜索',
+  terminal: '正在执行',
+  exec: '正在执行',
+  shell: '正在执行',
+  bash: '正在执行',
+  Read: '正在读取',
+  read: '正在读取',
+  read_file: '正在读取',
+  file_read: '正在读取',
+  Write: '正在写入',
+  write: '正在写入',
+  write_file: '正在写入',
+  file_write: '正在写入',
+  Edit: '正在写入',
+  edit: '正在写入',
+  memory: '正在记忆',
+  memory_search: '正在记忆',
+  memory_get: '正在记忆',
+  save_memory: '正在记忆',
+  browser: '正在浏览',
+  browser_navigate: '正在浏览',
+  navigate: '正在浏览',
+  image: '正在分析',
+  vision: '正在分析',
+  delegate: '正在委派',
+  spawn: '正在委派',
+  tts: '正在播报',
+  speak: '正在播报',
 }
 
 function useElapsedTime(active: boolean): string {
@@ -783,10 +804,10 @@ function useElapsedTime(active: boolean): string {
   }, [active])
 
   if (!active && elapsed === 0) return ''
-  if (elapsed < 60) return `${elapsed}s`
+  if (elapsed < 60) return `${elapsed}秒`
   const m = Math.floor(elapsed / 60)
   const s = elapsed % 60
-  return `${m}m ${s}s`
+  return `${m}分 ${s}秒`
 }
 
 function useAnimatedDots(): string {
@@ -841,25 +862,27 @@ function ToolCallPill({ toolCall }: { toolCall: StreamToolCall }) {
   const verb =
     TOOL_VERBS[toolCall.name] ??
     (toolCall.name.includes('search')
-      ? 'Searching'
+      ? '正在搜索'
       : toolCall.name.includes('read') || toolCall.name.includes('Read')
-        ? 'Reading'
+        ? '正在读取'
         : toolCall.name.includes('write') ||
             toolCall.name.includes('Write') ||
             toolCall.name.includes('edit') ||
             toolCall.name.includes('Edit')
-          ? 'Writing'
+          ? '正在写入'
           : toolCall.name.includes('exec') || toolCall.name.includes('terminal')
-            ? 'Executing'
+            ? '正在执行'
             : toolCall.name.includes('memory')
-              ? 'Remembering'
+              ? '正在记忆'
               : toolCall.name.includes('browser')
-                ? 'Browsing'
-                : 'Working')
+                ? '正在浏览'
+                : '正在工作')
   const displayName = formatToolDisplayLabel(
     toolCall.name,
     toolCall.args as Record<string, unknown> | undefined,
   )
+  const { icon: displayLabelIcon, text: displayLabelText } =
+    splitLabelPrefix(displayName)
   const label = keyArgLabel(
     toolCall.name,
     toolCall.args as Record<string, unknown> | undefined,
@@ -904,11 +927,14 @@ function ToolCallPill({ toolCall }: { toolCall: StreamToolCall }) {
         onClick={() => setExpanded((v) => !v)}
       >
         <span className="shrink-0 text-[10px] opacity-50">
-          {expanded ? '▾' : '▸'}
+          <EmojiIcon emoji={expanded ? '▾' : '▸'} size={12} />
         </span>
-        <span className="shrink-0 text-sm leading-none">{emoji}</span>
-        <span className="shrink-0 font-mono font-semibold text-ink">
-          {displayName}
+        <span className="shrink-0 leading-none">
+          <EmojiIcon emoji={emoji} size={14} />
+        </span>
+        <span className="shrink-0 font-mono font-semibold text-ink inline-flex items-center gap-1">
+          {displayLabelIcon && <EmojiIcon emoji={displayLabelIcon} size={12} />}
+          {displayLabelText}
         </span>
         {truncated && truncated !== displayName && (
           <span className="truncate opacity-40 text-[10px] font-mono min-w-0">
@@ -921,8 +947,16 @@ function ToolCallPill({ toolCall }: { toolCall: StreamToolCall }) {
             {elapsed}
           </span>
         )}
-        {isDone && <span className="shrink-0 text-xs text-green-500">✅</span>}
-        {isError && <span className="shrink-0 text-xs text-red-500">❌</span>}
+        {isDone && (
+          <span className="shrink-0 text-xs text-green-500">
+            <EmojiIcon emoji="✅" size={12} />
+          </span>
+        )}
+        {isError && (
+          <span className="shrink-0 text-xs text-red-500">
+            <EmojiIcon emoji="❌" size={12} />
+          </span>
+        )}
         {isRunning && (
           <span className="shrink-0 size-1.5 rounded-full animate-pulse bg-indigo-500" />
         )}
@@ -944,11 +978,11 @@ function ToolCallPill({ toolCall }: { toolCall: StreamToolCall }) {
           {/* Show args (input) */}
           {toolCall.args != null &&
             typeof toolCall.args === 'object' &&
-            Object.keys(toolCall.args as Record<string, unknown>).length >
+            Object.keys(toolCall.args).length >
               0 && (
               <div className="px-2.5 py-1.5">
                 <div className="text-[9px] uppercase tracking-widest opacity-40 mb-0.5">
-                  Input
+                  输入
                 </div>
                 <pre className="text-[10px] font-mono whitespace-pre-wrap break-words max-h-[200px] overflow-y-auto text-ink opacity-70">
                   {JSON.stringify(toolCall.args, null, 2)}
@@ -962,7 +996,7 @@ function ToolCallPill({ toolCall }: { toolCall: StreamToolCall }) {
               style={{ borderColor: 'var(--theme-border)' }}
             >
               <div className="text-[9px] uppercase tracking-widest opacity-40 mb-0.5">
-                Output
+                输出
               </div>
               <pre className="text-[10px] font-mono whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-ink opacity-80">
                 {showMore ? result : detail}
@@ -975,7 +1009,7 @@ function ToolCallPill({ toolCall }: { toolCall: StreamToolCall }) {
                       setShowMore(true)
                     }}
                   >
-                    Show more
+                    显示更多
                   </button>
                 )}
               </pre>
@@ -985,7 +1019,7 @@ function ToolCallPill({ toolCall }: { toolCall: StreamToolCall }) {
           {isError && result && (
             <div className="px-2.5 py-1.5">
               <div className="text-[9px] uppercase tracking-widest text-red-500 mb-0.5">
-                Error
+                错误
               </div>
               <pre className="text-[10px] font-mono whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-red-500">
                 {result}
@@ -1036,7 +1070,7 @@ function LifecycleEventCard({
       }}
     >
       <span className="inline-flex items-center gap-1.5">
-        {emoji ? <span className="leading-none">{emoji}</span> : null}
+        {emoji ? <EmojiIcon emoji={emoji} size={12} /> : null}
         <span>{text}</span>
       </span>
     </div>
@@ -1144,7 +1178,7 @@ function MarkdownDocumentCard({
           <div className="truncate text-sm font-medium text-primary-900">
             {title}
           </div>
-          <div className="text-[11px] text-primary-600">Markdown document</div>
+          <div className="text-[11px] text-primary-600">Markdown 文档</div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {hasContent ? (
@@ -1160,7 +1194,7 @@ function MarkdownDocumentCard({
                 )}
                 onClick={() => setViewMode('preview')}
               >
-                Preview
+                预览
               </Button>
               <Button
                 type="button"
@@ -1173,7 +1207,7 @@ function MarkdownDocumentCard({
                 )}
                 onClick={() => setViewMode('source')}
               >
-                Source
+                源码
               </Button>
             </div>
           ) : null}
@@ -1184,7 +1218,7 @@ function MarkdownDocumentCard({
               rel="noopener noreferrer"
               className="text-xs text-primary-700 underline decoration-primary-300 underline-offset-4 hover:decoration-primary-500"
             >
-              Open
+              打开
             </a>
           ) : null}
         </div>
@@ -1199,7 +1233,7 @@ function MarkdownDocumentCard({
           )
         ) : (
           <div className="text-sm text-primary-600">
-            Preview unavailable for this markdown content.
+            此 Markdown 内容无法预览。
           </div>
         )}
       </div>
@@ -1218,7 +1252,7 @@ function MarkdownAttachmentCard({
 
   return (
     <MarkdownDocumentCard
-      title={`${attachment.name || 'Markdown attachment'}${ext ? ` • ${ext.toUpperCase()}` : ''}`}
+      title={`${attachment.name || 'Markdown 附件'}${ext ? ` • ${ext.toUpperCase()}` : ''}`}
       content={content}
       openHref={source || undefined}
     />
@@ -1235,7 +1269,7 @@ function extractStandaloneMarkdownFence(text: string): string | null {
 function MarkdownMessageCard({ content }: { content: string }) {
   return (
     <MarkdownDocumentCard
-      title="Markdown preview"
+      title="Markdown 预览"
       content={content}
       className="max-w-full"
     />
@@ -1293,6 +1327,8 @@ function InlineToolSectionItem({
     toolSection.type,
     toolSection.input,
   )
+  const { icon: displayLabelIcon, text: displayLabelText } =
+    splitLabelPrefix(toolDisplayLabel)
   const headerArgTruncated =
     headerArg && headerArg.length > 60
       ? `${headerArg.slice(0, 57)}…`
@@ -1337,22 +1373,22 @@ function InlineToolSectionItem({
   }, [isRunning, toolSection.key])
   const elapsedLabel =
     elapsed >= 60
-      ? `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`
-      : `${elapsed}s`
+      ? `${Math.floor(elapsed / 60)}分 ${elapsed % 60}秒`
+      : `${elapsed}秒`
   const verb = toolSection.type.includes('search')
-    ? 'Searching'
+    ? '正在搜索'
     : toolSection.type.includes('read') || toolSection.type.includes('Read')
-      ? 'Reading'
+      ? '正在读取'
       : toolSection.type.includes('write') ||
           toolSection.type.includes('Write') ||
           toolSection.type.includes('edit')
-        ? 'Writing'
+        ? '正在写入'
         : toolSection.type.includes('exec') ||
             toolSection.type.includes('terminal')
-          ? 'Executing'
+          ? '正在执行'
           : toolSection.type.includes('memory')
-            ? 'Remembering'
-            : 'Working'
+            ? '正在记忆'
+            : '正在工作'
 
   const previewLabel = toolSection.preview || headerArgTruncated
   const hasInputData =
@@ -1384,9 +1420,12 @@ function InlineToolSectionItem({
         tabIndex={0}
       >
         <div className="flex items-center gap-2 px-3 py-2">
-          <span className="text-base leading-none shrink-0">{icon}</span>
-          <span className="font-mono font-semibold text-ink text-[13px]">
-            {toolDisplayLabel}
+          <span className="shrink-0 leading-none">
+            <EmojiIcon emoji={icon} size={16} />
+          </span>
+          <span className="font-mono font-semibold text-ink text-[13px] inline-flex items-center gap-1">
+            {displayLabelIcon && <EmojiIcon emoji={displayLabelIcon} size={13} />}
+            {displayLabelText}
           </span>
           {previewLabel && previewLabel !== toolDisplayLabel ? (
             <span className="truncate opacity-40 text-[10px] font-mono min-w-0">
@@ -1400,15 +1439,21 @@ function InlineToolSectionItem({
             </span>
           )}
           {isDone && !isRunning && (
-            <span className="text-xs text-green-500">✅</span>
+            <span className="text-xs text-green-500">
+              <EmojiIcon emoji="✅" size={12} />
+            </span>
           )}
-          {isError && <span className="text-xs text-red-500">❌</span>}
+          {isError && (
+            <span className="text-xs text-red-500">
+              <EmojiIcon emoji="❌" size={12} />
+            </span>
+          )}
           {isRunning && (
             <span className="size-1.5 rounded-full animate-pulse bg-indigo-500" />
           )}
           {hasExpandableContent && (
             <span className="text-[8px] opacity-30 ml-0.5">
-              {open ? '▾' : '▸'}
+              <EmojiIcon emoji={open ? '▾' : '▸'} size={12} />
             </span>
           )}
         </div>
@@ -1426,7 +1471,7 @@ function InlineToolSectionItem({
           {hasInputData && !showRawJson ? (
             <div>
               <div className="text-[9px] uppercase tracking-widest text-primary-500 mb-0.5 font-sans">
-                Input
+                输入
               </div>
               {toolSection.type === 'exec' && headerArg ? (
                 <pre
@@ -1453,7 +1498,7 @@ function InlineToolSectionItem({
             isError && toolSection.errorText ? (
               <div>
                 <div className="text-[9px] uppercase tracking-widest text-red-500 mb-0.5 font-sans">
-                  Error
+                  错误
                 </div>
                 <pre
                   className="max-h-48 overflow-x-auto whitespace-pre-wrap break-words rounded p-2 text-[10px] font-mono text-red-400"
@@ -1465,7 +1510,7 @@ function InlineToolSectionItem({
             ) : toolSection.outputText ? (
               <div>
                 <div className="text-[9px] uppercase tracking-widest text-primary-500 mb-0.5 font-sans">
-                  Output
+                  输出
                 </div>
                 <pre
                   className="max-h-48 overflow-x-auto whitespace-pre-wrap break-words rounded p-2 text-[10px] font-mono"
@@ -1501,7 +1546,7 @@ function InlineToolSectionItem({
                   }}
                   className="text-[9px] text-primary-500 hover:text-primary-700"
                 >
-                  {showFullOutput ? 'less' : 'more'}
+                  {showFullOutput ? '更少' : '更多'}
                 </button>
               )}
               <button
@@ -1512,14 +1557,14 @@ function InlineToolSectionItem({
                 }}
                 className="text-[9px] text-primary-500 hover:text-primary-700"
               >
-                {showRawJson ? 'formatted' : 'raw'}
+                {showRawJson ? '格式化' : '原始'}
               </button>
             </div>
           )}
           {/* Fallback when no args or output available */}
           {!hasInputData && !hasOutputData && !isRunning && (
             <div className="text-[10px] text-primary-400 italic">
-              No detail available for this tool call
+              此工具调用无可用详情
             </div>
           )}
         </div>
@@ -1813,15 +1858,15 @@ function MessageItemComponent({
       )
       if (!label || seen.has(label)) continue
       seen.add(label)
-      labels.push(label)
+      labels.push(splitLabelPrefix(label).text)
     }
 
     return labels
   }, [effectiveStreamToolCalls])
   const thinkingStatusLabel =
     activeStreamToolLabels.length > 0
-      ? `⚡ Running ${activeStreamToolLabels.join(', ')}...`
-      : '💭 Thinking...'
+      ? `⚡ 正在运行 ${activeStreamToolLabels.join(', ')}...`
+      : '💭 正在思考...'
   const [thinkingElapsedSeconds, setThinkingElapsedSeconds] = useState(0)
   useEffect(() => {
     if (!thinking || hasText) {
@@ -1856,7 +1901,7 @@ function MessageItemComponent({
         const messageText = textFromMessage(toolMessage)
         const outputText = extractToolResultText(toolMessage) || messageText
         const errorText = toolMessage.isError
-          ? outputText || 'Unknown error'
+          ? outputText || '未知错误'
           : undefined
         const toolType =
           (typeof toolMessage.toolName === 'string' &&
@@ -1899,7 +1944,7 @@ function MessageItemComponent({
               : undefined,
           preview: toolCall.preview,
           outputText,
-          errorText: isError ? outputText || 'Tool failed' : undefined,
+          errorText: isError ? outputText || '工具失败' : undefined,
           state: isError
             ? 'output-error'
             : isComplete || !effectiveIsStreaming
@@ -1996,7 +2041,7 @@ function MessageItemComponent({
   if (execNotification) {
     const isSuccess = execNotification.ok ?? execNotification.exitCode === 0
     const statusIcon = isSuccess ? '✓' : '✗'
-    const exitLabel = `exit ${execNotification.exitCode ?? '—'}`
+    const exitLabel = `退出码 ${execNotification.exitCode ?? '—'}`
     return (
       <div
         ref={wrapperRef}
@@ -2012,7 +2057,9 @@ function MessageItemComponent({
           wrapperClassName,
         )}
       >
-        <span className="font-semibold">{statusIcon}</span>
+        <span className="font-semibold inline-flex items-center">
+          <EmojiIcon emoji={statusIcon} size={12} />
+        </span>
         <span className="font-medium">{execNotification.name}</span>
         <span className="text-primary-400">{exitLabel}</span>
       </div>
@@ -2078,12 +2125,18 @@ function MessageItemComponent({
                 strokeWidth={1.5}
                 className="opacity-70"
               />
-              <span>{thinkingStatusLabel}</span>
+              <span className="inline-flex items-center gap-1">
+                <EmojiIcon
+                  emoji={thinkingStatusLabel.startsWith('⚡') ? '⚡' : '💭'}
+                  size={14}
+                />
+                {thinkingStatusLabel.replace(/^[⚡💭]\s*/, '')}
+              </span>
               {thinkingElapsedSeconds > 0 ? (
                 <span className="text-xs tabular-nums text-primary-400">
                   {thinkingElapsedSeconds >= 60
-                    ? `${Math.floor(thinkingElapsedSeconds / 60)}m ${thinkingElapsedSeconds % 60}s`
-                    : `${thinkingElapsedSeconds}s`}
+                    ? `${Math.floor(thinkingElapsedSeconds / 60)}分 ${thinkingElapsedSeconds % 60}秒`
+                    : `${thinkingElapsedSeconds}秒`}
                 </span>
               ) : null}
               {effectiveIsStreaming ? (
@@ -2128,7 +2181,7 @@ function MessageItemComponent({
           <details className="group/narration rounded-lg border border-primary-200/50 bg-primary-50/30 hover:bg-primary-50 dark:hover:bg-primary-800/50 transition-colors">
             <summary className="flex items-center gap-2 cursor-pointer select-none px-3 py-2 list-none [&::-webkit-details-marker]:hidden">
               <span className="size-6 flex items-center justify-center rounded-full bg-accent-500/15 shrink-0">
-                <span className="text-xs">⚡</span>
+                <EmojiIcon emoji="⚡" size={12} />
               </span>
               <span className="text-xs font-medium truncate flex-1 text-primary-700">
                 {displayText.slice(0, 120)}
@@ -2215,7 +2268,7 @@ function MessageItemComponent({
                       >
                         <img
                           src={source}
-                          alt={attachment.name || 'Attached image'}
+                          alt={attachment.name || '附件图片'}
                           className="max-h-64 w-auto max-w-full object-contain"
                           loading="lazy"
                         />
@@ -2245,12 +2298,12 @@ function MessageItemComponent({
                       rel="noopener noreferrer"
                       className="inline-flex max-w-full items-center gap-2 rounded-xl border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-700 hover:border-primary-400"
                     >
-                      <span>📄</span>
+                      <EmojiIcon emoji="📄" size={14} />
                       <span className="truncate">
-                        {attachment.name || 'Attachment'}
+                        {attachment.name || '附件'}
                       </span>
                       <span className="rounded bg-primary-100 px-1.5 py-0.5 text-[10px] uppercase text-primary-600">
-                        {ext || 'file'}
+                        {ext || '文件'}
                       </span>
                     </a>
                   )
@@ -2269,7 +2322,7 @@ function MessageItemComponent({
                   >
                     <img
                       src={img.src}
-                      alt="Shared image"
+                      alt="分享的图片"
                       className="max-h-64 w-auto max-w-full object-contain"
                       loading="lazy"
                     />
@@ -2303,7 +2356,7 @@ function MessageItemComponent({
               ) : null)}
             {/* Sent indicator — message delivered, waiting for response */}
             {isUser && isQueued && (
-              <span className="text-[10px] text-white/60 self-end">Sent</span>
+              <span className="text-[10px] text-white/60 self-end">已发送</span>
             )}
           </div>
         </Message>
@@ -2318,22 +2371,28 @@ function MessageItemComponent({
             className="size-1.5 rounded-full animate-pulse"
             style={{ background: 'var(--theme-accent)' }}
           />
-          <span>Working&hellip;</span>
+          <span>正在工作…</span>
         </div>
       ) : null}
       {hasAssistantMetadata ? (
         <div className="flex flex-wrap justify-end gap-x-2 gap-y-0.5 pl-10 pr-1 mt-0.5 font-mono text-[10px] tabular-nums text-primary-400 leading-relaxed">
           {usageMetadata.inputTokens !== null && (
-            <span>↑{formatCompactNumber(usageMetadata.inputTokens)}</span>
+            <span className="inline-flex items-center">
+              <EmojiIcon emoji="↑" size={10} />
+              {formatCompactNumber(usageMetadata.inputTokens)}
+            </span>
           )}
           {usageMetadata.outputTokens !== null && (
-            <span>↓{formatCompactNumber(usageMetadata.outputTokens)}</span>
+            <span className="inline-flex items-center">
+              <EmojiIcon emoji="↓" size={10} />
+              {formatCompactNumber(usageMetadata.outputTokens)}
+            </span>
           )}
           {usageMetadata.cacheReadTokens !== null && (
-            <span>R{formatCompactNumber(usageMetadata.cacheReadTokens)}</span>
+            <span>读{formatCompactNumber(usageMetadata.cacheReadTokens)}</span>
           )}
           {usageMetadata.cacheWriteTokens !== null && (
-            <span>W{formatCompactNumber(usageMetadata.cacheWriteTokens)}</span>
+            <span>写{formatCompactNumber(usageMetadata.cacheWriteTokens)}</span>
           )}
           {usageMetadata.modelLabel && (
             <span className="opacity-60">{usageMetadata.modelLabel}</span>

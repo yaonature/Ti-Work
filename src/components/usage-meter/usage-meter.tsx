@@ -11,6 +11,7 @@ import {
   MenuTrigger,
 } from '@/components/ui/menu'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { toast } from '@/components/ui/toast'
 import { SEARCH_MODAL_EVENTS } from '@/hooks/use-search-modal'
 
@@ -23,10 +24,10 @@ const THRESHOLDS = [50, 75, 90]
 type StatsView = 'session' | 'provider' | 'cost' | 'agents'
 
 const STATS_VIEW_LABELS: Record<StatsView, string> = {
-  session: 'Session Stats',
-  provider: 'Provider Usage',
-  cost: 'Cost Breakdown',
-  agents: 'Agent Activity',
+  session: '会话统计',
+  provider: '服务提供方用量',
+  cost: '费用明细',
+  agents: '智能体活动',
 }
 
 const PREFERRED_PROVIDER_KEY = 'hermes-preferred-provider'
@@ -413,7 +414,7 @@ function getAlertState() {
     }
     return {
       date: today,
-      sent: parsed.sent ?? ({} as Record<number, boolean>),
+      sent: parsed.sent ?? ({}),
     }
   } catch {
     return { date: today, sent: {} as Record<number, boolean> }
@@ -465,7 +466,7 @@ export function UsageMeter() {
       if (!res.ok) {
         const data = await res.json().catch(() => null)
         throw new Error(
-          data?.error || data?.message || res.statusText || 'Request failed',
+          data?.error || data?.message || res.statusText || '请求失败',
         )
       }
       const data = (await res.json()) as SessionStatusResponse
@@ -476,7 +477,7 @@ export function UsageMeter() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err)
       setError(errorMessage)
-      toast('Failed to fetch usage data', { type: 'error' })
+      toast('获取用量数据失败', { type: 'error' })
     }
   }, [])
 
@@ -491,7 +492,7 @@ export function UsageMeter() {
       } | null
 
       if (!res.ok || data?.ok === false) {
-        throw new Error(data?.error || res.statusText || 'Request failed')
+        throw new Error(data?.error || res.statusText || '请求失败')
       }
 
       setProviderUsage(data?.providers ?? [])
@@ -500,7 +501,7 @@ export function UsageMeter() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err)
       setProviderError(errorMessage)
-      toast('Failed to fetch provider usage', { type: 'error' })
+      toast('获取服务提供方用量失败', { type: 'error' })
     }
   }, [])
 
@@ -690,7 +691,7 @@ export function UsageMeter() {
           <>
             <div className="flex items-center gap-1">
               <span className="text-[10px] uppercase tracking-wide text-primary-600">
-                In
+                入
               </span>
               <span>{formatTokens(usage.inputTokens)}</span>
             </div>
@@ -702,13 +703,13 @@ export function UsageMeter() {
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[10px] uppercase tracking-wide text-primary-600">
-                Ctx
+                上下文
               </span>
               <span>{Math.round(usage.contextPercent)}%</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[10px] uppercase tracking-wide text-primary-600">
-                Cost
+                费用
               </span>
               <span>{formatCurrency(usage.dailyCost)}</span>
             </div>
@@ -736,8 +737,13 @@ export function UsageMeter() {
                 >
                   <span className="text-[10px] uppercase tracking-wide text-primary-600">
                     {line.label
-                      .replace('Session (5h)', 'Sess')
-                      .replace('Weekly', 'Wk')
+                      .replace('Session (5h)', '会话')
+                      .replace('Weekly', '每周')
+                      .replace('Daily', '每日')
+                      .replace('Monthly', '每月')
+                      .replace('Never', '从不')
+                      .replace('Requests remaining', '剩余请求')
+                      .replace('Tokens remaining', '剩余令牌')
                       .replace('Sonnet', 'Son')}
                   </span>
                   <span>
@@ -769,7 +775,7 @@ export function UsageMeter() {
           )
         }
         return (
-          <span className="text-[10px] text-primary-500">No provider data</span>
+          <span className="text-[10px] text-primary-500">暂无服务提供方数据</span>
         )
       }
 
@@ -802,9 +808,9 @@ export function UsageMeter() {
         return (
           <div className="flex items-center gap-1">
             <span className="text-[10px] uppercase tracking-wide text-primary-600">
-              Total
-            </span>
-            <span>{formatCurrency(usage.dailyCost)}</span>
+                总计
+              </span>
+              <span>{formatCurrency(usage.dailyCost)}</span>
           </div>
         )
       }
@@ -814,7 +820,7 @@ export function UsageMeter() {
           <>
             <div className="flex items-center gap-1">
               <span className="text-[10px] uppercase tracking-wide text-primary-600">
-                Active
+                进行中
               </span>
               <span>{agentActivity.activeAgents}</span>
             </div>
@@ -826,7 +832,7 @@ export function UsageMeter() {
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[10px] uppercase tracking-wide text-primary-600">
-                Cost
+                费用
               </span>
               <span>{formatCurrency(agentActivity.totalAgentCost)}</span>
             </div>
@@ -865,11 +871,15 @@ export function UsageMeter() {
               )}
             >
               <span className="flex-1">{STATS_VIEW_LABELS[view]}</span>
-              {statsView === view && <span className="text-amber-600">✓</span>}
+              {statsView === view && (
+                <span className="text-amber-600">
+                  <EmojiIcon emoji="✓" size={12} />
+                </span>
+              )}
             </MenuItem>
           ))}
           <div className="my-1 h-px bg-primary-100" />
-          <MenuItem onClick={() => setOpen(true)}>View Details…</MenuItem>
+          <MenuItem onClick={() => setOpen(true)}>查看详情…</MenuItem>
         </MenuContent>
       </MenuRoot>
 

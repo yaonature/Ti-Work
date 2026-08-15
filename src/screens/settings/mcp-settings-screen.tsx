@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 type Transport = 'stdio' | 'http'
 
@@ -114,11 +115,11 @@ function buildDraft(server?: McpServer | null): ServerDraft {
 }
 
 function formatServerSummary(server: McpServer): string {
-  if (server.transport === 'http') return server.url || 'No URL configured'
+  if (server.transport === 'http') return server.url || '未配置 URL'
   const args = server.args?.join(' ') || ''
   return (
     [server.command, args].filter(Boolean).join(' ').trim() ||
-    'No command configured'
+    '未配置命令'
   )
 }
 
@@ -188,23 +189,23 @@ function validateDraft(
   originalName?: string,
 ): string | null {
   const name = draft.name.trim()
-  if (!name) return 'Server name is required.'
+  if (!name) return '服务器名称不能为空。'
   if (!/^[A-Za-z0-9_-]+$/.test(name)) {
-    return 'Use letters, numbers, underscores, or hyphens for the server name.'
+    return '服务器名称只能包含字母、数字、下划线或连字符。'
   }
   if (existingNames.includes(name) && name !== originalName) {
-    return 'A server with that name already exists.'
+    return '已存在同名服务器。'
   }
   if (draft.transport === 'stdio' && !draft.command.trim()) {
-    return 'Command is required for stdio servers.'
+    return 'stdio 服务器需要配置命令。'
   }
   if (draft.transport === 'http' && !draft.url.trim()) {
-    return 'URL is required for HTTP servers.'
+    return 'HTTP 服务器需要配置 URL。'
   }
   if (draft.timeout.trim()) {
     const timeout = Number(draft.timeout)
     if (!Number.isFinite(timeout) || timeout <= 0) {
-      return 'Timeout must be a positive number.'
+      return '超时时间必须为正数。'
     }
   }
   return null
@@ -226,18 +227,17 @@ function ServerDialog(props: {
         <div className="space-y-5 p-5 md:p-6">
           <div className="space-y-1">
             <DialogTitle>
-              {editingName ? 'Edit MCP Server' : 'Add MCP Server'}
+              {editingName ? '编辑 MCP 服务' : '添加 MCP 服务'}
             </DialogTitle>
             <DialogDescription>
-              Configure the server details, then generate an updated YAML
-              snippet.
+              配置服务器详情，然后生成更新的 YAML 片段。
             </DialogDescription>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-1.5 md:col-span-2">
               <span className="text-xs font-medium uppercase tracking-[0.12em] text-primary-600">
-                Name
+                名称
               </span>
               <Input
                 value={draft.name}
@@ -268,7 +268,7 @@ function ServerDialog(props: {
                 <TabsContent value="stdio" className="mt-4 space-y-4">
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium uppercase tracking-[0.12em] text-primary-600">
-                      Command
+                      命令
                     </span>
                     <Input
                       value={draft.command}
@@ -283,7 +283,7 @@ function ServerDialog(props: {
                   </label>
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium uppercase tracking-[0.12em] text-primary-600">
-                      Args
+                      参数
                     </span>
                     <Input
                       value={draft.args}
@@ -298,7 +298,7 @@ function ServerDialog(props: {
                   </label>
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium uppercase tracking-[0.12em] text-primary-600">
-                      Env Vars
+                      环境变量
                     </span>
                     <textarea
                       value={draft.envText}
@@ -332,7 +332,7 @@ function ServerDialog(props: {
                   </label>
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium uppercase tracking-[0.12em] text-primary-600">
-                      Headers
+                      请求头
                     </span>
                     <textarea
                       value={draft.headersText}
@@ -355,7 +355,7 @@ function ServerDialog(props: {
 
             <label className="space-y-1.5 md:col-span-2">
               <span className="text-xs font-medium uppercase tracking-[0.12em] text-primary-600">
-                Timeout (seconds)
+                超时时间（秒）
               </span>
               <Input
                 type="number"
@@ -373,9 +373,9 @@ function ServerDialog(props: {
           </div>
 
           <div className="flex items-center justify-end gap-2">
-            <DialogClose>Cancel</DialogClose>
+            <DialogClose>取消</DialogClose>
             <Button onClick={onSave}>
-              {editingName ? 'Save Changes' : 'Add Server'}
+              {editingName ? '保存更改' : '添加服务器'}
             </Button>
           </div>
         </div>
@@ -413,7 +413,7 @@ export function McpSettingsScreen() {
         setNotice(payload.message ?? null)
       } catch {
         setNotice(
-          'Could not load MCP config from Hermes. You can still draft servers here.',
+          '无法从 Hermes 加载 MCP 配置；您仍可在此编辑服务器。',
         )
       } finally {
         setLoading(false)
@@ -480,8 +480,8 @@ export function McpSettingsScreen() {
     setDialogOpen(false)
     toast(
       editingName
-        ? 'MCP server updated in local draft.'
-        : 'MCP server added to local draft.',
+        ? 'MCP 服务已在本地草稿中更新。'
+        : 'MCP 服务已添加到本地草稿。',
       {
         type: 'success',
       },
@@ -503,16 +503,16 @@ export function McpSettingsScreen() {
       }
       if (payload.ok) {
         setOriginalServers(servers)
-        toast(payload.message ?? 'MCP servers saved.', { type: 'success' })
+        toast(payload.message ?? 'MCP 服务已保存。', { type: 'success' })
         // Auto-trigger reload if available so changes apply immediately
         if (reloadAvailable) {
           void handleReload()
         }
       } else {
-        toast(payload.error ?? 'Failed to save MCP servers.', { type: 'error' })
+        toast(payload.error ?? '保存 MCP 服务失败。', { type: 'error' })
       }
     } catch {
-      toast('Could not reach save endpoint.', { type: 'error' })
+      toast('无法访问保存接口。', { type: 'error' })
     } finally {
       setSaving(false)
     }
@@ -521,9 +521,9 @@ export function McpSettingsScreen() {
   async function handleCopySnippet() {
     try {
       await writeTextToClipboard(yamlSnippet)
-      toast('YAML snippet copied.', { type: 'success' })
+      toast('YAML 片段已复制。', { type: 'success' })
     } catch {
-      toast('Clipboard unavailable.', { type: 'error' })
+      toast('剪贴板不可用。', { type: 'error' })
     }
   }
 
@@ -537,13 +537,13 @@ export function McpSettingsScreen() {
       }
       toast(
         payload.message ||
-          (payload.ok ? 'Reload requested.' : 'Reload unavailable.'),
+          (payload.ok ? '已请求重新加载。' : '无法重新加载。'),
         {
           type: payload.ok ? 'success' : 'info',
         },
       )
     } catch {
-      toast('Could not reach reload endpoint.', { type: 'error' })
+      toast('无法访问重载接口。', { type: 'error' })
     } finally {
       setReloadPending(false)
     }
@@ -567,27 +567,26 @@ export function McpSettingsScreen() {
                         size={16}
                         strokeWidth={1.8}
                       />
-                      Back to Settings
+                      返回设置
                     </Link>
                   }
                 />
                 <div>
                   <h1 className="text-lg font-semibold text-ink">
-                    MCP Servers
+                    MCP 服务
                   </h1>
                   <p className="mt-1 text-sm text-primary-600">
-                    Add, edit, and remove MCP servers. Save writes directly
-                    to{' '}
+                    添加、编辑和移除 MCP 服务。保存时将直接写入{' '}
                     <code className="rounded bg-primary-200/60 px-1.5 py-0.5 font-mono text-xs text-ink">
                       ~/.hermes/config.yaml
                     </code>{' '}
-                    and triggers a live reload.
+                    并触发热重载。
                   </p>
                 </div>
               </div>
               <Button size="sm" onClick={openAddDialog}>
                 <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.8} />
-                Add Server
+                添加服务器
               </Button>
             </div>
           </header>
@@ -601,14 +600,14 @@ export function McpSettingsScreen() {
           {isDirty ? (
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 shadow-sm">
               <p className="text-sm text-amber-800">
-                You have unsaved changes.
+                您有未保存的更改。
               </p>
               <Button
                 size="sm"
                 onClick={() => void handleSaveToConfig()}
                 disabled={saving}
               >
-                {saving ? 'Saving…' : 'Save to Config'}
+                {saving ? '保存中…' : '保存到配置'}
               </Button>
             </div>
           ) : null}
@@ -617,11 +616,10 @@ export function McpSettingsScreen() {
             <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <h2 className="text-base font-medium text-ink">
-                  Configured Servers
+                  已配置的服务器
                 </h2>
                 <p className="mt-1 text-xs text-primary-600">
-                  {servers.length} server{servers.length === 1 ? '' : 's'} in
-                  the current local draft.
+                  当前本地草稿中有 {servers.length} 个服务器。
                 </p>
               </div>
               {reloadAvailable ? (
@@ -636,28 +634,27 @@ export function McpSettingsScreen() {
                     size={16}
                     strokeWidth={1.8}
                   />
-                  {reloadPending ? 'Reloading...' : 'Reload MCP Servers'}
+                  {reloadPending ? '正在重新加载...' : '重新加载 MCP 服务'}
                 </Button>
               ) : (
                 <span
                   className="text-xs text-primary-400"
-                  title="MCP reload not available on this gateway"
+                  title="该网关不支持 MCP 重新加载"
                 >
-                  Reload unavailable
+                  无法重新加载
                 </span>
               )}
             </div>
 
             {loading ? (
               <div className="rounded-xl border border-primary-200 bg-primary-100/40 px-4 py-3 text-sm text-primary-600">
-                Loading MCP servers...
+                正在加载 MCP 服务...
               </div>
             ) : null}
 
             {!loading && servers.length === 0 ? (
               <div className="rounded-xl border border-dashed border-primary-300 bg-primary-100/30 px-4 py-8 text-center text-sm text-primary-600">
-                No MCP servers found yet. Add one to generate a starter config
-                snippet.
+                尚未找到 MCP 服务 — 添加一个以生成初始配置片段。
               </div>
             ) : null}
 
@@ -672,7 +669,10 @@ export function McpSettingsScreen() {
                       <div className="min-w-0 space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-lg">
-                            {server.transport === 'http' ? '🌐' : '📡'}
+                            <EmojiIcon
+                              emoji={server.transport === 'http' ? '🌐' : '📡'}
+                              size={16}
+                            />
                           </span>
                           <h3 className="text-sm font-semibold text-ink">
                             {server.name}
@@ -686,13 +686,13 @@ export function McpSettingsScreen() {
                         </p>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-primary-500">
                           <span>
-                            timeout:{' '}
-                            {server.timeout ? `${server.timeout}s` : 'default'}
+                            超时：{' '}
+                            {server.timeout ? `${server.timeout}s` : '默认'}
                           </span>
                           {server.connectTimeout ? (
-                            <span>connect: {server.connectTimeout}s</span>
+                            <span>连接：{server.connectTimeout} 秒</span>
                           ) : null}
-                          {server.auth ? <span>auth configured</span> : null}
+                          {server.auth ? <span>已配置认证</span> : null}
                         </div>
                       </div>
 
@@ -707,7 +707,7 @@ export function McpSettingsScreen() {
                             size={14}
                             strokeWidth={1.8}
                           />
-                          Edit
+                          编辑
                         </Button>
                         <Button
                           variant="outline"
@@ -721,7 +721,7 @@ export function McpSettingsScreen() {
                                 (entry) => entry.name !== server.name,
                               ),
                             )
-                            toast(`Removed ${server.name} from local draft.`, {
+                            toast(`已将 ${server.name} 从本地草稿中移除。`, {
                               type: 'success',
                             })
                           }}
@@ -731,7 +731,7 @@ export function McpSettingsScreen() {
                             size={14}
                             strokeWidth={1.8}
                           />
-                          Delete
+                          删除
                         </Button>
                       </div>
                     </div>
@@ -745,19 +745,19 @@ export function McpSettingsScreen() {
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <h2 className="text-base font-medium text-ink">
-                  Generated YAML
+                  生成的 YAML
                 </h2>
                 <p className="mt-1 text-sm text-primary-600">
-                  Manual fallback — copy into{' '}
+                  手动替代方案 — 如果上方保存按钮不可用，请将其复制到{' '}
                   <code className="rounded bg-primary-200/60 px-1.5 py-0.5 font-mono text-xs text-ink">
                     config.yaml
                   </code>{' '}
-                  if the Save button above is unavailable.
+                  中。
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={handleCopySnippet}>
                 <HugeiconsIcon icon={Copy01Icon} size={16} strokeWidth={1.8} />
-                Copy to Clipboard
+                复制到剪贴板
               </Button>
             </div>
 

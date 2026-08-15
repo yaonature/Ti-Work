@@ -32,16 +32,16 @@ export type OnboardingStep = {
 export const ONBOARDING_STEPS: Array<OnboardingStep> = [
   {
     id: 'welcome',
-    title: 'Welcome to Hermes Studio',
-    description: 'Your AI workspace powered by Hermes Agent',
+    title: '欢迎使用 Ti Work',
+    description: '由 Hermes Agent 驱动的 AI 工作空间',
     icon: Home01Icon,
     iconBg: 'bg-orange-500',
-    nextLabel: 'Get Started',
+    nextLabel: '开始设置',
   },
   {
     id: 'connection-check',
-    title: 'Connection Check',
-    description: 'Verify that Hermes Agent is running before you begin.',
+    title: '连接检查',
+    description: '开始之前，先确认 Hermes Agent 已正常运行。',
     icon: Plug01Icon,
     iconBg: 'bg-emerald-500',
     component: ConnectionCheckStep,
@@ -49,20 +49,20 @@ export const ONBOARDING_STEPS: Array<OnboardingStep> = [
   },
   {
     id: 'model-configuration',
-    title: 'Model Configuration',
-    description: 'Review your current provider and model setup.',
+    title: '模型配置',
+    description: '检查当前使用的模型提供方与模型设置。',
     icon: Settings01Icon,
     iconBg: 'bg-cyan-500',
     component: ModelConfigurationStep,
   },
   {
     id: 'ready',
-    title: 'You are all set!',
+    title: '配置完成',
     description:
-      'Start chatting with Hermes. Try asking it to help with code, research, or anything else.',
+      '现在就可以开始和 Hermes 协作了。你可以让它帮你写代码、做调研，或处理其他工作任务。',
     icon: CheckmarkCircle02Icon,
     iconBg: 'bg-emerald-500',
-    completeLabel: 'Start Chatting',
+    completeLabel: '开始对话',
   },
 ]
 

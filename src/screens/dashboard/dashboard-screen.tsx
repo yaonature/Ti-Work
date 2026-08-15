@@ -13,15 +13,16 @@ import {
 import type { ReactNode } from 'react'
 import type { HermesSession } from '@/server/hermes-api'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
 function timeAgo(ts: number): string {
   const diff = Date.now() / 1000 - ts
-  if (diff < 60) return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
+  if (diff < 60) return '刚刚'
+  if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`
+  return `${Math.floor(diff / 86400)} 天前`
 }
 
 function formatNumber(n: number): string {
@@ -82,7 +83,7 @@ function GlassCard({
   )
 }
 
-function EnhancedBadge({ label = 'Enhanced API' }: { label?: string }) {
+function EnhancedBadge({ label = '增强 API' }: { label?: string }) {
   return (
     <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700">
       {label}
@@ -141,10 +142,10 @@ function SystemGlance({
         <span className="text-muted">·</span>
         <span className="text-xs text-neutral-500">{provider}</span>
         <span className="text-muted">·</span>
-        <span className="text-xs text-neutral-500">{sessions} sessions</span>
+        <span className="text-xs text-neutral-500">{sessions} 个会话</span>
         <span className="text-muted">·</span>
         <span className="text-xs font-bold tabular-nums text-ink">
-          {tokens} tokens
+          {tokens} Token
         </span>
         <span className="text-muted">·</span>
         <span className="text-xs text-neutral-400">{cost}</span>
@@ -184,7 +185,7 @@ function MetricTile({
           className="flex size-8 items-center justify-center rounded-lg text-base"
           style={{ background: `${accentColor}15` }}
         >
-          {icon}
+          <EmojiIcon emoji={icon} size={16} />
         </div>
       </div>
     </GlassCard>
@@ -231,8 +232,8 @@ function ActivityChart({ sessions }: { sessions: Array<HermesSession> }) {
 
   return (
     <GlassCard
-      title="Activity"
-      titleRight={<span className="text-[10px] text-muted">14 days</span>}
+      title="活动"
+      titleRight={<span className="text-[10px] text-muted">最近 14 天</span>}
       accentColor="#6366f1"
       className="h-full"
     >
@@ -312,11 +313,11 @@ function ActivityChart({ sessions }: { sessions: Array<HermesSession> }) {
       <div className="flex items-center gap-5 mt-2 text-[10px] text-neutral-500">
         <span className="flex items-center gap-1.5">
           <span className="size-2 rounded-full bg-[#6366f1]" />
-          Sessions
+          会话
         </span>
         <span className="flex items-center gap-1.5">
           <span className="size-2 rounded-full bg-[#22c55e]" />
-          Messages
+          消息
         </span>
       </div>
     </GlassCard>
@@ -360,7 +361,7 @@ function ModelCard() {
 
   return (
     <GlassCard
-      title="Model"
+      title="模型"
       titleRight={
         <span
           className={cn(
@@ -376,7 +377,7 @@ function ModelCard() {
               connected ? 'bg-emerald-500' : 'bg-red-500',
             )}
           />
-          {connected ? 'Online' : 'Offline'}
+          {connected ? '在线' : '离线'}
         </span>
       }
       accentColor={connected ? '#22c55e' : '#ef4444'}
@@ -385,7 +386,7 @@ function ModelCard() {
       <div className="space-y-2">
         <div className="flex items-center gap-3 rounded-lg p-2.5 bg-[var(--theme-card2)] border border-[var(--theme-border)]">
           <div className="flex size-7 items-center justify-center rounded-md bg-indigo-500/10 text-sm">
-            🤖
+            <EmojiIcon emoji="🤖" size={20} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="font-mono text-[13px] font-bold text-ink truncate">
@@ -400,7 +401,7 @@ function ModelCard() {
         {fallbackModel && (
           <div className="flex items-center gap-3 rounded-lg p-2.5 bg-[var(--theme-card2)] border border-[var(--theme-border)]">
             <div className="flex size-7 items-center justify-center rounded-md bg-amber-500/10 text-sm">
-              🔄
+              <EmojiIcon emoji="🔄" size={14} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="font-mono text-[13px] text-ink truncate">
@@ -437,17 +438,17 @@ function SkillsWidget() {
 
   return (
     <GlassCard
-      title="Skills"
+      title="技能"
       titleRight={
         <span className="text-[10px] text-muted">
-          {skills.length} installed
+          已安装 {skills.length} 个
         </span>
       }
       accentColor="#f59e0b"
     >
       {skills.length === 0 ? (
         <div className="text-xs text-neutral-400 py-4 text-center">
-          No skills installed
+          未安装技能
         </div>
       ) : (
         <div className="space-y-1.5">
@@ -456,9 +457,11 @@ function SkillsWidget() {
               key={String(skill.name ?? i)}
               className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-[var(--theme-card2)] transition-colors"
             >
-              <span className="text-xs">📦</span>
+              <span className="text-xs">
+                <EmojiIcon emoji="📦" size={12} />
+              </span>
               <span className="text-xs font-medium text-ink truncate flex-1">
-                {String(skill.name ?? 'Unnamed')}
+                {String(skill.name ?? '未命名')}
               </span>
               {skill.enabled !== false && (
                 <span className="size-1.5 rounded-full bg-emerald-500/60" />
@@ -505,7 +508,7 @@ function QuickAction({
         className="flex size-7 shrink-0 items-center justify-center rounded-md text-sm"
         style={{ background: `${accentColor}18` }}
       >
-        {icon}
+        <EmojiIcon emoji={icon} size={16} />
       </div>
       <span
         className="min-w-0 flex-1 text-xs font-semibold"
@@ -564,9 +567,9 @@ function SessionRow({
             {session.model}
           </span>
         )}
-        <span>{msgs} msgs</span>
-        {tools > 0 && <span>{tools} tools</span>}
-        {tokens > 0 && <span>{formatNumber(tokens)} tok</span>}
+        <span>{msgs} 条消息</span>
+        {tools > 0 && <span>{tools} 次工具调用</span>}
+        {tokens > 0 && <span>{formatNumber(tokens)} Token</span>}
       </div>
       <div className="h-[3px] rounded-full w-full bg-[var(--theme-border)] overflow-hidden">
         <div
@@ -606,7 +609,7 @@ export function DashboardScreen() {
         tool_call_count: (s.tool_call_count as number | undefined) ?? 0,
         input_tokens: (s.tokenCount as number | undefined) ?? 0,
         output_tokens: 0,
-      })) as Array<HermesSession>
+      }))
     },
     staleTime: 10_000,
     refetchInterval: 30_000,
@@ -648,23 +651,23 @@ export function DashboardScreen() {
     return max
   }, [recentSessions])
 
-  const costEstimate = `~$${((stats.totalTokens / 1_000_000) * 5).toFixed(2)}`
+  const costEstimate = `~ $${((stats.totalTokens / 1_000_000) * 5).toFixed(2)}`
 
   return (
     <div className="min-h-full px-4 py-4 md:px-8 md:py-6 lg:px-10 space-y-5 pb-28">
       {/* ── Header: Hermes Logo + Quick Actions ── */}
       <div className="flex flex-col items-center gap-3 py-3">
         <img
-          src="/hermes-avatar.webp"
-          alt="Hermes"
+          src="/ti-work-logo.svg"
+          alt="Ti Work"
           className="size-12 md:size-14 rounded-xl shadow-md shadow-indigo-500/10 border border-[var(--theme-border)]"
         />
         <h1 className="text-sm font-semibold text-ink tracking-wide">
-          Hermes Studio
+          Ti Work
         </h1>
         <div className="mt-1 grid w-full max-w-2xl grid-cols-2 gap-2 sm:grid-cols-4">
           <QuickAction
-            label="New Chat"
+            label="新建会话"
             icon="💬"
             accentColor="#6366f1"
             onClick={() =>
@@ -675,19 +678,19 @@ export function DashboardScreen() {
             }
           />
           <QuickAction
-            label="Terminal"
+            label="终端"
             icon="💻"
             accentColor="#22c55e"
             onClick={() => navigate({ to: '/terminal' })}
           />
           <QuickAction
-            label="Skills"
+            label="技能"
             icon="🧩"
             accentColor="#f59e0b"
             onClick={() => navigate({ to: '/skills' })}
           />
           <QuickAction
-            label="Settings"
+            label="设置"
             icon="⚙️"
             accentColor="#a855f7"
             onClick={() => navigate({ to: '/settings' })}
@@ -698,25 +701,25 @@ export function DashboardScreen() {
       {/* ── Metrics Row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricTile
-          label="Sessions"
+          label="会话"
           value={formatNumber(stats.totalSessions)}
           icon="💬"
           accentColor="#6366f1"
         />
         <MetricTile
-          label="Messages"
+          label="消息"
           value={formatNumber(stats.totalMessages)}
           icon="✉️"
           accentColor="#22c55e"
         />
         <MetricTile
-          label="Tool Calls"
+          label="工具调用"
           value={formatNumber(stats.totalToolCalls)}
           icon="🔧"
           accentColor="#f59e0b"
         />
         <MetricTile
-          label="Tokens"
+          label="Token"
           value={formatNumber(stats.totalTokens)}
           sub={costEstimate}
           icon="⚡"
@@ -739,7 +742,7 @@ export function DashboardScreen() {
 
       {/* ── Recent Sessions (minimal) ── */}
       <GlassCard
-        title="Recent Sessions"
+        title="最近会话"
         titleRight={
           <button
             type="button"
@@ -751,7 +754,7 @@ export function DashboardScreen() {
               })
             }
           >
-            View all →
+            查看全部 →
           </button>
         }
         accentColor="#6366f1"
@@ -760,7 +763,7 @@ export function DashboardScreen() {
         <div className="py-1">
           {recentSessions.length === 0 ? (
             <div className="text-xs text-neutral-400 py-8 text-center">
-              No sessions yet — start a chat!
+              暂无会话 — 开始一段新对话吧！
             </div>
           ) : (
             recentSessions.map((s) => (

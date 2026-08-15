@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
@@ -19,6 +19,7 @@ import { DialogContent, DialogRoot, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 type ProfileSummary = {
   name: string
@@ -48,7 +49,7 @@ async function readJson<T>(url: string): Promise<T> {
   const response = await fetch(url)
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(text || `Request failed (${response.status})`)
+    throw new Error(text || `请求失败（HTTP ${response.status}）`)
   }
   return (await response.json()) as T
 }
@@ -80,7 +81,7 @@ function ProfileStat({
   truncate,
 }: {
   label: string
-  value: string | number
+  value: ReactNode
   truncate?: boolean
 }) {
   return (
@@ -151,7 +152,7 @@ export function ProfilesScreen() {
     })
     const payload = await response.json().catch(() => ({}))
     if (!response.ok || payload?.error) {
-      throw new Error(payload?.error || `Request failed (${response.status})`)
+      throw new Error(payload?.error || `请求失败（HTTP ${response.status}）`)
     }
     return payload
   }
@@ -201,13 +202,13 @@ export function ProfilesScreen() {
         ...(wizardModel ? { model: wizardModel } : {}),
         ...(wizardProvider ? { provider: wizardProvider } : {}),
       })
-      toast(`Created profile ${newProfileName.trim()}`, { type: 'success' })
+      toast(`配置档案 "${newProfileName.trim()}" 已创建`, { type: 'success' })
       setCreateOpen(false)
       resetWizard()
       await refreshProfiles()
     } catch (error) {
       toast(
-        error instanceof Error ? error.message : 'Failed to create profile',
+        error instanceof Error ? error.message : '创建配置档案失败',
         { type: 'error' },
       )
     } finally {
@@ -219,11 +220,11 @@ export function ProfilesScreen() {
     setBusyName(name)
     try {
       await postJson('/api/profiles/activate', { name })
-      toast(`Activated profile ${name}`, { type: 'success' })
+      toast(`配置档案 "${name}" 已启用`, { type: 'success' })
       await refreshProfiles()
     } catch (error) {
       toast(
-        error instanceof Error ? error.message : 'Failed to activate profile',
+        error instanceof Error ? error.message : '启用配置档案失败',
         { type: 'error' },
       )
     } finally {
@@ -234,17 +235,17 @@ export function ProfilesScreen() {
   async function handleDelete(name: string) {
     if (
       typeof window !== 'undefined' &&
-      !window.confirm(`Delete profile ${name}?`)
+      !window.confirm(`确定删除配置档案 "${name}"？`)
     )
       return
     setBusyName(name)
     try {
       await postJson('/api/profiles/delete', { name })
-      toast(`Deleted profile ${name}`, { type: 'success' })
+      toast(`配置档案 "${name}" 已删除`, { type: 'success' })
       await refreshProfiles()
     } catch (error) {
       toast(
-        error instanceof Error ? error.message : 'Failed to delete profile',
+        error instanceof Error ? error.message : '删除配置档案失败',
         { type: 'error' },
       )
     } finally {
@@ -260,7 +261,7 @@ export function ProfilesScreen() {
         oldName: renameTarget.name,
         newName: renameValue.trim(),
       })
-      toast(`Renamed ${renameTarget.name} → ${renameValue.trim()}`, {
+      toast(`已将 ${renameTarget.name} 重命名为 ${renameValue.trim()}`, {
         type: 'success',
       })
       setRenameTarget(null)
@@ -268,7 +269,7 @@ export function ProfilesScreen() {
       await refreshProfiles()
     } catch (error) {
       toast(
-        error instanceof Error ? error.message : 'Failed to rename profile',
+        error instanceof Error ? error.message : '重命名配置档案失败',
         { type: 'error' },
       )
     } finally {
@@ -282,16 +283,17 @@ export function ProfilesScreen() {
         <div>
           <div className="flex items-center gap-2">
             <HugeiconsIcon icon={UserGroupIcon} size={22} strokeWidth={1.7} />
-            <h1 className="text-lg font-semibold text-primary-900">Profiles</h1>
+            <h1 className="text-lg font-semibold text-primary-900">配置档案</h1>
           </div>
           <p className="mt-1 text-sm text-[var(--theme-muted)]">
-            Browse and manage Hermes profiles stored under{' '}
-            <span className="font-mono">~/.hermes/profiles</span>.
+            浏览并管理存储在{' '}
+            <span className="font-mono">~/.hermes/profiles</span>
+            下的 Hermes 配置档案。
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} className="gap-2">
           <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={1.8} />
-          Create profile
+          创建配置档案
         </Button>
       </div>
 
@@ -320,7 +322,7 @@ export function ProfilesScreen() {
                     )}
                   >
                     <img
-                      src="/hermes-avatar.webp"
+                      src="/ti-work-logo.svg"
                       alt={profile.name}
                       className={cn(
                         'size-20 rounded-full border-2 object-cover',
@@ -344,7 +346,7 @@ export function ProfilesScreen() {
                         className="text-white"
                       />
                       <span className="text-[9px] font-bold uppercase tracking-wider text-white">
-                        Active
+                        已启用
                       </span>
                     </div>
                   )}
@@ -355,22 +357,28 @@ export function ProfilesScreen() {
                   {profile.name}
                 </h2>
                 <span className="mt-1 inline-block rounded-full bg-primary-100 px-2.5 py-0.5 text-[11px] font-medium text-[var(--theme-muted)] dark:bg-neutral-800 dark:text-neutral-400">
-                  {profile.provider || 'no provider'}
+                  {profile.provider || '未配置服务提供方'}
                 </span>
               </div>
 
               {/* Stats ring */}
               <div className="mx-4 mt-4 grid grid-cols-4 divide-x divide-primary-200 rounded-xl border border-[var(--theme-border)] bg-primary-100/50 dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900/50">
-                <ProfileStat label="Skills" value={profile.skillCount} />
-                <ProfileStat label="Sessions" value={profile.sessionCount} />
+                <ProfileStat label="技能" value={profile.skillCount} />
+                <ProfileStat label="会话" value={profile.sessionCount} />
                 <ProfileStat
-                  label="Model"
+                  label="模型"
                   value={profile.model || '\u2014'}
                   truncate
                 />
                 <ProfileStat
-                  label="Env"
-                  value={profile.hasEnv ? '\u2713' : '\u2014'}
+                  label="环境"
+                  value={
+                    profile.hasEnv ? (
+                      <EmojiIcon emoji="✓" size={12} />
+                    ) : (
+                      '\u2014'
+                    )
+                  }
                 />
               </div>
 
@@ -398,7 +406,7 @@ export function ProfilesScreen() {
                     size={13}
                     strokeWidth={1.8}
                   />{' '}
-                  Activate
+                  启用
                 </button>
                 <button
                   type="button"
@@ -410,7 +418,7 @@ export function ProfilesScreen() {
                     size={13}
                     strokeWidth={1.8}
                   />{' '}
-                  Details
+                  详情
                 </button>
                 <button
                   type="button"
@@ -425,7 +433,7 @@ export function ProfilesScreen() {
                     size={13}
                     strokeWidth={1.8}
                   />{' '}
-                  Rename
+                  重命名
                 </button>
                 <button
                   type="button"
@@ -443,7 +451,7 @@ export function ProfilesScreen() {
                     size={13}
                     strokeWidth={1.8}
                   />{' '}
-                  Delete
+                  删除
                 </button>
               </div>
             </article>
@@ -453,8 +461,8 @@ export function ProfilesScreen() {
 
       {sorted.length === 0 && !profilesQuery.isLoading ? (
         <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)]/70 p-8 text-center text-sm text-[var(--theme-muted)]">
-          No named profiles found yet. The active profile is{' '}
-          <span className="font-semibold">{activeProfile}</span>.
+          未找到命名的配置档案。当前启用的配置档案是{' '}
+          <span className="font-semibold">{activeProfile}</span>。
         </div>
       ) : null}
 
@@ -474,14 +482,14 @@ export function ProfilesScreen() {
               </div>
               <div>
                 <DialogTitle className="text-base font-semibold">
-                  Create profile
+                  创建配置档案
                 </DialogTitle>
                 <p className="mt-0.5 text-xs text-primary-500 dark:text-neutral-400">
                   {wizardStep === 1
-                    ? 'Name & template'
+                    ? '名称与模板'
                     : wizardStep === 2
-                      ? 'Choose model'
-                      : 'Review & create'}
+                      ? '选择模型'
+                      : '确认并创建'}
                 </p>
               </div>
             </div>
@@ -531,25 +539,27 @@ export function ProfilesScreen() {
               <div className="space-y-5">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-muted)] dark:text-neutral-400">
-                    Profile name
+                    配置档案名称
                   </label>
                   <Input
                     value={newProfileName}
                     onChange={(e) => setNewProfileName(e.target.value)}
-                    placeholder="e.g. builder, researcher, ops"
+                    placeholder="例如：builder、researcher、ops"
                     className="h-11 text-sm"
                     autoFocus
                   />
                   {newProfileName.trim() && !nameValid ? (
                     <p className="text-xs text-red-500">
-                      Use letters, numbers, underscores, or hyphens. Cannot be
-                      &quot;default&quot;.
+                      只能使用字母、数字、下划线或连字符，且不能为
+                      &quot;default&quot;。
                     </p>
                   ) : newProfileName.trim() && nameValid ? (
-                    <p className="text-xs text-emerald-600">✓ Valid name</p>
+                    <p className="text-xs text-emerald-600">
+                      <EmojiIcon emoji="✓" size={12} /> 名称有效
+                    </p>
                   ) : (
                     <p className="text-xs text-primary-400 dark:text-neutral-500">
-                      Choose a short, memorable identifier
+                      请选择一个简短易记的标识符
                     </p>
                   )}
                 </div>
@@ -562,7 +572,7 @@ export function ProfilesScreen() {
                         size={13}
                         strokeWidth={1.8}
                       />
-                      Clone from existing
+                      从现有配置档案克隆
                     </span>
                   </label>
                   <select
@@ -570,27 +580,26 @@ export function ProfilesScreen() {
                     onChange={(e) => setCloneFrom(e.target.value)}
                     className="h-11 w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm text-primary-900 outline-none transition-colors focus:border-accent-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
                   >
-                    <option value="">Start fresh — empty config</option>
+                    <option value="">全新开始 — 空配置</option>
                     {profiles.map((p) => (
                       <option key={p.name} value={p.name}>
                         {p.name} {p.model ? `(${p.model})` : ''}{' '}
-                        {p.active ? '• active' : ''}
+                        {p.active ? '• 已启用' : ''}
                       </option>
                     ))}
                   </select>
                   <p className="text-xs text-primary-400 dark:text-neutral-500">
-                    Copies config, skills path, and env from the selected
-                    profile
+                    复制所选配置档案的配置、技能路径和环境变量
                   </p>
                 </div>
 
                 <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]/60 p-3 dark:border-neutral-800 dark:bg-neutral-900/40">
                   <p className="text-xs text-primary-500 dark:text-neutral-400">
-                    Profiles are stored under{' '}
+                    配置档案存储在{' '}
                     <code className="rounded bg-primary-100 px-1 py-0.5 font-mono text-[11px] dark:bg-neutral-800">
                       ~/.hermes/profiles/&lt;name&gt;/
                     </code>{' '}
-                    with their own config, skills, sessions, and env.
+                    下，并带有各自的配置、技能、会话和环境。
                   </p>
                 </div>
               </div>
@@ -600,16 +609,15 @@ export function ProfilesScreen() {
               <div className="space-y-5">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-muted)] dark:text-neutral-400">
-                    Default model
+                    默认模型
                   </label>
                   {loadingModels ? (
                     <div className="flex h-11 items-center rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm text-primary-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-500">
-                      Loading configured models…
+                      加载已配置模型…
                     </div>
                   ) : allModels.length === 0 ? (
                     <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
-                      No models found. Make sure Project Agent is running and
-                      has models configured.
+                      未找到模型。请确保 Project Agent 正在运行且已配置模型。
                     </div>
                   ) : (
                     <select
@@ -622,7 +630,7 @@ export function ProfilesScreen() {
                       }}
                       className="h-11 w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm text-primary-900 outline-none transition-colors focus:border-accent-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
                     >
-                      <option value="">Skip — configure later</option>
+                      <option value="">跳过 — 稍后配置</option>
                       {allModels.map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name || m.id}
@@ -633,8 +641,8 @@ export function ProfilesScreen() {
                   )}
                   {wizardModel && (
                     <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                      ✓ {wizardModel}
-                      {wizardProvider ? ` via ${wizardProvider}` : ''}
+                      <EmojiIcon emoji="✓" size={12} /> {wizardModel}
+                      {wizardProvider ? ` 通过 ${wizardProvider}` : ''}
                     </p>
                   )}
                 </div>
@@ -642,8 +650,8 @@ export function ProfilesScreen() {
                 {!wizardModel && !loadingModels && allModels.length > 0 && (
                   <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]/60 p-3 dark:border-neutral-800 dark:bg-neutral-900/40">
                     <p className="text-xs text-primary-500 dark:text-neutral-400">
-                      Select a model or skip to configure later from profile
-                      details or config.yaml.
+                      选择模型，或跳过并在稍后通过档案详情或
+                      config.yaml 配置。
                     </p>
                   </div>
                 )}
@@ -654,20 +662,20 @@ export function ProfilesScreen() {
               <div className="space-y-4">
                 <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-panel)] p-4 dark:border-neutral-800 dark:bg-neutral-900/60">
                   <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-primary-500 dark:text-neutral-400">
-                    Profile summary
+                    配置档案摘要
                   </h3>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <SummaryField label="Name" value={newProfileName.trim()} />
+                    <SummaryField label="名称" value={newProfileName.trim()} />
                     <SummaryField
-                      label="Template"
-                      value={cloneFrom || 'Fresh start'}
+                      label="模板"
+                      value={cloneFrom || '全新开始'}
                     />
                     <SummaryField
-                      label="Model"
+                      label="模型"
                       value={
                         wizardModel
                           ? `${wizardModel}${wizardProvider ? ` (${wizardProvider})` : ''}`
-                          : 'Not set'
+                          : '未设置'
                       }
                       muted={!wizardModel}
                     />
@@ -676,13 +684,13 @@ export function ProfilesScreen() {
 
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
                   <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                    This will create{' '}
+                    这将在{' '}
                     <code className="rounded bg-emerald-100 px-1 py-0.5 font-mono text-[11px] dark:bg-emerald-900/40">
                       ~/.hermes/profiles/{newProfileName.trim()}/
                     </code>{' '}
-                    with config.yaml
-                    {cloneFrom ? ` cloned from ${cloneFrom}` : ''}, skills/, and
-                    sessions/ directories.
+                    下创建 config.yaml
+                    {cloneFrom ? `（从 ${cloneFrom} 克隆）` : ''}、skills/ 和
+                    sessions/。
                   </p>
                 </div>
               </div>
@@ -696,9 +704,9 @@ export function ProfilesScreen() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setWizardStep((s) => (s - 1) as 1 | 2 | 3)}
+                  onClick={() => setWizardStep((s) => (s - 1))}
                 >
-                  Back
+                  返回
                 </Button>
               )}
             </div>
@@ -711,16 +719,16 @@ export function ProfilesScreen() {
                   resetWizard()
                 }}
               >
-                Cancel
+                取消
               </Button>
               {wizardStep < 3 ? (
                 <Button
                   size="sm"
-                  onClick={() => setWizardStep((s) => (s + 1) as 1 | 2 | 3)}
+                  onClick={() => setWizardStep((s) => (s + 1))}
                   disabled={wizardStep === 1 && !nameValid}
                   className="gap-1.5"
                 >
-                  Next
+                  下一步
                   <HugeiconsIcon
                     icon={ArrowRight01Icon}
                     size={14}
@@ -739,7 +747,7 @@ export function ProfilesScreen() {
                     size={14}
                     strokeWidth={1.8}
                   />
-                  Create Profile
+                  创建配置档案
                 </Button>
               )}
             </div>
@@ -764,10 +772,10 @@ export function ProfilesScreen() {
               </div>
               <div>
                 <DialogTitle className="text-base font-semibold">
-                  Rename profile
+                  重命名配置档案
                 </DialogTitle>
                 <p className="mt-0.5 text-xs text-primary-500 dark:text-neutral-400">
-                  Renaming{' '}
+                  正在重命名{' '}
                   <span className="font-semibold text-[var(--theme-text)] dark:text-neutral-200">
                     {renameTarget?.name}
                   </span>
@@ -778,19 +786,19 @@ export function ProfilesScreen() {
           <div className="px-6 py-5 space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-muted)] dark:text-neutral-400">
-                New name
+                新名称
               </label>
               <Input
                 value={renameValue}
                 onChange={(e) => setRenameValue(e.target.value)}
-                placeholder="new-profile-name"
+                placeholder="例如：my-profile（仅限英文）"
                 className="h-11 text-sm"
                 autoFocus
               />
               {renameValue.trim() &&
                 !/^[A-Za-z0-9_-]+$/.test(renameValue.trim()) && (
                   <p className="text-xs text-red-500">
-                    Use letters, numbers, underscores, or hyphens.
+                    只能使用字母、数字、下划线或连字符。
                   </p>
                 )}
             </div>
@@ -804,7 +812,7 @@ export function ProfilesScreen() {
                 setRenameValue('')
               }}
             >
-              Cancel
+              取消
             </Button>
             <Button
               size="sm"
@@ -815,7 +823,7 @@ export function ProfilesScreen() {
                 !/^[A-Za-z0-9_-]+$/.test(renameValue.trim())
               }
             >
-              Rename
+              重命名
             </Button>
           </div>
         </DialogContent>
@@ -830,7 +838,7 @@ export function ProfilesScreen() {
           <div className="shrink-0 border-b border-[var(--theme-border)] px-6 pb-4 pt-5 dark:border-neutral-800">
             <div className="flex items-center gap-3">
               <img
-                src="/hermes-avatar.webp"
+                src="/ti-work-logo.svg"
                 alt={detailsName || ''}
                 className="size-12 rounded-full border-2 border-[var(--theme-border)] object-cover dark:border-neutral-700"
               />
@@ -839,7 +847,7 @@ export function ProfilesScreen() {
                   {detailsName}
                 </DialogTitle>
                 <p className="mt-0.5 text-xs text-primary-500 dark:text-neutral-400">
-                  Profile details &amp; configuration
+                  配置档案详情与配置
                 </p>
               </div>
             </div>
@@ -851,36 +859,36 @@ export function ProfilesScreen() {
               <div className="space-y-4 text-sm">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <DetailField
-                    label="Name"
+                    label="名称"
                     value={detailQuery.data.profile.name}
                   />
                   <DetailField
-                    label="Active"
-                    value={detailQuery.data.profile.active ? 'Yes' : 'No'}
+                    label="已启用"
+                    value={detailQuery.data.profile.active ? '是' : '否'}
                     accent={detailQuery.data.profile.active}
                   />
                 </div>
                 <DetailField
-                  label="Path"
+                  label="路径"
                   value={detailQuery.data.profile.path}
                   mono
                 />
                 <div className="grid gap-3 sm:grid-cols-3">
                   <DetailField
-                    label="Env file"
-                    value={detailQuery.data.profile.envPath || 'Not set'}
+                    label="环境文件"
+                    value={detailQuery.data.profile.envPath || '未设置'}
                     mono
                     muted={!detailQuery.data.profile.envPath}
                   />
                   <DetailField
-                    label="Sessions"
-                    value={detailQuery.data.profile.sessionsDir || 'Not set'}
+                    label="会话"
+                    value={detailQuery.data.profile.sessionsDir || '未设置'}
                     mono
                     muted={!detailQuery.data.profile.sessionsDir}
                   />
                   <DetailField
-                    label="Skills"
-                    value={detailQuery.data.profile.skillsDir || 'Not set'}
+                    label="技能"
+                    value={detailQuery.data.profile.skillsDir || '未设置'}
                     mono
                     muted={!detailQuery.data.profile.skillsDir}
                   />
@@ -892,7 +900,7 @@ export function ProfilesScreen() {
                       size={14}
                       strokeWidth={1.8}
                     />{' '}
-                    Config
+                    配置
                   </div>
                   <pre className="max-h-48 overflow-auto rounded-lg border border-[var(--theme-border)] bg-primary-100/70 p-3 text-xs leading-relaxed text-primary-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200">
                     {JSON.stringify(detailQuery.data.profile.config, null, 2)}
@@ -901,11 +909,11 @@ export function ProfilesScreen() {
               </div>
             ) : detailQuery.isLoading ? (
               <div className="flex min-h-[120px] items-center justify-center text-sm text-primary-500 dark:text-neutral-400">
-                Loading profile\u2026
+                加载配置档案中…
               </div>
             ) : (
               <div className="flex min-h-[120px] items-center justify-center text-sm text-red-500">
-                Failed to load profile.
+                加载配置档案失败。
               </div>
             )}
           </div>
@@ -917,7 +925,7 @@ export function ProfilesScreen() {
               size="sm"
               onClick={() => setDetailsName(null)}
             >
-              Close
+              关闭
             </Button>
           </div>
         </DialogContent>

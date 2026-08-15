@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 const POLL_INTERVAL_MS = 30_000
 const PREFERRED_PROVIDER_KEY = 'hermes-preferred-provider'
@@ -110,10 +111,10 @@ function formatResetHint(resetsAt?: string): string | null {
   const hours = diff / 3_600_000
   if (hours >= 24) {
     const days = Math.ceil(hours / 24)
-    return `~${days}d`
+    return `~${days}天`
   }
   const h = Math.ceil(hours)
-  return `~${h}h`
+  return `~${h}时`
 }
 
 type UsageRow = {
@@ -262,7 +263,6 @@ export function UsageMeterCompact() {
       POLL_INTERVAL_MS,
     )
     return () => window.clearInterval(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchProvider])
 
   // Cleanup flash timer on unmount
@@ -277,11 +277,11 @@ export function UsageMeterCompact() {
   if (contextPct === null) return null
 
   // Build the rows to display: session context row + all provider progress rows
-  const ctxRow: UsageRow = { label: 'Ctx', pct: contextPct, resetHint: null }
+  const ctxRow: UsageRow = { label: '上下文', pct: contextPct, resetHint: null }
   const allRows: Array<UsageRow> =
     progressRows.length > 0 ? progressRows : [ctxRow]
 
-  const headerLabel = providerLabel ? `Usage · ${providerLabel}` : 'Usage'
+  const headerLabel = providerLabel ? `用量 · ${providerLabel}` : '用量'
   const canCycle =
     allProviders.filter((p) => p.status === 'ok' && p.lines.length > 0).length >
     1
@@ -301,11 +301,15 @@ export function UsageMeterCompact() {
               : 'cursor-default text-neutral-400',
             providerFlash && 'text-emerald-500 ring-1 ring-accent-400',
           )}
-          title={canCycle ? 'Click to switch provider' : undefined}
-          aria-label={canCycle ? 'Cycle provider' : undefined}
+          title={canCycle ? '点击切换服务提供方' : undefined}
+          aria-label={canCycle ? '切换服务提供方' : undefined}
         >
           <span>{headerLabel}</span>
-          {canCycle && <span className="text-[8px] opacity-60">↻</span>}
+          {canCycle && (
+            <span className="text-[8px] opacity-60">
+              <EmojiIcon emoji="↻" size={12} />
+            </span>
+          )}
         </button>
 
         {/* Collapse chevron */}
@@ -314,9 +318,13 @@ export function UsageMeterCompact() {
           onClick={() => setExpanded((v) => !v)}
           className="text-[9px] text-neutral-300 hover:text-neutral-500 transition-colors cursor-pointer"
           aria-expanded={expanded}
-          aria-label={expanded ? 'Collapse usage' : 'Expand usage'}
+          aria-label={expanded ? '收起用量' : '展开用量'}
         >
-          {expanded ? '▲' : '▼'}
+          {expanded ? (
+            <EmojiIcon emoji="▲" size={12} />
+          ) : (
+            <EmojiIcon emoji="▼" size={12} />
+          )}
         </button>
       </div>
 

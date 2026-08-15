@@ -232,8 +232,8 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
         }
         markFailed(
           reason === 'handoff'
-            ? 'Run stalled after handoff'
-            : 'No activity received after message was accepted',
+            ? '交接后运行停滞'
+            : '消息已接受，但未收到任何活动',
         )
       }, timeoutMs)
     },
@@ -583,7 +583,7 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
             break
           }
           const errorMessage =
-            (payload as { message?: string }).message ?? 'Stream error'
+            (payload as { message?: string }).message ?? '流式响应错误'
           markFailed(errorMessage)
           break
         }
@@ -595,7 +595,7 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
           ) {
             transitionToHandoff()
           } else {
-            markFailed('Request timed out')
+            markFailed('请求超时')
           }
           break
         }
@@ -609,7 +609,7 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
           ) {
             transitionToHandoff()
           } else {
-            markFailed('Hermes connection closed')
+            markFailed('Hermes 连接已关闭')
           }
           break
         }
@@ -713,7 +713,7 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
 
         const reader = response.body?.getReader()
         if (!reader) {
-          throw new Error('No response body')
+          throw new Error('没有响应内容')
         }
 
         const decoder = new TextDecoder()

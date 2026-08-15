@@ -2,10 +2,10 @@
  * Client-side API helpers for task management.
  */
 
-import type { HermesTask, CreateTaskInput, UpdateTaskInput, TaskColumn } from '@/types/task'
+import type { CreateTaskInput, HermesTask, TaskColumn, UpdateTaskInput } from '@/types/task'
 import type { TaskFilter } from '@/server/task-store'
 
-export async function fetchTasks(filter?: TaskFilter): Promise<HermesTask[]> {
+export async function fetchTasks(filter?: TaskFilter): Promise<Array<HermesTask>> {
   const params = new URLSearchParams()
   if (filter?.column) params.set('column', filter.column)
   if (filter?.assignee) params.set('assignee', filter.assignee)
@@ -14,7 +14,7 @@ export async function fetchTasks(filter?: TaskFilter): Promise<HermesTask[]> {
   if (filter?.sourceId) params.set('sourceId', filter.sourceId)
   const qs = params.toString()
   const res = await fetch(`/api/tasks${qs ? `?${qs}` : ''}`)
-  const data = (await res.json()) as { ok: boolean; tasks?: HermesTask[] }
+  const data = (await res.json()) as { ok: boolean; tasks?: Array<HermesTask> }
   return data.tasks ?? []
 }
 

@@ -4,7 +4,7 @@ import { CrewsScreen } from '@/screens/crews/crews-screen'
 
 export const Route = createFileRoute('/crews/')({
   component: function CrewsRoute() {
-    usePageTitle('Crews')
+    usePageTitle('多智能体')
     return <CrewsScreen />
   },
 })

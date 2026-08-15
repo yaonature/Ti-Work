@@ -297,7 +297,7 @@ export function AgentAvatar({
   )
 }
 
-export const AGENT_ACCENT_COLORS: AgentAccentColor[] = [
+export const AGENT_ACCENT_COLORS: Array<AgentAccentColor> = [
   { bar: 'bg-orange-500', border: 'border-orange-500', avatar: 'bg-orange-100', text: 'text-orange-600', ring: 'ring-orange-500/20' },
   { bar: 'bg-blue-500', border: 'border-blue-500', avatar: 'bg-blue-100', text: 'text-blue-600', ring: 'ring-blue-500/20' },
   { bar: 'bg-violet-500', border: 'border-violet-500', avatar: 'bg-violet-100', text: 'text-violet-600', ring: 'ring-violet-500/20' },
@@ -313,7 +313,7 @@ export const AGENT_ACCENT_COLORS: AgentAccentColor[] = [
   hex: ['#f97316', '#3b82f6', '#8b5cf6', '#10b981', '#f43f5e', '#f59e0b', '#06b6d4', '#d946ef', '#84cc16', '#0ea5e9'][index] ?? '#f97316',
 }))
 
-export const AGENT_NAMES = ['Nova', 'Pixel', 'Blaze', 'Echo', 'Sage', 'Drift', 'Flux', 'Volt']
+export const AGENT_NAMES = ['Stellar', 'Pixel', 'Blaze', 'Echo', 'Sage', 'Zephyr', 'Shimmer', 'Volt']
 export const AGENT_EMOJIS = ['🤖', '⚡', '🔥', '🌊', '🌿', '💫', '🔮', '⭐']
 
 export function getAgentPersona(index: number) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 const POLL_MS = 15_000
 
@@ -53,9 +54,9 @@ export function ContextMeter({
         setPct(next)
 
         if (next >= 90) {
-          setWarning('Context nearly full — conversation may be compacted soon')
+          setWarning('上下文即将写满，对话可能很快会被压缩')
         } else if (next >= 75) {
-          setWarning('Context filling up — approaching limit')
+          setWarning('上下文空间不足，即将达到限制')
         } else {
           setWarning(null)
         }
@@ -101,7 +102,7 @@ export function ContextMeter({
                 : 'bg-orange-500/10 text-orange-600',
             )}
           >
-            ⚠ {warning}
+            <> <EmojiIcon emoji="⚠" size={14} /> {warning}</>
           </div>
         )}
       </div>
@@ -113,7 +114,11 @@ export function ContextMeter({
     <div className={cn('flex items-center gap-2', className)}>
       {pct >= 75 && (
         <span className="text-[10px] font-medium text-orange-500 shrink-0">
-          {pct >= 90 ? '⚠ Context full' : '⚠ Context high'}
+          {pct >= 90 ? (
+            <> <EmojiIcon emoji="⚠" size={12} /> Context full</>
+          ) : (
+            <> <EmojiIcon emoji="⚠" size={12} /> Context high</>
+          )}
         </span>
       )}
       <div

@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { fetchSessions, type GatewaySession } from '@/lib/gateway-api'
+import type {GatewaySession} from '@/lib/gateway-api';
+import type {ConductorSettings, ConductorTask, ConductorWorker, MissionHistoryEntry, MissionHistoryWorkerDetail, MissionPhase, PersistedMission, StreamEvent} from '@/types/conductor';
+import {  fetchSessions } from '@/lib/gateway-api'
 import {
-  type MissionPhase,
-  type ConductorSettings,
-  type ConductorWorker,
-  type ConductorTask,
-  type MissionHistoryEntry,
-  type MissionHistoryWorkerDetail,
-  type StreamEvent,
-  type PersistedMission,
-  DEFAULT_CONDUCTOR_SETTINGS,
+  
+  
+  
+  DEFAULT_CONDUCTOR_SETTINGS
+  
+  
+  
+  
+  
 } from '@/types/conductor'
 
 // Re-export useful types for consumers
@@ -33,12 +35,12 @@ type HistoryMessagePart = {
 
 type HistoryMessage = {
   role?: string
-  content?: string | HistoryMessagePart[]
+  content?: string | Array<HistoryMessagePart>
   text?: string
 }
 
 type HistoryResponse = {
-  messages?: HistoryMessage[]
+  messages?: Array<HistoryMessage>
   error?: string
 }
 
@@ -51,7 +53,7 @@ const CONDUCTOR_SETTINGS_STORAGE_KEY = 'conductor-settings'
 const HISTORY_STORAGE_KEY = 'conductor:history'
 const MAX_HISTORY_ENTRIES = 50
 
-const AGENT_NAMES = ['Nova', 'Pixel', 'Blaze', 'Echo', 'Sage', 'Drift', 'Flux', 'Volt']
+const AGENT_NAMES = ['Xingshu', 'Pixel', 'Blaze', 'Echo', 'Sage', 'Gale', 'Prisma', 'Volt']
 const AGENT_EMOJIS = ['🤖', '⚡', '🔥', '🌊', '🌿', '💫', '🔮', '⭐']
 
 function getAgentPersona(index: number) {
@@ -65,8 +67,8 @@ function getAgentPersona(index: number) {
 // Helper functions
 // ---------------------------------------------------------------------------
 
-function extractTasksFromPlan(planText: string): ConductorTask[] {
-  const tasks: ConductorTask[] = []
+function extractTasksFromPlan(planText: string): Array<ConductorTask> {
+  const tasks: Array<ConductorTask> = []
   const patterns = [
     /^\s*(\d+)\.\s+(.+)$/gm,
     /^\s*#{1,3}\s+(?:Step\s+)?(\d+)[.:]\s*(.+)$/gm,
@@ -262,7 +264,7 @@ function persistConductorSettings(settings: ConductorSettings): void {
   }
 }
 
-function loadMissionHistory(): MissionHistoryEntry[] {
+function loadMissionHistory(): Array<MissionHistoryEntry> {
   try {
     const raw = globalThis.localStorage?.getItem(HISTORY_STORAGE_KEY)
     if (!raw) return []
@@ -371,7 +373,7 @@ function deriveWorkerStatus(session: GatewaySession, updatedAt: string | null): 
   return 'running'
 }
 
-function workersLookComplete(workers: ConductorWorker[], staleAfterMs: number): boolean {
+function workersLookComplete(workers: Array<ConductorWorker>, staleAfterMs: number): boolean {
   if (workers.length === 0) return false
 
   return workers.every((worker) => {
@@ -415,14 +417,14 @@ function formatDisplayName(session: GatewaySession): string {
 }
 
 function formatTokenUsage(totalTokens: number, contextTokens: number): string {
-  if (contextTokens > 0) return `${totalTokens.toLocaleString()} / ${contextTokens.toLocaleString()} tok`
-  return `${totalTokens.toLocaleString()} tok`
+  if (contextTokens > 0) return `${totalTokens.toLocaleString()} / ${contextTokens.toLocaleString()} tokens`
+  return `${totalTokens.toLocaleString()} tokens`
 }
 
 function toWorker(session: GatewaySession): ConductorWorker | null {
   const key = readString(session.key)
   if (!key) return null
-  const label = readString(session.label) ?? 'worker'
+  const label = readString(session.label) ?? 'Agent'
   const updatedAt = toIso(session.updatedAt ?? session.startedAt ?? session.createdAt)
   const totalTokens = readNumber(session.totalTokens) ?? readNumber(session.tokenCount) ?? 0
   const contextTokens = readContextTokens(session)
@@ -453,7 +455,7 @@ function extractHistoryMessageText(message: HistoryMessage | undefined): string 
   return ''
 }
 
-function getLastAssistantMessage(messages: HistoryMessage[] | undefined): string {
+function getLastAssistantMessage(messages: Array<HistoryMessage> | undefined): string {
   if (!Array.isArray(messages)) return ''
   // Return the longest assistant message so we prefer the substantive work output.
   let best = ''
@@ -501,15 +503,15 @@ function extractProjectPath(text: string): string | null {
 }
 
 function buildMissionOutputPath(
-  workers: ConductorWorker[],
+  workers: Array<ConductorWorker>,
   workerOutputs: Record<string, string>,
-  tasks: ConductorTask[],
+  tasks: Array<ConductorTask>,
   streamText: string,
 ): string | null {
   const workerOutputTexts = [
     ...Object.values(workerOutputs),
     ...workers.map((worker) =>
-      getLastAssistantMessage(worker.raw.messages as HistoryMessage[] | undefined),
+      getLastAssistantMessage(worker.raw.messages as Array<HistoryMessage> | undefined),
     ),
   ].filter(Boolean)
 
@@ -530,9 +532,9 @@ function buildMissionOutputPath(
   return null
 }
 
-function summarizeWorkers(workers: ConductorWorker[]): string[] {
+function summarizeWorkers(workers: Array<ConductorWorker>): Array<string> {
   return workers.map((worker) => {
-    const output = getLastAssistantMessage(worker.raw.messages as HistoryMessage[] | undefined)
+    const output = getLastAssistantMessage(worker.raw.messages as Array<HistoryMessage> | undefined)
     const firstLine = output
       .split(/\n+/)
       .map((line) => line.trim())
@@ -559,31 +561,31 @@ function buildCompleteSummary(params: {
   const seconds = totalSeconds % 60
   const duration =
     hours > 0
-      ? `${hours}h ${minutes}m ${seconds}s`
+      ? `${hours}小时 ${minutes}分 ${seconds}秒`
       : minutes > 0
-        ? `${minutes}m ${seconds}s`
-        : `${seconds}s`
+        ? `${minutes}分 ${seconds}秒`
+        : `${seconds}秒`
 
   const lines = [
-    streamError ? `Error: ${streamError}` : 'Mission completed successfully',
+    streamError ? `任务失败：${streamError}` : '任务已成功完成',
     '',
-    `**Goal:** ${goal}`,
-    `**Duration:** ${duration}`,
+    `**目标：** ${goal}`,
+    `**耗时：** ${duration}`,
   ]
 
   if (totalWorkers > 0) {
-    lines.push(`**Workers:** ${totalWorkers} ran · ${totalTokens.toLocaleString()} tokens`)
+    lines.push(`**执行者：** ${totalWorkers} 个 · ${totalTokens.toLocaleString()} tokens`)
   }
 
   if (outputPath) {
-    lines.push(`**Output:** ${outputPath.split('/').pop() || 'Output ready'}`)
+    lines.push(`**输出：** ${outputPath.split('/').pop() || '输出已就绪'}`)
   }
 
   return lines.join('\n')
 }
 
 function buildMissionOutputText(
-  workers: ConductorWorker[],
+  workers: Array<ConductorWorker>,
   workerOutputs: Record<string, string>,
   streamText: string,
 ): string {
@@ -591,7 +593,7 @@ function buildMissionOutputText(
     .map((worker) => {
       const output = (
         workerOutputs[worker.key] ??
-        getLastAssistantMessage(worker.raw.messages as HistoryMessage[] | undefined)
+        getLastAssistantMessage(worker.raw.messages as Array<HistoryMessage> | undefined)
       ).trim()
       if (!output) return null
       return `### ${worker.displayName}\n\n${output}`
@@ -629,7 +631,7 @@ export function useConductorGateway() {
   )
   const [streamText, setStreamText] = useState(() => initialMission?.streamText ?? '')
   const [planText, setPlanText] = useState(() => initialMission?.planText ?? '')
-  const [streamEvents, setStreamEvents] = useState<StreamEvent[]>([])
+  const [streamEvents, setStreamEvents] = useState<Array<StreamEvent>>([])
   const [missionStartedAt, setMissionStartedAt] = useState<string | null>(
     () => initialMission?.missionStartedAt ?? null,
   )
@@ -655,8 +657,8 @@ export function useConductorGateway() {
   const [workerOutputs, setWorkerOutputs] = useState<Record<string, string>>(
     () => initialMission?.workerOutputs ?? {},
   )
-  const [tasks, setTasks] = useState<ConductorTask[]>(() => initialMission?.tasks ?? [])
-  const [missionHistory, setMissionHistory] = useState<MissionHistoryEntry[]>(() =>
+  const [tasks, setTasks] = useState<Array<ConductorTask>>(() => initialMission?.tasks ?? [])
+  const [missionHistory, setMissionHistory] = useState<Array<MissionHistoryEntry>>(() =>
     loadMissionHistory(),
   )
   const [selectedHistoryEntry, setSelectedHistoryEntry] = useState<MissionHistoryEntry | null>(null)

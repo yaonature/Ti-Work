@@ -25,9 +25,9 @@ function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400)
   const h = Math.floor((seconds % 86400) / 3600)
   const m = Math.floor((seconds % 3600) / 60)
-  if (d > 0) return `${d}d ${h}h`
-  if (h > 0) return `${h}h ${m}m`
-  return `${m}m`
+  if (d > 0) return `${d}天 ${h}小时`
+  if (h > 0) return `${h}小时 ${m}分`
+  return `${m}分`
 }
 
 export function SystemMetricsFooter() {
@@ -58,7 +58,7 @@ export function SystemMetricsFooter() {
   return (
     <div
       role="status"
-      aria-label="System metrics"
+      aria-label="系统指标"
       style={{
         position: 'fixed',
         bottom: 0,
@@ -81,42 +81,42 @@ export function SystemMetricsFooter() {
     >
       {error || !data ? (
         <span style={{ color: 'var(--theme-text-muted)' }}>
-          {error ? 'System metrics unavailable' : 'Loading…'}
+          {error ? '系统指标暂不可用' : '加载中…'}
         </span>
       ) : (
         <>
           {/* CPU */}
           <MetricChip
-            label="CPU"
+            label="处理器"
             value={`${data.cpu.loadPercent}%`}
             pct={data.cpu.loadPercent}
-            title={`${data.cpu.cores} logical cores · 1-min load avg`}
+            title={`${data.cpu.cores} 个逻辑核心 · 1 分钟平均负载`}
           />
 
           {/* Memory */}
           <MetricChip
-            label="MEM"
+            label="内存"
             value={`${data.memory.usedMb >= 1024 ? `${(data.memory.usedMb / 1024).toFixed(1)} GB` : `${data.memory.usedMb} MB`} / ${data.memory.totalMb >= 1024 ? `${(data.memory.totalMb / 1024).toFixed(1)} GB` : `${data.memory.totalMb} MB`}`}
             pct={data.memory.usedPercent}
-            title={`Memory: ${data.memory.usedPercent}% used`}
+            title={`内存：${data.memory.usedPercent}% 已使用`}
           />
 
           {/* Disk */}
           {data.disk !== null && (
             <MetricChip
-              label="DISK"
+              label="磁盘"
               value={`${data.disk.usedGb} GB / ${data.disk.totalGb} GB`}
               pct={data.disk.usedPercent}
-              title={`Root partition: ${data.disk.usedPercent}% used`}
+              title={`根分区：${data.disk.usedPercent}% 已使用`}
             />
           )}
 
           {/* Uptime */}
           <span
-            title={`System uptime: ${data.uptimeSeconds}s`}
+            title={`系统已运行：${data.uptimeSeconds} 秒`}
             style={{ color: 'var(--theme-text-muted)' }}
           >
-            UP {formatUptime(data.uptimeSeconds)}
+            运行 {formatUptime(data.uptimeSeconds)}
           </span>
         </>
       )}

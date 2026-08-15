@@ -42,7 +42,7 @@ export type GatewaySession = {
   startedAt?: number | string
   updatedAt?: number | string
   lastMessage?: GatewaySessionMessage | null
-  messages?: unknown[]
+  messages?: Array<unknown>
   usage?: GatewaySessionUsage
   [key: string]: unknown
 }

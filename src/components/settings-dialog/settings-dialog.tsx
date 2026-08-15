@@ -2,6 +2,7 @@
 
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
+  Alert02Icon,
   ArrowLeft01Icon,
   Cancel01Icon,
   CheckmarkCircle02Icon,
@@ -22,8 +23,10 @@ import type { LoaderStyle } from '@/hooks/use-chat-settings'
 import type { BrailleSpinnerPreset } from '@/components/ui/braille-spinner'
 import type { ThemeId } from '@/lib/theme'
 import { Button } from '@/components/ui/button'
+import { EmojiIcon, LobsterIcon } from '@/components/emoji-icon'
 import { Switch } from '@/components/ui/switch'
-import { applyTheme, useSettings } from '@/hooks/use-settings'
+import { applyTheme, getStoredThemeMode, useSettings } from '@/hooks/use-settings'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { THEMES, getTheme, setTheme } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 import {
@@ -35,9 +38,7 @@ import { Input } from '@/components/ui/input'
 import { LogoLoader } from '@/components/logo-loader'
 import { BrailleSpinner } from '@/components/ui/braille-spinner'
 import { ThreeDotsSpinner } from '@/components/ui/three-dots-spinner'
-import BackendUnavailableState from '@/components/backend-unavailable-state'
 import { applyAccentColor } from '@/lib/accent-colors'
-import { getUnavailableReason } from '@/lib/feature-gates'
 import { useFeatureAvailable } from '@/hooks/use-feature-available'
 import { ProviderLogo } from '@/components/provider-logo'
 import {
@@ -61,14 +62,14 @@ type SectionId =
   | 'notifications'
 
 const SECTIONS: Array<{ id: SectionId; label: string; icon: any }> = [
-  { id: 'hermes', label: 'Model & Provider', icon: CloudIcon },
-  { id: 'agent', label: 'Agent', icon: Settings02Icon },
-  { id: 'routing', label: 'Smart Routing', icon: SparklesIcon },
-  { id: 'voice', label: 'Voice', icon: VolumeHighIcon },
-  { id: 'display', label: 'Display', icon: PaintBoardIcon },
-  { id: 'appearance', label: 'Theme', icon: PaintBoardIcon },
-  { id: 'chat', label: 'Chat', icon: MessageMultiple01Icon },
-  { id: 'notifications', label: 'Alerts', icon: Notification03Icon },
+  { id: 'hermes', label: '模型与服务商', icon: CloudIcon },
+  { id: 'agent', label: '智能体', icon: Settings02Icon },
+  { id: 'routing', label: '智能路由', icon: SparklesIcon },
+  { id: 'voice', label: '语音', icon: VolumeHighIcon },
+  { id: 'display', label: '显示', icon: PaintBoardIcon },
+  { id: 'appearance', label: '主题', icon: PaintBoardIcon },
+  { id: 'chat', label: '会话', icon: MessageMultiple01Icon },
+  { id: 'notifications', label: '通知', icon: Notification03Icon },
 ]
 
 const DARK_ENTERPRISE_THEMES = new Set<ThemeId>([
@@ -135,7 +136,7 @@ function Row({
 }
 
 const SETTINGS_CARD_CLASS =
-  'rounded-xl border border-primary-200 bg-primary-50/80 px-4 py-3 shadow-sm'
+  'rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)] px-4 py-3 shadow-sm'
 
 // ── Section components ──────────────────────────────────────────────────
 
@@ -147,6 +148,22 @@ const PROVIDER_CARDS: Array<{
   authType: 'oauth' | 'api_key' | 'none'
   envKey?: string
 }> = [
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    logo: '/providers/deepseek.png',
+    models: ['deepseek-v4-flash', 'deepseek-v4-pro'],
+    authType: 'api_key',
+    envKey: 'DEEPSEEK_API_KEY',
+  },
+  {
+    id: 'dashscope',
+    name: '通义千问 Qwen',
+    logo: '/providers/qwen.png',
+    models: ['qwen-max', 'qwen-plus', 'qwen3'],
+    authType: 'api_key',
+    envKey: 'DASHSCOPE_API_KEY',
+  },
   {
     id: 'nous',
     name: 'Nous Portal',
@@ -208,7 +225,7 @@ const PROVIDER_CARDS: Array<{
     models: ['llama3.1:70b', 'qwen3:32b', 'deepseek-r1:32b'],
     authType: 'none',
   },
-  { id: 'custom', name: 'Custom', logo: '', models: [], authType: 'api_key' },
+  { id: 'custom', name: '自定义', logo: '', models: [], authType: 'api_key' },
 ]
 
 function HermesContent() {
@@ -275,7 +292,7 @@ function HermesContent() {
         body: JSON.stringify(updates),
       })
       const r = (await res.json()) as { message?: string }
-      setMsg(r.message || 'Saved')
+      setMsg(r.message || '已保存')
       const ref = await fetch('/api/hermes-config')
       const d = await ref.json()
       setActiveProvider(d.activeProvider || '')
@@ -288,7 +305,7 @@ function HermesContent() {
       setConfiguredKeys(keys)
       setTimeout(() => setMsg(null), 3000)
     } catch {
-      setMsg('Failed to save')
+      setMsg('保存失败')
     }
     setSaving(false)
   }
@@ -305,15 +322,6 @@ function HermesContent() {
     }
   }
 
-  if (!configAvailable) {
-    return (
-      <BackendUnavailableState
-        feature="Hermes Agent Settings"
-        description={getUnavailableReason('config')}
-      />
-    )
-  }
-
   const cardStyle: React.CSSProperties = {
     backgroundColor: 'var(--theme-card)',
     border: '1px solid var(--theme-border)',
@@ -323,11 +331,32 @@ function HermesContent() {
 
   return (
     <div className="space-y-5">
+      {!configAvailable && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
+          <div className="flex items-start gap-2">
+            <HugeiconsIcon
+              icon={Alert02Icon}
+              size={16}
+              strokeWidth={1.7}
+              className="mt-0.5 shrink-0 text-amber-500"
+            />
+            <div className="text-xs leading-5">
+              <p className="font-semibold text-amber-500">
+                网关未连接或版本过旧
+              </p>
+              <p className="mt-0.5 text-amber-500/80">
+                模型列表已降级为内置默认值，本地 Provider / API Key 配置不受影响。连接支持增强 API
+                的 Hermes 网关后，可在线拉取可用模型并解锁完整能力。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       {msg && (
         <div
           className={cn(
             'rounded-lg px-3 py-2 text-sm font-medium',
-            msg.includes('Failed')
+            msg.includes('失败')
               ? 'bg-red-500/15 text-red-400'
               : 'bg-green-500/15 text-green-400',
           )}
@@ -345,7 +374,7 @@ function HermesContent() {
           Provider
         </p>
         <p className="mb-3 text-[11px]" style={mutedStyle}>
-          Select your AI provider. OAuth providers authenticate via browser.
+          选择你的 AI 服务提供方。OAuth 服务提供方通过浏览器完成认证。
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {PROVIDER_CARDS.map((p) => {
@@ -389,8 +418,8 @@ function HermesContent() {
                     : p.authType === 'none'
                       ? 'Local'
                       : hasKey
-                        ? 'Key set'
-                        : 'Key required'}
+                        ? '密钥已设置'
+                        : '需要密钥'}
                 </span>
               </button>
             )
@@ -405,7 +434,7 @@ function HermesContent() {
             className="mb-1 text-xs font-semibold uppercase tracking-wider"
             style={mutedStyle}
           >
-            Model
+            模型
           </p>
           <div className="flex flex-wrap gap-2">
             {(availableModels.length > 0
@@ -470,7 +499,15 @@ function HermesContent() {
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && keyInput) {
-                            save({ env: { [key]: keyInput } })
+                            save({
+                              env: { [key]: keyInput },
+                              config: {
+                                provider: p.id,
+                                ...(p.models?.[0]
+                                  ? { model: p.models[0] }
+                                  : {}),
+                              },
+                            })
                             setEditingKey(null)
                             setKeyInput('')
                           }
@@ -483,7 +520,7 @@ function HermesContent() {
                     ) : hasKey ? (
                       configuredKeys[key]
                     ) : (
-                      'Not configured'
+                      '未配置'
                     )}
                   </div>
                 </div>
@@ -500,14 +537,22 @@ function HermesContent() {
                         type="button"
                         onClick={() => {
                           if (keyInput) {
-                            save({ env: { [key]: keyInput } })
+                            save({
+                              env: { [key]: keyInput },
+                              config: {
+                                provider: p.id,
+                                ...(p.models?.[0]
+                                  ? { model: p.models[0] }
+                                  : {}),
+                              },
+                            })
                           }
                           setEditingKey(null)
                           setKeyInput('')
                         }}
                         className="rounded-lg px-2 py-1 text-[11px] font-medium bg-accent-500 text-white"
                       >
-                        Save
+                        保存
                       </button>
                       <button
                         type="button"
@@ -518,7 +563,7 @@ function HermesContent() {
                         className="rounded-lg px-2 py-1 text-[11px] font-medium"
                         style={{ color: 'var(--theme-muted)' }}
                       >
-                        Cancel
+                        取消
                       </button>
                     </>
                   ) : (
@@ -533,7 +578,7 @@ function HermesContent() {
                         color: 'var(--theme-accent, var(--theme-text))',
                       }}
                     >
-                      {hasKey ? 'Update' : 'Add'}
+                      {hasKey ? '更新' : '添加'}
                     </button>
                   )}
                 </div>
@@ -549,7 +594,7 @@ function HermesContent() {
           className="mb-1 text-xs font-semibold uppercase tracking-wider"
           style={mutedStyle}
         >
-          Memory
+          记忆
         </p>
         <div className="space-y-1.5">
           <div
@@ -557,9 +602,9 @@ function HermesContent() {
             style={cardStyle}
           >
             <div>
-              <div className="text-sm font-medium">Memory</div>
+              <div className="text-sm font-medium">记忆</div>
               <div className="text-[11px]" style={mutedStyle}>
-                Store & recall memories across sessions
+                跨会话存储与回忆记忆
               </div>
             </div>
             <Switch
@@ -575,9 +620,9 @@ function HermesContent() {
             style={cardStyle}
           >
             <div>
-              <div className="text-sm font-medium">User Profile</div>
+              <div className="text-sm font-medium">用户资料</div>
               <div className="text-[11px]" style={mutedStyle}>
-                Remember preferences & context
+                记住偏好与上下文
               </div>
             </div>
             <Switch
@@ -599,19 +644,19 @@ function HermesContent() {
             className="text-xs font-semibold uppercase tracking-wider"
             style={mutedStyle}
           >
-            Runtime
+            运行时
           </span>
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
-          <span style={mutedStyle}>Model</span>
+          <span style={mutedStyle}>模型</span>
           <span className="font-mono font-medium">{activeModel || '—'}</span>
-          <span style={mutedStyle}>Provider</span>
+          <span style={mutedStyle}>服务提供方</span>
           <span className="font-mono font-medium">
             {PROVIDER_CARDS.find((p) => p.id === activeProvider)?.name ||
               activeProvider ||
               '—'}
           </span>
-          <span style={mutedStyle}>Config</span>
+          <span style={mutedStyle}>配置</span>
           <span className="font-mono font-medium">~/.hermes/config.yaml</span>
         </div>
       </div>
@@ -628,7 +673,7 @@ function _ProfileContent() {
 
   function handleNameChange(value: string) {
     if (value.length > 50) {
-      setNameError('Display name too long (max 50 characters)')
+      setNameError('显示名称过长（最多 50 个字符）')
       return
     }
     setNameError(null)
@@ -640,11 +685,11 @@ function _ProfileContent() {
     e.target.value = ''
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      setProfileError('Unsupported file type.')
+      setProfileError('不支持的文件类型。')
       return
     }
     if (file.size > 10 * 1024 * 1024) {
-      setProfileError('Image too large (max 10MB).')
+      setProfileError('图片过大（最大 10MB）。')
       return
     }
     setProfileError(null)
@@ -675,7 +720,7 @@ function _ProfileContent() {
         ),
       })
     } catch {
-      setProfileError('Failed to process image.')
+      setProfileError('处理图片失败。')
     } finally {
       setProcessing(false)
     }
@@ -686,8 +731,8 @@ function _ProfileContent() {
   return (
     <div className="space-y-4">
       <SectionHeader
-        title="Profile"
-        description="Your display identity in chat."
+        title="资料"
+        description="你在聊天中显示的身份。"
       />
       <div className={SETTINGS_CARD_CLASS}>
         <div className="flex items-center gap-3">
@@ -703,15 +748,15 @@ function _ProfileContent() {
         </div>
       </div>
       <div className={SETTINGS_CARD_CLASS}>
-        <Row label="Display name" description="Shown in chat and sidebar">
+        <Row label="显示名称" description="显示在聊天和侧栏中">
           <div className="w-full max-w-xs">
             <Input
               value={cs.displayName}
               onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="User"
+              placeholder="用户"
               className="h-8 w-full rounded-lg border-primary-200 text-sm"
               maxLength={50}
-              aria-label="Display name"
+              aria-label="显示名称"
               aria-invalid={!!nameError}
               aria-describedby={nameError ? errorId : undefined}
             />
@@ -726,7 +771,7 @@ function _ProfileContent() {
             )}
           </div>
         </Row>
-        <Row label="Avatar">
+        <Row label="头像">
           <div className="flex items-center gap-2">
             <label className="block">
               <input
@@ -734,7 +779,7 @@ function _ProfileContent() {
                 accept="image/*"
                 onChange={handleAvatarUpload}
                 disabled={processing}
-                aria-label="Upload profile picture"
+                aria-label="上传资料图片"
                 className="block max-w-[13rem] cursor-pointer text-xs text-primary-700 dark:text-neutral-300 file:mr-2 file:cursor-pointer file:rounded-lg file:border file:border-primary-200 file:bg-primary-100 file:px-2.5 file:py-1.5 file:text-xs file:font-medium file:text-primary-900 file:transition-colors hover:file:bg-primary-200 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </label>
@@ -745,7 +790,7 @@ function _ProfileContent() {
               disabled={!cs.avatarDataUrl || processing}
               className="h-8 rounded-lg border-primary-200 px-3"
             >
-              Remove
+              移除
             </Button>
           </div>
           {profileError && (
@@ -785,27 +830,38 @@ function AppearanceContent() {
   return (
     <div className="space-y-4">
       <SectionHeader
-        title="Appearance"
-        description="Theme and color accents."
+        title="外观"
+        description="主题与配色。"
       />
       {/* Accent color removed — themes control accent */}
       <div className={SETTINGS_CARD_CLASS}>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary-500">
-          Enterprise Theme
+          明暗模式
+        </p>
+        <Row
+          label="界面明暗"
+          description="切换浅色 / 深色，或跟随系统。"
+        >
+          <ThemeToggle />
+        </Row>
+      </div>
+      <div className={SETTINGS_CARD_CLASS}>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary-500">
+          企业主题
         </p>
         <EnterpriseThemePicker />
       </div>
       <div className={SETTINGS_CARD_CLASS}>
         <Row
-          label="System metrics footer"
-          description="Show a persistent footer with CPU, RAM, disk, and Hermes status."
+          label="系统指标页脚"
+          description="显示包含 CPU、内存、磁盘和 Hermes 状态的常驻页脚。"
         >
           <Switch
             checked={settings.showSystemMetricsFooter}
             onCheckedChange={(c) =>
               updateSettings({ showSystemMetricsFooter: c })
             }
-            aria-label="Show system metrics footer"
+            aria-label="显示系统指标页脚"
           />
         </Row>
 
@@ -816,24 +872,66 @@ function AppearanceContent() {
 }
 
 
-const THEME_PREVIEWS: Record<string, { bg: string; panel: string; border: string; accent: string; text: string }> = {
+type ThemePreview = {
+  bg: string
+  panel: string
+  border: string
+  accent: string
+  text: string
+}
+
+const THEME_PREVIEWS_DARK: Record<string, ThemePreview> = {
+  'ti-work': { bg: '#1D1D20', panel: '#27272B', border: '#3A3A40', accent: '#148AFF', text: '#FAFAFA' },
+  'hermes-os': { bg: '#080c14', panel: '#111827', border: '#1e293b', accent: '#38bdf8', text: '#e2e8f0' },
   'hermes-official': { bg: '#0A0E1A', panel: '#11182A', border: '#24304A', accent: '#6366F1', text: '#E6EAF2' },
   'hermes-classic': { bg: '#0d0f12', panel: '#1a1f26', border: '#2a313b', accent: '#b98a44', text: '#eceff4' },
   'hermes-slate': { bg: '#0d1117', panel: '#1c2128', border: '#30363d', accent: '#7eb8f6', text: '#c9d1d9' },
   'hermes-mono': { bg: '#111111', panel: '#222222', border: '#333333', accent: '#aaaaaa', text: '#e6edf3' },
 }
 
-const ENTERPRISE_THEMES = THEMES.map((theme) => ({
-  ...theme,
-  desc: theme.description,
-  preview: THEME_PREVIEWS[theme.id] ?? { bg: '#080c14', panel: '#111827', border: '#1e293b', accent: '#38bdf8', text: '#e2e8f0' },
-}))
+/** Light variants — only themes with a real light implementation (CC Switch style). */
+const THEME_PREVIEWS_LIGHT: Partial<Record<string, ThemePreview>> = {
+  'ti-work': { bg: '#FFFFFF', panel: '#FFFFFF', border: '#E4E4E7', accent: '#0A84FF', text: '#09090B' },
+}
 
-function ThemeSwatch({
-  colors,
-}: {
-  colors: (typeof ENTERPRISE_THEMES)[number]['preview']
-}) {
+const THEME_PREVIEW_FALLBACK: ThemePreview = {
+  bg: '#080c14',
+  panel: '#111827',
+  border: '#1e293b',
+  accent: '#38bdf8',
+  text: '#e2e8f0',
+}
+
+function getEnterpriseThemes(mode: 'light' | 'dark') {
+  const previews =
+    mode === 'light' ? THEME_PREVIEWS_LIGHT : THEME_PREVIEWS_DARK
+  return THEMES.map((theme) => ({
+    ...theme,
+    desc: theme.description,
+    preview: (previews[theme.id] ?? THEME_PREVIEWS_DARK[theme.id] ?? THEME_PREVIEW_FALLBACK) as ThemePreview,
+  }))
+}
+
+/** Live-track <html data-mode> so swatches react to the mode toggle. */
+function useMode(): 'light' | 'dark' {
+  const [mode, setModeState] = useState<'light' | 'dark'>(() =>
+    typeof document !== 'undefined' &&
+    document.documentElement.getAttribute('data-mode') === 'light'
+      ? 'light'
+      : 'dark',
+  )
+  useEffect(() => {
+    const el = document.documentElement
+    const update = () =>
+      setModeState(el.getAttribute('data-mode') === 'light' ? 'light' : 'dark')
+    const mo = new MutationObserver(update)
+    mo.observe(el, { attributes: true, attributeFilter: ['data-mode'] })
+    return () => mo.disconnect()
+  }, [])
+  return mode
+}
+
+function ThemeSwatch({ colors }: { colors: ThemePreview }) {
   return (
     <div
       className="flex h-10 w-full overflow-hidden rounded-md border"
@@ -871,10 +969,12 @@ function ThemeSwatch({
 
 function EnterpriseThemePicker() {
   const { updateSettings } = useSettings()
+  const mode = useMode()
   const [current, setCurrent] = useState(() => {
-    if (typeof window === 'undefined') return 'hermes-official'
+    if (typeof window === 'undefined') return 'ti-work'
     return getTheme()
   })
+  const themes = getEnterpriseThemes(mode)
 
   useEffect(() => {
     setCurrent(getTheme())
@@ -882,14 +982,15 @@ function EnterpriseThemePicker() {
 
   function applyEnterpriseTheme(id: ThemeId) {
     setTheme(id)
-    updateSettings({ theme: 'dark' })
+    // Preserve the user's light/dark/system mode — do not force dark.
+    updateSettings({ theme: getStoredThemeMode() })
     setCurrent(id)
   }
 
   return (
     <div className="space-y-3">
       <div className="grid w-full grid-cols-2 gap-2">
-        {ENTERPRISE_THEMES.map((t) => {
+        {themes.map((t) => {
           const isActive = current === t.id
           return (
             <button
@@ -900,18 +1001,20 @@ function EnterpriseThemePicker() {
                 'flex flex-col gap-1.5 rounded-lg border p-2 text-left transition-colors',
                 isActive
                   ? 'border-accent-500 bg-accent-50 text-accent-700'
-                  : 'border-primary-200 bg-primary-50/80 hover:bg-primary-100',
+                  : 'border-[var(--theme-border)] bg-[var(--theme-card)] hover:bg-[var(--theme-hover)]',
               )}
             >
               <ThemeSwatch colors={t.preview} />
               <div className="flex items-center gap-1">
-                <span className="text-xs">{t.icon}</span>
+                <span className="text-xs">
+                  <EmojiIcon emoji={t.icon} size={14} />
+                </span>
                 <span className="text-xs font-semibold text-primary-900 dark:text-neutral-100">
                   {t.label}
                 </span>
                 {isActive && (
                   <span className="ml-auto text-[9px] font-bold text-accent-600 uppercase tracking-wide">
-                    Active
+                    当前
                   </span>
                 )}
               </div>
@@ -929,14 +1032,14 @@ function EnterpriseThemePicker() {
 function _LoaderContent() {
   const { settings: cs, updateSettings: updateCS } = useChatSettingsStore()
   const styles: Array<{ value: LoaderStyle; label: string }> = [
-    { value: 'dots', label: 'Dots' },
+    { value: 'dots', label: '圆点' },
     { value: 'braille-hermes', label: 'Hermes' },
-    { value: 'braille-orbit', label: 'Orbit' },
-    { value: 'braille-breathe', label: 'Breathe' },
-    { value: 'braille-pulse', label: 'Pulse' },
-    { value: 'braille-wave', label: 'Wave' },
+    { value: 'braille-orbit', label: '轨道' },
+    { value: 'braille-breathe', label: '呼吸' },
+    { value: 'braille-pulse', label: '脉冲' },
+    { value: 'braille-wave', label: '波浪' },
     { value: 'lobster', label: 'Lobster' },
-    { value: 'logo', label: 'Logo' },
+    { value: 'logo', label: '标志' },
   ]
   function getPreset(s: LoaderStyle): BrailleSpinnerPreset | null {
     const m: Record<string, BrailleSpinnerPreset> = {
@@ -951,7 +1054,11 @@ function _LoaderContent() {
   function Preview({ style }: { style: LoaderStyle }) {
     if (style === 'dots') return <ThreeDotsSpinner />
     if (style === 'lobster')
-      return <span className="inline-block text-sm animate-pulse">🦞</span>
+      return (
+        <span className="inline-block text-sm animate-pulse">
+          <LobsterIcon size={16} />
+        </span>
+      )
     if (style === 'logo') return <LogoLoader />
     const p = getPreset(style)
     return p ? (
@@ -968,7 +1075,7 @@ function _LoaderContent() {
   return (
     <div>
       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary-500">
-        Loading animation
+        加载动画
       </p>
       <div className="grid grid-cols-4 gap-2">
         {styles.map((o) => (
@@ -980,7 +1087,7 @@ function _LoaderContent() {
               'flex min-h-14 flex-col items-center justify-center gap-1.5 rounded-lg border px-1.5 py-1.5 transition-colors',
               cs.loaderStyle === o.value
                 ? 'border-accent-500 bg-accent-50 text-accent-700'
-                : 'border-primary-200 bg-primary-50/80 text-primary-700 hover:bg-primary-100',
+                : 'border-[var(--theme-border)] bg-[var(--theme-card)] text-primary-700 hover:bg-[var(--theme-hover)]',
             )}
             aria-pressed={cs.loaderStyle === o.value}
           >
@@ -1000,28 +1107,28 @@ function ChatContent() {
   return (
     <div className="space-y-4">
       <SectionHeader
-        title="Chat"
-        description="Message visibility and response loader style."
+        title="会话"
+        description="消息可见性与回复加载样式。"
       />
       <div className={SETTINGS_CARD_CLASS}>
         <Row
-          label="Show tool messages"
-          description="Display tool call details in assistant responses."
+          label="显示工具消息"
+          description="在助手回复中展示工具调用详情。"
         >
           <Switch
             checked={cs.showToolMessages}
             onCheckedChange={(c) => updateCS({ showToolMessages: c })}
-            aria-label="Show tool messages"
+            aria-label="显示工具消息"
           />
         </Row>
         <Row
-          label="Show reasoning blocks"
-          description="Display model reasoning blocks when available."
+          label="显示推理块"
+          description="在模型提供时展示推理内容块。"
         >
           <Switch
             checked={cs.showReasoningBlocks}
             onCheckedChange={(c) => updateCS({ showReasoningBlocks: c })}
-            aria-label="Show reasoning blocks"
+            aria-label="显示推理块"
           />
         </Row>
       </div>
@@ -1035,18 +1142,18 @@ function NotificationsContent() {
   return (
     <div className="space-y-4">
       <SectionHeader
-        title="Notifications"
-        description="Simple alerts and threshold controls."
+        title="通知"
+        description="简单提醒与阈值控制。"
       />
       <div className={SETTINGS_CARD_CLASS}>
-        <Row label="Enable alerts">
+        <Row label="启用提醒">
           <Switch
             checked={settings.notificationsEnabled}
             onCheckedChange={(c) => updateSettings({ notificationsEnabled: c })}
-            aria-label="Enable alerts"
+            aria-label="启用提醒"
           />
         </Row>
-        <Row label="Usage threshold">
+        <Row label="用量阈值">
           <div className="flex w-full max-w-[14rem] items-center gap-2">
             <input
               type="range"
@@ -1058,7 +1165,7 @@ function NotificationsContent() {
               }
               className="w-full accent-primary-900 dark:accent-primary-400 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!settings.notificationsEnabled}
-              aria-label={`Usage threshold: ${settings.usageThreshold} percent`}
+              aria-label={`用量阈值：${settings.usageThreshold}%`}
               aria-valuemin={50}
               aria-valuemax={100}
               aria-valuenow={settings.usageThreshold}
@@ -1086,7 +1193,7 @@ function _AdvancedContent() {
         new URL(value)
         setUrlError(null)
       } catch {
-        setUrlError('Invalid URL format')
+        setUrlError('URL 格式无效')
       }
     } else {
       setUrlError(null)
@@ -1133,11 +1240,11 @@ function _AdvancedContent() {
   return (
     <div className="space-y-4">
       <SectionHeader
-        title="Advanced"
-        description="Hermes endpoint, connectivity, and data management."
+        title="高级"
+        description="Hermes 端点、连接与数据管理。"
       />
       <div className={SETTINGS_CARD_CLASS}>
-        <Row label="Hermes URL" description="Used for API requests from Studio">
+        <Row label="Hermes URL" description="用于来自 Studio 的 API 请求">
           <div className="w-full max-w-sm">
             <Input
               type="url"
@@ -1160,7 +1267,7 @@ function _AdvancedContent() {
             )}
           </div>
         </Row>
-        <Row label="API Server Key" description="API_SERVER_KEY for non-loopback Hermes instances (v0.9.0)">
+        <Row label="API 服务器密钥" description="用于非回环 Hermes 实例的 API_SERVER_KEY（v0.9.0）">
           <Input
             type="password"
             placeholder="sk-…"
@@ -1170,7 +1277,7 @@ function _AdvancedContent() {
             aria-label="Hermes API server key"
           />
         </Row>
-        <Row label="Connection status">
+        <Row label="连接状态">
           <span
             className={cn(
               'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium',
@@ -1185,12 +1292,12 @@ function _AdvancedContent() {
             )}
           >
             {connectionStatus === 'idle'
-              ? 'Not tested'
+              ? '未测试'
               : connectionStatus === 'testing'
-                ? 'Testing...'
+                ? '测试中...'
                 : connectionStatus === 'connected'
-                  ? 'Connected'
-                  : 'Failed'}
+                  ? '已连接'
+                  : '失败'}
           </span>
           <Button
             variant="outline"
@@ -1204,12 +1311,12 @@ function _AdvancedContent() {
               size={16}
               strokeWidth={1.5}
             />
-            Test
+            测试
           </Button>
         </Row>
       </div>
       <div className={SETTINGS_CARD_CLASS}>
-        <Row label="Backup" description="Export config, sessions, skills, and memory to a snapshot file.">
+        <Row label="备份" description="将配置、会话、技能和记忆导出为快照文件。">
           <Button
             variant="outline"
             size="sm"
@@ -1217,10 +1324,16 @@ function _AdvancedContent() {
             disabled={backupStatus === 'running'}
             className="h-8 rounded-lg border-primary-200 px-3"
           >
-            {backupStatus === 'running' ? 'Backing up…' : backupStatus === 'done' ? 'Done ✓' : backupStatus === 'error' ? 'Error' : 'Create backup'}
+            {backupStatus === 'running'
+              ? '备份中…'
+              : backupStatus === 'done'
+                ? (<>完成 <EmojiIcon emoji="✓" size={14} /></>)
+                : backupStatus === 'error'
+                  ? '错误'
+                  : '创建备份'}
           </Button>
         </Row>
-        <Row label="Import" description="Restore a previously created backup archive.">
+        <Row label="导入" description="恢复此前创建的备份归档。">
           <div>
             <input
               ref={importRef}
@@ -1235,7 +1348,7 @@ function _AdvancedContent() {
               onClick={() => importRef.current?.click()}
               className="h-8 rounded-lg border-primary-200 px-3"
             >
-              Choose file…
+              选择文件…
             </Button>
           </div>
         </Row>
@@ -1262,13 +1375,13 @@ class SettingsErrorBoundary extends Component<
         <div className="flex h-full items-center justify-center p-8 text-center">
           <div>
             <p className="mb-2 text-sm font-medium text-red-500">
-              Settings failed to load
+              设置加载失败
             </p>
             <button
               onClick={() => this.setState({ error: null })}
               className="text-xs text-primary-600 underline hover:text-primary-900"
             >
-              Try again
+              重试
             </button>
           </div>
         </div>
@@ -1312,8 +1425,8 @@ function AgentBehaviorContent() {
   return (
     <div className="space-y-4">
       <SectionHeader
-        title="Agent Behavior"
-        description="Execution limits and tool access."
+        title="智能体行为"
+        description="执行限制与工具访问控制。"
       />
       {msg && (
         <div
@@ -1324,13 +1437,13 @@ function AgentBehaviorContent() {
               : 'bg-red-500/15 text-red-400',
           )}
         >
-          {msg}
+          {msg === 'Saved' ? '已保存' : msg === 'Failed' ? '失败' : msg}
         </div>
       )}
       <div className={SETTINGS_CARD_CLASS}>
         <Row
-          label="Max turns"
-          description="Maximum agent turns per request (1-100)"
+          label="最大轮次"
+          description="每次请求允许的最大智能体轮次（1-100）"
         >
           <input
             type="number"
@@ -1341,7 +1454,7 @@ function AgentBehaviorContent() {
             className="h-8 w-20 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-center text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
         </Row>
-        <Row label="Gateway timeout" description="Seconds before timeout">
+        <Row label="网关超时" description="超时前等待的秒数">
           <input
             type="number"
             min={10}
@@ -1351,15 +1464,15 @@ function AgentBehaviorContent() {
             className="h-8 w-20 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-center text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
         </Row>
-        <Row label="Tool enforcement" description="When agent must use tools">
+        <Row label="工具使用策略" description="控制智能体何时必须调用工具">
           <select
             value={String(config.tool_use_enforcement || 'auto')}
             onChange={(e) => save('tool_use_enforcement', e.target.value)}
             className="h-8 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           >
-            <option value="auto">Auto</option>
-            <option value="required">Required</option>
-            <option value="none">None</option>
+            <option value="auto">自动</option>
+            <option value="required">必须</option>
+            <option value="none">禁用</option>
           </select>
         </Row>
       </div>
@@ -1412,8 +1525,8 @@ function SmartRoutingContent() {
   return (
     <div className="space-y-4">
       <SectionHeader
-        title="Smart Routing"
-        description="Route simple queries to cheaper models."
+        title="智能路由"
+        description="将简单查询路由到更便宜的模型。"
       />
       {msg && (
         <div
@@ -1429,21 +1542,21 @@ function SmartRoutingContent() {
       )}
       <div className={SETTINGS_CARD_CLASS}>
         <Row
-          label="Enable smart routing"
-          description="Auto-route simple queries"
+          label="启用智能路由"
+          description="自动路由简单查询"
         >
           <Switch
             checked={config.enabled !== false}
             onCheckedChange={(c) => save('enabled', c)}
           />
         </Row>
-        <Row label="Cheap model" description="Model for simple queries">
+        <Row label="廉价模型" description="处理简单查询的模型">
           <select
             value={String(config.cheap_model || '')}
             onChange={(e) => save('cheap_model', e.target.value)}
             className="h-8 max-w-[12rem] rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           >
-            <option value="">Auto</option>
+            <option value="">自动</option>
             {models.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name || m.id}
@@ -1451,7 +1564,7 @@ function SmartRoutingContent() {
             ))}
           </select>
         </Row>
-        <Row label="Max chars" description="Messages shorter use cheap model">
+        <Row label="最大字符数" description="较短的对话使用廉价模型">
           <input
             type="number"
             min={10}
@@ -1462,8 +1575,8 @@ function SmartRoutingContent() {
           />
         </Row>
         <Row
-          label="Max words"
-          description="Messages with fewer words use cheap model"
+          label="最大词数"
+          description="词数更少的对话使用廉价模型"
         >
           <input
             type="number"
@@ -1533,8 +1646,8 @@ function VoiceContent() {
   return (
     <div className="space-y-4">
       <SectionHeader
-        title="Voice"
-        description="Text-to-speech and speech-to-text."
+        title="语音"
+        description="文字转语音与语音转文字。"
       />
       {msg && (
         <div
@@ -1550,9 +1663,9 @@ function VoiceContent() {
       )}
       <div className={SETTINGS_CARD_CLASS}>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary-500">
-          Text-to-Speech
+          文字转语音
         </p>
-        <Row label="TTS Provider">
+        <Row label="TTS 服务提供方">
           <select
             value={ttsProvider}
             onChange={(e) => saveTts('provider', e.target.value)}
@@ -1565,14 +1678,14 @@ function VoiceContent() {
           </select>
         </Row>
         {ttsProvider === 'openai' && (
-          <Row label="Voice">
+          <Row label="音色">
             <select
               value={String(
                 (tts.openai as Record<string, unknown>)?.voice || 'nova',
               )}
               onChange={(e) =>
                 saveTts('openai', {
-                  ...((tts.openai as Record<string, unknown>) || {}),
+                  ...((tts.openai) || {}),
                   voice: e.target.value,
                 })
               }
@@ -1591,15 +1704,15 @@ function VoiceContent() {
       </div>
       <div className={SETTINGS_CARD_CLASS}>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary-500">
-          Speech-to-Text
+          语音转文字
         </p>
-        <Row label="Enable STT">
+        <Row label="启用 STT">
           <Switch
             checked={stt.enabled !== false}
             onCheckedChange={(c) => saveStt('enabled', c)}
           />
         </Row>
-        <Row label="STT Provider">
+        <Row label="STT 服务提供方">
           <select
             value={String(stt.provider || 'local')}
             onChange={(e) => saveStt('provider', e.target.value)}
@@ -1648,8 +1761,8 @@ function DisplayContent() {
   return (
     <div className="space-y-4">
       <SectionHeader
-        title="Display"
-        description="Agent response style and output preferences."
+        title="显示"
+        description="智能体回复风格与输出偏好。"
       />
       {msg && (
         <div
@@ -1664,40 +1777,40 @@ function DisplayContent() {
         </div>
       )}
       <div className={SETTINGS_CARD_CLASS}>
-        <Row label="Personality" description="Agent response style">
+        <Row label="个性" description="智能体回复风格">
           <select
             value={String(config.personality || 'default')}
             onChange={(e) => save('personality', e.target.value)}
             className="h-8 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           >
-            <option value="default">Default</option>
-            <option value="concise">Concise</option>
-            <option value="verbose">Verbose</option>
-            <option value="creative">Creative</option>
+            <option value="default">默认</option>
+            <option value="concise">简洁</option>
+            <option value="verbose">详细</option>
+            <option value="creative">有创造力</option>
           </select>
         </Row>
-        <Row label="Streaming" description="Stream responses in real-time">
+        <Row label="流式输出" description="实时流式返回回复">
           <Switch
             checked={config.streaming !== false}
             onCheckedChange={(c) => save('streaming', c)}
           />
         </Row>
         <Row
-          label="Show reasoning"
-          description="Display model thinking process"
+          label="显示推理"
+          description="展示模型的思考过程"
         >
           <Switch
             checked={config.show_reasoning !== false}
             onCheckedChange={(c) => save('show_reasoning', c)}
           />
         </Row>
-        <Row label="Show cost" description="Display token cost per response">
+        <Row label="显示费用" description="显示每次回复的 Token 费用">
           <Switch
             checked={config.show_cost === true}
             onCheckedChange={(c) => save('show_cost', c)}
           />
         </Row>
-        <Row label="Compact mode" description="Reduce spacing in responses">
+        <Row label="紧凑模式" description="压缩回复间距">
           <Switch
             checked={config.compact === true}
             onCheckedChange={(c) => save('compact', c)}
@@ -1750,15 +1863,15 @@ export function SettingsDialog({
 
   return (
     <DialogRoot open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="inset-0 h-full w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-none border-0 p-0 shadow-xl md:inset-auto md:left-1/2 md:top-1/2 md:h-[min(88dvh,740px)] md:min-h-[520px] md:w-full md:max-w-3xl md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:border md:border-primary-200 bg-[var(--theme-bg)]">
+      <DialogContent className="inset-0 h-full w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-none border-0 p-0 shadow-xl md:inset-auto md:left-1/2 md:top-1/2 md:h-[min(88dvh,740px)] md:min-h-[520px] md:w-full md:max-w-3xl md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-[20px] md:border md:border-[var(--theme-border)] bg-[var(--theme-panel)]">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="flex items-center justify-between border-b border-primary-200 bg-primary-50/80 px-4 py-4 md:rounded-t-2xl md:px-5">
+          <div className="flex items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-card)] px-4 py-4 md:rounded-t-[20px] md:px-5">
             <div>
-              <DialogTitle className="text-base font-semibold text-primary-900 dark:text-neutral-100">
-                Settings
+              <DialogTitle className="text-base font-semibold text-[var(--theme-text)] dark:text-neutral-100">
+                设置
               </DialogTitle>
               <DialogDescription className="sr-only">
-                Configure Hermes Studio
+                配置 Ti Work
               </DialogDescription>
             </div>
             <DialogClose
@@ -1767,7 +1880,7 @@ export function SettingsDialog({
                   size="icon-sm"
                   variant="ghost"
                   className="rounded-full text-primary-500 hover:bg-primary-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                  aria-label="Close"
+                  aria-label="关闭"
                 >
                   <HugeiconsIcon
                     icon={Cancel01Icon}
@@ -1828,7 +1941,7 @@ export function SettingsDialog({
                       size={16}
                       strokeWidth={1.5}
                     />
-                    Back
+                    返回
                   </Button>
                 </div>
                 <ActiveContent />
@@ -1836,13 +1949,13 @@ export function SettingsDialog({
             </div>
           </SettingsErrorBoundary>
 
-          <div className="sticky bottom-0 z-10 border-t border-primary-200 bg-primary-50/60 px-4 py-3 text-xs text-primary-500 dark:text-neutral-400 md:rounded-b-2xl md:px-5">
-            Changes saved automatically.{' '}
+          <div className="sticky bottom-0 z-10 border-t border-[var(--theme-border)] bg-[var(--theme-card)] px-4 py-3 text-xs text-[var(--theme-muted)] dark:text-neutral-400 md:rounded-b-[20px] md:px-5">
+            更改自动保存。{' '}
             <a
               href="/settings"
               className="ml-2 font-medium underline underline-offset-2 hover:text-primary-700 dark:hover:text-neutral-200"
             >
-              All settings →
+              全部设置 →
             </a>
           </div>
         </div>

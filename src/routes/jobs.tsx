@@ -7,11 +7,11 @@ import { JobsScreen } from '@/screens/jobs/jobs-screen'
 
 export const Route = createFileRoute('/jobs')({
   component: function JobsRoute() {
-    usePageTitle('Jobs')
+    usePageTitle('定时任务')
     if (!useFeatureAvailable('jobs')) {
       return (
         <BackendUnavailableState
-          feature="Jobs"
+          feature="定时任务"
           description={getUnavailableReason('Jobs')}
         />
       )

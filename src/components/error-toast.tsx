@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 const AUTO_DISMISS_MS = 8_000
 
@@ -18,7 +19,7 @@ function classifyError(raw: string): string {
     lower.includes('rate limit') ||
     lower.includes('too many')
   ) {
-    return 'Rate limited — try again in a moment'
+    return '请求过于频繁，请稍后再试'
   }
   if (
     lower.includes('401') ||
@@ -26,14 +27,14 @@ function classifyError(raw: string): string {
     lower.includes('unauthorized') ||
     lower.includes('auth')
   ) {
-    return 'Authentication error — check your API key in Settings'
+    return '认证失败，请在设置中检查 API 密钥'
   }
   if (
     lower.includes('500') ||
     lower.includes('server error') ||
     lower.includes('model error')
   ) {
-    return 'Model error — the provider is having issues'
+    return '模型错误，服务提供方可能存在问题'
   }
   if (
     lower.includes('network') ||
@@ -41,7 +42,7 @@ function classifyError(raw: string): string {
     lower.includes('failed to fetch') ||
     lower.includes('connection')
   ) {
-    return 'Connection lost — retrying…'
+    return '连接已断开，正在重连…'
   }
   // Return original message if no pattern matched
   return raw
@@ -79,7 +80,9 @@ function ToastItem({ entry, onDismiss }: ToastItemProps) {
       )}
       role="alert"
     >
-      <span className="text-red-500 text-base shrink-0 mt-0.5">⚠</span>
+      <span className="text-red-500 shrink-0 mt-0.5">
+        <EmojiIcon emoji="⚠" size={18} />
+      </span>
       <span className="flex-1 text-[13px] text-ink leading-snug">
         {entry.message}
       </span>
@@ -87,9 +90,9 @@ function ToastItem({ entry, onDismiss }: ToastItemProps) {
         type="button"
         onClick={() => onDismiss(entry.id)}
         className="shrink-0 text-primary-400 hover:text-primary-600 transition-colors text-lg leading-none"
-        aria-label="Dismiss"
+        aria-label="关闭"
       >
-        ×
+        <EmojiIcon emoji="✕" size={14} />
       </button>
     </div>
   )

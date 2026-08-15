@@ -199,25 +199,25 @@ function getDefaultVerificationMap(): WorkspaceCheckpointVerificationMap {
   return {
     tsc: {
       status: 'missing',
-      label: 'Not run yet',
+      label: '尚未运行',
       output: null,
       checked_at: null,
     },
     tests: {
       status: 'not_configured',
-      label: 'Not configured',
+      label: '未配置',
       output: null,
       checked_at: null,
     },
     lint: {
       status: 'not_configured',
-      label: 'Not configured',
+      label: '未配置',
       output: null,
       checked_at: null,
     },
     e2e: {
       status: 'not_configured',
-      label: 'Not configured',
+      label: '未配置',
       output: null,
       checked_at: null,
     },
@@ -480,16 +480,30 @@ export async function runWorkspaceCheckpointTsc(
       status === 'not_configured'
         ? status
         : 'missing',
-    label: asString(record.label) ?? 'Unknown',
+    label: asString(record.label) ?? '未知',
     output: typeof record.output === 'string' ? record.output : null,
     checked_at: asString(record.checked_at) ?? null,
   }
 }
 
+const CHECKPOINT_STATUS_LABELS: Record<string, string> = {
+  approved: '已通过',
+  revised: '已修订',
+  rejected: '已拒绝',
+  passed: '已通过',
+  failed: '失败',
+  missing: '缺失',
+  not_configured: '未配置',
+  pending: '待审批',
+  in_review: '审核中',
+  closed: '已关闭',
+  queued: '排队中',
+  running: '运行中',
+  cancelled: '已取消',
+}
+
 export function formatCheckpointStatus(status: CheckpointStatus): string {
-  return status
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+  return CHECKPOINT_STATUS_LABELS[status] ?? status.replace(/_/g, ' ')
 }
 
 export function getCheckpointStatusBadgeClass(
@@ -606,19 +620,19 @@ export function getCheckpointCommitHashLabel(
 export function getCheckpointReviewSuccessMessage(
   action: CheckpointReviewAction,
 ): string {
-  if (action === 'approve') return 'Checkpoint approved'
+  if (action === 'approve') return '检查点已通过'
   if (action === 'approve-and-commit')
-    return 'Checkpoint approved and committed'
-  if (action === 'approve-and-pr') return 'Checkpoint approved and PR opened'
-  if (action === 'approve-and-merge') return 'Checkpoint approved and merged'
-  if (action === 'revise') return 'Checkpoint sent back for revision'
-  return 'Checkpoint rejected'
+    return '检查点已通过并已提交'
+  if (action === 'approve-and-pr') return '检查点已通过并已打开 PR'
+  if (action === 'approve-and-merge') return '检查点已通过并已合并'
+  if (action === 'revise') return '检查点已退回修订'
+  return '检查点已拒绝'
 }
 
 export function getCheckpointReviewSubmitLabel(
   action: Extract<CheckpointReviewAction, 'revise' | 'reject'>,
 ): string {
-  return action === 'revise' ? 'Send Revision Request' : 'Reject Checkpoint'
+  return action === 'revise' ? '发送修订请求' : '拒绝检查点'
 }
 
 export function isCheckpointReviewable(

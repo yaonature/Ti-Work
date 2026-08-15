@@ -16,7 +16,17 @@ async function probeHermesHealth(): Promise<boolean> {
     const response = await fetch('/api/connection-status', {
       cache: 'no-store',
     })
-    if (response.ok) return true
+    const payload = response.ok
+      ? ((await response.json()) as {
+          status?: string
+          health?: boolean
+          chatReady?: boolean
+          chatMode?: string
+        })
+      : null
+    if (response.ok) {
+      return payload?.status !== 'disconnected'
+    }
   } catch {
     /* fall through */
   }
@@ -28,6 +38,28 @@ async function probeHermesHealth(): Promise<boolean> {
     return response.ok
   } catch {
     return false
+  }
+}
+
+type BootstrapProgress = {
+  ok?: boolean
+  phase?: 'idle' | 'detecting' | 'installing' | 'configuring' | 'starting' | 'ready' | 'failed'
+  message?: string
+  error?: string | null
+  stageIndex?: number
+  stageCount?: number
+  currentStage?: string | null
+}
+
+async function fetchBootstrapProgress(): Promise<BootstrapProgress | null> {
+  try {
+    const response = await fetch('/api/engine-bootstrap', {
+      cache: 'no-store',
+    })
+    if (!response.ok) return null
+    return (await response.json()) as BootstrapProgress
+  } catch {
+    return null
   }
 }
 
@@ -45,6 +77,7 @@ export function HermesReconnectBanner({
     ((showSpinner: boolean) => Promise<boolean>) | null
   >(null)
   const wasDisconnectedRef = useRef(false)
+  const dismissedRef = useRef(false)
   const flashTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -64,6 +97,7 @@ export function HermesReconnectBanner({
       setIsStarting(false)
       setMessage(null)
       wasDisconnectedRef.current = false
+      dismissedRef.current = false
       if (flashTimerRef.current !== null) {
         window.clearTimeout(flashTimerRef.current)
         flashTimerRef.current = null
@@ -83,7 +117,7 @@ export function HermesReconnectBanner({
       }
 
       const pendingProbe = probeHermesHealth()
-        .then((connected) => {
+        .then(async (connected) => {
           if (cancelled || !mountedRef.current) return connected
 
           if (flashTimerRef.current !== null) {
@@ -106,7 +140,31 @@ export function HermesReconnectBanner({
             }
           } else {
             wasDisconnectedRef.current = true
-            setBannerState('disconnected')
+            if (!dismissedRef.current) {
+              setBannerState('disconnected')
+            }
+            const progress = await fetchBootstrapProgress()
+            if (
+              progress?.phase === 'detecting' ||
+              progress?.phase === 'installing' ||
+              progress?.phase === 'configuring' ||
+              progress?.phase === 'starting'
+            ) {
+              const total = progress.stageCount ?? 0
+              const index =
+                total > 0
+                  ? Math.min((progress.stageIndex ?? -1) + 1, total)
+                  : 0
+              setMessage(
+                progress.currentStage
+                  ? `正在安装执行引擎（${index}/${total}）：${progress.currentStage}`
+                  : progress.message || '正在准备执行引擎…',
+              )
+            } else if (progress?.phase === 'failed') {
+              setMessage(progress.error || '执行引擎安装失败')
+            } else if (!dismissedRef.current) {
+              setMessage(null)
+            }
           }
 
           return connected
@@ -114,9 +172,11 @@ export function HermesReconnectBanner({
         .catch((error) => {
           if (!cancelled && mountedRef.current) {
             wasDisconnectedRef.current = true
-            setBannerState('disconnected')
+            if (!dismissedRef.current) {
+              setBannerState('disconnected')
+            }
             setMessage(
-              error instanceof Error ? error.message : 'Connection failed',
+              error instanceof Error ? error.message : '连接失败',
             )
           }
           return false
@@ -168,19 +228,45 @@ export function HermesReconnectBanner({
         error?: string
         message?: string
       }
-
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || 'Failed to start Hermes agent')
+        throw new Error(payload.error || 'Hermes 智能体启动失败')
       }
 
       setMessage(
         payload.message === 'already running'
-          ? 'Hermes agent is already running'
-          : 'Starting Hermes agent…',
+          ? '执行引擎已在运行'
+          : '正在准备执行引擎…',
       )
+
+      // 自动安装进行中 → 轮询进度（首次安装需要几分钟）
+      if (payload.message !== 'already running') {
+        for (let i = 0; i < 300; i += 1) {
+          if (!mountedRef.current) return
+          await new Promise((resolveWait) => setTimeout(resolveWait, 2_000))
+          const progress = await fetchBootstrapProgress()
+          if (!progress) continue
+          if (progress.phase === 'ready') break
+          if (progress.phase === 'failed') {
+            throw new Error(progress.error || '执行引擎安装失败')
+          }
+          if (
+            progress.phase === 'installing' ||
+            progress.phase === 'configuring' ||
+            progress.phase === 'starting'
+          ) {
+            const total = progress.stageCount ?? 0
+            const index = Math.min(progress.stageIndex ?? 0, total)
+            setMessage(
+              progress.currentStage
+                ? `正在安装执行引擎（${index}/${total}）：${progress.currentStage}`
+                : progress.message || '正在安装执行引擎…',
+            )
+          }
+        }
+      }
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : 'Failed to start Hermes agent',
+        error instanceof Error ? error.message : '执行引擎启动失败',
       )
     } finally {
       setIsStarting(false)
@@ -220,9 +306,13 @@ export function HermesReconnectBanner({
           />
           <div className="min-w-0">
             <p className="text-sm font-semibold">
-              {isDisconnected ? 'Hermes agent not connected' : 'Connected'}
+              {isDisconnected ? '执行引擎未连接' : '已连接'}
             </p>
-            {message ? (
+            {isDisconnected && !message ? (
+              <p className="text-xs opacity-70">
+                Ti Work 需要连接执行引擎（Hermes 网关）才能对话与使用增强功能。启动后端后点击「重试」。
+              </p>
+            ) : message ? (
               <p className="truncate text-xs opacity-80">{message}</p>
             ) : null}
           </div>
@@ -241,7 +331,7 @@ export function HermesReconnectBanner({
                 color: 'inherit',
               }}
             >
-              {isChecking ? 'Retrying…' : 'Retry'}
+              {isChecking ? '正在重试…' : '重试'}
             </button>
             <button
               type="button"
@@ -252,7 +342,19 @@ export function HermesReconnectBanner({
                 background: 'var(--theme-danger)',
               }}
             >
-              {isStarting ? 'Starting…' : 'Start Agent'}
+              {isStarting ? '正在启动…' : '一键连接'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                dismissedRef.current = true
+                setBannerState('hidden')
+              }}
+              className="rounded-md px-2.5 py-1.5 text-sm opacity-70 transition-opacity hover:opacity-100"
+              style={{ color: 'inherit' }}
+              aria-label="稍后再说"
+            >
+              稍后再说
             </button>
           </div>
         ) : null}

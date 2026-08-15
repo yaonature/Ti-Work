@@ -3,13 +3,14 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowLeft01Icon, Home01Icon } from '@hugeicons/core-free-icons'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { buttonVariants } from '@/components/ui/button'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 export const Route = createFileRoute('/$')({
   component: NotFoundPage,
 })
 
 function NotFoundPage() {
-  usePageTitle('404 — Not Found')
+  usePageTitle('404 — 页面不存在')
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-primary-50">
@@ -22,7 +23,9 @@ function NotFoundPage() {
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="h-16 w-16 rounded-full bg-accent-500/10 flex items-center justify-center">
-                <span className="text-4xl">🔍</span>
+                <span className="text-4xl">
+                  <EmojiIcon emoji="🔍" size={40} />
+                </span>
               </div>
             </div>
           </div>
@@ -30,10 +33,10 @@ function NotFoundPage() {
 
         {/* Message */}
         <h1 className="text-2xl font-semibold text-primary-900 mb-2">
-          Page Not Found
+          页面不存在
         </h1>
         <p className="text-primary-600 mb-8">
-          The page you're looking for doesn't exist or has been moved.
+          你访问的页面不存在，或已经被移动到其他位置。
         </p>
 
         {/* Actions */}
@@ -43,44 +46,44 @@ function NotFoundPage() {
             className={buttonVariants({ variant: 'outline', size: 'default' })}
           >
             <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={1.5} />
-            Go Back
+            返回上一页
           </button>
           <Link
-            to={'/chat' as string}
+            to={'/chat'}
             className={buttonVariants({ variant: 'default', size: 'default' })}
           >
             <HugeiconsIcon icon={Home01Icon} size={18} strokeWidth={1.5} />
-            Chat
+            会话
           </Link>
         </div>
 
         {/* Helpful Links */}
         <div className="mt-12 pt-8 border-t border-primary-200">
-          <p className="text-sm text-primary-500 mb-3">Quick Links</p>
+          <p className="text-sm text-primary-500 mb-3">快捷入口</p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
             <Link
-              to={'/chat' as string}
+              to={'/chat'}
               className="text-accent-500 hover:text-accent-600 hover:underline"
             >
-              Chat
+              会话
             </Link>
             <Link
               to="/files"
               className="text-accent-500 hover:text-accent-600 hover:underline"
             >
-              Files
+              文件
             </Link>
             <Link
               to="/memory"
               className="text-accent-500 hover:text-accent-600 hover:underline"
             >
-              Memory
+              记忆
             </Link>
             <Link
               to="/skills"
               className="text-accent-500 hover:text-accent-600 hover:underline"
             >
-              Skills
+              技能
             </Link>
           </div>
         </div>

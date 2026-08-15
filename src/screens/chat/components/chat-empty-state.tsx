@@ -10,20 +10,20 @@ type SuggestionChip = {
 
 const SUGGESTIONS: Array<SuggestionChip> = [
   {
-    label: 'Analyze workspace',
+    label: '分析当前工作区',
     prompt:
-      'Analyze this workspace structure and give me 3 engineering risks. Use tools and keep it concise.',
+      '分析这个工作区结构，并给出 3 个工程风险。请使用工具，并保持简洁。',
     icon: CodeIcon,
   },
   {
-    label: 'Save a preference',
+    label: '保存一个偏好',
     prompt:
-      'Save this to memory exactly: "For demos, respond in 3 bullets max and put risk first." Then confirm saved.',
+      '把这句话原样保存到记忆中：“演示场景下，回答最多 3 个要点，并先说风险。” 然后确认已保存。',
     icon: BrainIcon,
   },
   {
-    label: 'Create a file',
-    prompt: 'Create demo-checklist.md with 5 launch checks for this app.',
+    label: '创建一个文件',
+    prompt: '创建 demo-checklist.md，并写入这个应用上线前的 5 项检查项。',
     icon: PuzzleIcon,
   },
 ]
@@ -55,8 +55,8 @@ export function ChatEmptyState({
             }}
           />
           <img
-            src="/hermes-avatar.webp"
-            alt="Hermes"
+            src="/ti-work-logo.svg"
+            alt="Ti Work"
             className="relative size-20 rounded-2xl"
             style={{
               boxShadow:
@@ -70,13 +70,13 @@ export function ChatEmptyState({
           className="text-xl font-semibold tracking-tight"
           style={{ color: 'var(--theme-text)' }}
         >
-          Hermes Studio
+          Ti Work
         </h2>
 
         {!compact && (
           <>
             <p className="mt-2 text-sm" style={{ color: 'var(--theme-muted)' }}>
-              Agent chat · live tools · memory · full observability
+              智能体会话 · 实时工具 · 记忆能力 · 全链路可观测
             </p>
           </>
         )}

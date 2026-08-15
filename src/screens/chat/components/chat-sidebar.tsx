@@ -1,31 +1,32 @@
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
+  AiUserIcon,
+  Analytics01Icon,
   ArrowDown01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  BookOpen01Icon,
   BrainIcon,
   Chat01Icon,
+  CheckListIcon,
   Clock01Icon,
   ComputerTerminal01Icon,
+  ConsoleIcon,
   DashboardSquare01Icon,
   File01Icon,
+  Flag01Icon,
+  GitBranchIcon,
+  HelpCircleIcon,
   MessageMultiple01Icon,
   Moon02Icon,
   PencilEdit02Icon,
   PuzzleIcon,
+  Radar01Icon,
   Search01Icon,
   Settings01Icon,
+  TimelineIcon,
   UserGroupIcon,
   UserMultiple02Icon,
-  AiUserIcon,
-  Analytics01Icon,
-  ConsoleIcon,
-  TimelineIcon,
-  Flag01Icon,
-  Radar01Icon,
-  CheckListIcon,
-  HelpCircleIcon,
-  BookOpen01Icon,
 } from '@hugeicons/core-free-icons'
 import { AnimatePresence, motion } from 'motion/react'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
@@ -72,7 +73,7 @@ function ThemeToggleMini() {
     <span
       className="shrink-0 rounded-lg p-1.5"
       style={{ color: 'var(--theme-muted)' }}
-      aria-label="Dark mode"
+      aria-label="深色模式"
     >
       <HugeiconsIcon icon={Moon02Icon} size={16} strokeWidth={1.5} />
     </span>
@@ -99,8 +100,6 @@ type ChatSidebarProps = {
 type NavItemDef = {
   kind: 'link' | 'button'
   to?: string
-  search?: Record<string, unknown>
-  hash?: string
   icon: unknown
   label: string
   active: boolean
@@ -199,9 +198,7 @@ function NavItem({
             <TooltipTrigger
               render={
                 <Link
-                  to={item.to!}
-                  search={item.search}
-                  hash={item.hash}
+                  to={item.to}
                   onClick={handleSelect}
                   className={cls}
                   data-tour={item.dataTour}
@@ -217,9 +214,7 @@ function NavItem({
     }
     return (
       <Link
-        to={item.to!}
-        search={item.search}
-        hash={item.hash}
+        to={item.to}
         onClick={handleSelect}
         className={cls}
         data-tour={item.dataTour}
@@ -349,7 +344,7 @@ function SectionLabel({
           type="button"
           onClick={onToggle}
           className="ml-auto p-0.5 rounded hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors"
-          aria-label={expanded ? `Collapse ${label}` : `Expand ${label}`}
+          aria-label={expanded ? `收起 ${label}` : `展开 ${label}`}
         >
           <HugeiconsIcon
             icon={ArrowDown01Icon}
@@ -536,6 +531,7 @@ function ChatSidebarComponent({
   const isAgentsActive = pathname === '/agents'
   const isPatternsActive = pathname === '/patterns'
   const isAnalyticsActive = pathname === '/analytics'
+  const isLineageActive = pathname === '/lineage'
   const isSessionHistoryActive = pathname === '/session-history'
   const isAuditActive = pathname === '/audit'
   const isLogsActive = pathname === '/logs'
@@ -585,7 +581,6 @@ function ChatSidebarComponent({
   const [deleteSessionTitle, setDeleteSessionTitle] = useState('')
   const [providersOpen, setProvidersOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const [isHoverExpanded, setIsHoverExpanded] = useState(false)
   const sidebarRef = useRef<HTMLElement | null>(null)
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null)
 
@@ -640,20 +635,9 @@ function ChatSidebarComponent({
     return () => media.removeEventListener('change', update)
   }, [])
 
-  useEffect(() => {
-    if (isMobile || !isCollapsed) {
-      setIsHoverExpanded(false)
-    }
-  }, [isCollapsed, isMobile])
-
-  const isVisuallyCollapsed = isCollapsed && !isHoverExpanded
-  const isHoverPreviewExpanded = !isMobile && isCollapsed && isHoverExpanded
+  const isVisuallyCollapsed = isCollapsed
 
   function handleSidebarToggle() {
-    if (isHoverPreviewExpanded) {
-      setIsHoverExpanded(false)
-      return
-    }
     onToggleCollapse()
   }
 
@@ -735,7 +719,7 @@ function ChatSidebarComponent({
   const searchItem: NavItemDef = {
     kind: 'button',
     icon: Search01Icon,
-    label: 'Search',
+    label: '搜索',
     active: isSearchModalOpen,
     onClick: openSearchModal,
   }
@@ -747,14 +731,14 @@ function ChatSidebarComponent({
       kind: 'link',
       to: '/dashboard',
       icon: DashboardSquare01Icon,
-      label: 'Dashboard',
+      label: '工作台',
       active: isDashboardActive,
     },
     {
       kind: 'link',
       to: '/chat',
       icon: MessageMultiple01Icon,
-      label: 'Chat',
+      label: '会话',
       active: isChatActive,
       badge: pendingApprovalCount > 0 ? pendingApprovalCount : undefined,
     },
@@ -762,91 +746,98 @@ function ChatSidebarComponent({
       kind: 'link',
       to: '/files',
       icon: File01Icon,
-      label: 'Files',
+      label: '文件',
       active: isFilesActive,
     },
     {
       kind: 'link',
       to: '/terminal',
       icon: ComputerTerminal01Icon,
-      label: 'Terminal',
+      label: '终端',
       active: isTerminalActive,
     },
     {
       kind: 'link',
       to: '/jobs',
       icon: Clock01Icon,
-      label: 'Jobs',
+      label: '任务',
       active: isJobsActive,
     },
     {
       kind: 'link',
       to: '/crews',
       icon: UserMultiple02Icon,
-      label: 'Crews',
+      label: '多智能体',
       active: isCrewsActive,
     },
     {
       kind: 'link',
       to: '/conductor',
       icon: Flag01Icon,
-      label: 'Conductor',
+      label: '任务编排',
       active: isConductorActive,
     },
     {
       kind: 'link',
       to: '/operations',
       icon: Radar01Icon,
-      label: 'Operations',
+      label: '运维视图',
       active: isOperationsActive,
     },
     {
       kind: 'link',
       to: '/tasks',
       icon: CheckListIcon,
-      label: 'Tasks',
+      label: '待办',
       active: isTasksActive,
     },
     {
       kind: 'link',
       to: '/agents',
       icon: AiUserIcon,
-      label: 'Agents',
+      label: '智能体',
       active: isAgentsActive,
     },
     {
       kind: 'link',
       to: '/patterns',
       icon: BrainIcon,
-      label: 'Patterns',
+      label: '模式与纠正',
       active: isPatternsActive,
     },
     {
       kind: 'link',
       to: '/analytics',
       icon: Analytics01Icon,
-      label: 'Analytics',
+      label: '分析',
       active: isAnalyticsActive,
+    },
+    {
+      kind: 'link',
+      to: '/lineage',
+      icon: GitBranchIcon,
+      label: '血缘',
+      active: isLineageActive,
     },
     {
       kind: 'link',
       to: '/session-history',
       icon: Clock01Icon,
-      label: 'Session History',
+      label: '会话历史',
       active: isSessionHistoryActive,
     },
     {
       kind: 'link',
       to: '/audit',
       icon: TimelineIcon,
-      label: 'Audit Trail',
+      label: '审计记录',
       active: isAuditActive,
     },
     {
       kind: 'link',
       to: '/logs',
       icon: ConsoleIcon,
-      label: 'Logs',
+      label: '日志',
       active: isLogsActive,
     },
   ]
@@ -856,14 +847,14 @@ function ChatSidebarComponent({
       kind: 'link',
       to: '/memory',
       icon: BrainIcon,
-      label: 'Memory',
+      label: '记忆',
       active: isMemoryActive,
     },
     {
       kind: 'link',
       to: '/skills',
       icon: PuzzleIcon,
-      label: 'Skills',
+      label: '技能',
       active: isSkillsActive,
       dataTour: 'skills',
     },
@@ -871,7 +862,7 @@ function ChatSidebarComponent({
       kind: 'link',
       to: '/profiles',
       icon: UserGroupIcon,
-      label: 'Profiles',
+      label: '用户档案',
       active: isProfilesActive,
     },
   ]
@@ -881,14 +872,14 @@ function ChatSidebarComponent({
       kind: 'link',
       to: '/help',
       icon: HelpCircleIcon,
-      label: 'Help',
+      label: '帮助',
       active: isHelpActive,
     },
     {
       kind: 'link',
       to: '/docs',
       icon: BookOpen01Icon,
-      label: 'Documentation',
+      label: '文档',
       active: isDocsActive,
     },
   ]
@@ -915,12 +906,6 @@ function ChatSidebarComponent({
       )}
       data-tour="sidebar-container"
       style={isMobile ? { maxWidth: 360 } : undefined}
-      onMouseEnter={() => {
-        if (!isMobile && isCollapsed) setIsHoverExpanded(true)
-      }}
-      onMouseLeave={() => {
-        if (!isMobile) setIsHoverExpanded(false)
-      }}
       aria-hidden={isMobile && isCollapsed ? true : undefined}
       {...(isMobile && isCollapsed ? { inert: '' as unknown as boolean } : {})}
     >
@@ -946,15 +931,15 @@ function ChatSidebarComponent({
                 )}
               >
                 <img
-                  src="/hermes-avatar.webp"
-                  alt="Hermes"
+                  src="/ti-work-logo.svg"
+                  alt="Ti Work"
                   className="size-6 rounded-lg"
                 />
                 <span
                   className="text-sm font-semibold tracking-tight"
                   style={{ color: 'var(--theme-text)' }}
                 >
-                  Hermes Studio
+                  Ti Work
                 </span>
               </Link>
             </motion.div>
@@ -969,7 +954,7 @@ function ChatSidebarComponent({
                   size="icon-sm"
                   variant="ghost"
                   aria-label={
-                    isVisuallyCollapsed ? 'Open Sidebar' : 'Close Sidebar'
+                    isVisuallyCollapsed ? '展开侧栏' : '收起侧栏'
                   }
                   className="absolute right-2 top-1/2 shrink-0 -translate-y-1/2 opacity-80 hover:opacity-100"
                   data-tour="sidebar-collapse-toggle"
@@ -991,7 +976,7 @@ function ChatSidebarComponent({
               }
             />
             <TooltipContent side="right">
-              {isVisuallyCollapsed ? 'Open Sidebar' : 'Close Sidebar'}
+              {isVisuallyCollapsed ? '展开侧栏' : '收起侧栏'}
             </TooltipContent>
           </TooltipRoot>
         </TooltipProvider>
@@ -1036,7 +1021,7 @@ function ChatSidebarComponent({
               strokeWidth={1.5}
               className="size-5 shrink-0"
             />
-            <span>New Session</span>
+            <span>新建会话</span>
           </Link>
         </div>
       )}
@@ -1046,7 +1031,7 @@ function ChatSidebarComponent({
         {/* Navigation sections */}
         <div className={cn('shrink-0 space-y-0.5 px-2', isMobile && 'order-2')}>
           <SectionLabel
-            label="Main"
+            label="主要"
             isCollapsed={isVisuallyCollapsed}
             transition={transition}
             collapsible
@@ -1063,7 +1048,7 @@ function ChatSidebarComponent({
           />
 
           <SectionLabel
-            label="Knowledge"
+            label="知识"
             isCollapsed={isVisuallyCollapsed}
             transition={transition}
             collapsible
@@ -1174,7 +1159,7 @@ function ChatSidebarComponent({
                     size={20}
                     strokeWidth={1.5}
                   />
-                  Settings
+                  设置
                 </span>
               </MenuItem>
             </MenuContent>
@@ -1187,7 +1172,7 @@ function ChatSidebarComponent({
                 type="button"
                 onClick={() => handleOpenSettings('hermes')}
                 className="shrink-0 rounded-lg p-1.5 text-primary-400 hover:bg-primary-200 dark:hover:bg-neutral-800 hover:text-primary-600 dark:hover:text-neutral-300 transition-colors"
-                aria-label="Settings"
+                aria-label="设置"
               >
                 <HugeiconsIcon
                   icon={Settings01Icon}

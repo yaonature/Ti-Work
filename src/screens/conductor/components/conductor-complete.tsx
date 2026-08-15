@@ -6,12 +6,14 @@
  */
 
 import { useMemo, useState } from 'react'
+import { CostTracker,  estimateTokenCost, formatUsd } from './cost-tracker'
+import { getAgentPersona } from './agent-avatar'
+import { EmojiIcon } from '@/components/emoji-icon'
+import type {CostWorker} from './cost-tracker';
+import type { useConductorGateway } from '../hooks/use-conductor-gateway'
 import { Button } from '@/components/ui/button'
 import { Markdown } from '@/components/prompt-kit/markdown'
 import { cn } from '@/lib/utils'
-import { CostTracker, estimateTokenCost, formatUsd, type CostWorker } from './cost-tracker'
-import { getAgentPersona } from './agent-avatar'
-import type { useConductorGateway } from '../hooks/use-conductor-gateway'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,20 +29,20 @@ type ConductorCompleteProps = {
 // ---------------------------------------------------------------------------
 
 function formatElapsedTime(startIso: string | null | undefined, endMs: number): string {
-  if (!startIso) return '0s'
+  if (!startIso) return '0秒'
   const startMs = new Date(startIso).getTime()
-  if (!Number.isFinite(startMs)) return '0s'
+  if (!Number.isFinite(startMs)) return '0秒'
   const totalSeconds = Math.max(0, Math.floor((endMs - startMs) / 1000))
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
-  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`
-  if (minutes > 0) return `${minutes}m ${seconds}s`
-  return `${seconds}s`
+  if (hours > 0) return `${hours}小时 ${minutes}分 ${seconds}秒`
+  if (minutes > 0) return `${minutes}分 ${seconds}秒`
+  return `${seconds}秒`
 }
 
 function getShortModelName(model: string | null | undefined): string {
-  if (!model) return 'Unknown'
+  if (!model) return '未知'
   const parts = model.split('/')
   return parts[parts.length - 1] || model
 }
@@ -73,7 +75,7 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
   const completedWorkers = conductor.workers.filter((w) => w.status === 'complete').length
   const totalTokens = conductor.workers.reduce((sum, w) => sum + w.totalTokens, 0)
 
-  const completeMissionCostWorkers = useMemo<CostWorker[]>(
+  const completeMissionCostWorkers = useMemo<Array<CostWorker>>(
     () =>
       conductor.workers.map((worker, index) => {
         const persona = getAgentPersona(index)
@@ -93,13 +95,13 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
     const isFailed = !!conductor.streamError
     const endMs = conductor.completedAt ? new Date(conductor.completedAt).getTime() : now
     const lines = [
-      isFailed ? `Mission failed: ${conductor.streamError}` : 'Mission completed successfully',
+      isFailed ? `任务失败：${conductor.streamError}` : '任务已成功完成',
       '',
-      `**Goal:** ${conductor.goal}`,
-      `**Duration:** ${formatElapsedTime(conductor.missionStartedAt, endMs)}`,
+      `**目标：** ${conductor.goal}`,
+      `**耗时：** ${formatElapsedTime(conductor.missionStartedAt, endMs)}`,
     ]
     if (totalWorkers > 0) {
-      lines.push(`**Workers:** ${totalWorkers} ran, ${totalTokens.toLocaleString()} tokens`)
+      lines.push(`**智能体：** ${totalWorkers} 个智能体，共 ${totalTokens.toLocaleString()} token`)
     }
     return lines.join('\n')
   }, [conductor.streamError, conductor.goal, conductor.missionStartedAt, conductor.completedAt, totalWorkers, totalTokens, now])
@@ -138,7 +140,7 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
   // Export to clipboard
   const handleExport = () => {
     const sections = [
-      `# Mission: ${conductor.goal}`,
+      `# 任务：${conductor.goal}`,
       '',
       completeSummary,
       '',
@@ -159,7 +161,7 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
       {/* Header badge */}
       <div className="text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--theme-muted)]">
-          Conductor
+          任务指挥中心
           <span className="size-2 rounded-full bg-emerald-400" />
         </div>
       </div>
@@ -171,7 +173,7 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
             <div className="flex items-start gap-3">
               <span className="pt-0.5 text-[var(--theme-danger)]">&#10060;</span>
               <div>
-                <p className="text-sm font-semibold text-[var(--theme-danger)]">Mission failed</p>
+                <p className="text-sm font-semibold text-[var(--theme-danger)]">任务失败</p>
                 <p className="mt-1 text-sm text-[var(--theme-danger)]/90">{conductor.streamError}</p>
               </div>
             </div>
@@ -181,14 +183,14 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
                 onClick={() => void conductor.retryMission()}
                 className="rounded-xl border border-[var(--theme-danger-border)] bg-[var(--theme-danger-soft)] px-4 text-[var(--theme-danger)] hover:bg-[var(--theme-danger-soft-strong)]"
               >
-                Retry Mission
+                重试任务
               </Button>
               <Button
                 type="button"
                 onClick={onNewMission}
                 className="rounded-xl bg-[var(--theme-accent)] px-4 text-white hover:bg-[var(--theme-accent-strong)]"
               >
-                New Mission
+                新建任务
               </Button>
             </div>
           </div>
@@ -200,11 +202,11 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className={cn('text-xs font-semibold uppercase tracking-[0.24em]', conductor.streamError ? 'text-red-400' : 'text-[var(--theme-accent)]')}>
-              {conductor.streamError ? 'Mission Stopped' : 'Mission Complete'}
+              {conductor.streamError ? '任务已停止' : '任务已完成'}
             </p>
             <h1 className="mt-2 text-xl font-semibold tracking-tight text-[var(--theme-text)] sm:text-2xl">{conductor.goal}</h1>
             <p className="mt-2 text-xs text-[var(--theme-muted-2)]">
-              {completedWorkers}/{Math.max(totalWorkers, completedWorkers)} workers finished &middot; {formatElapsedTime(conductor.missionStartedAt, conductor.completedAt ? new Date(conductor.completedAt).getTime() : now)} total elapsed
+              {completedWorkers}/{Math.max(totalWorkers, completedWorkers)} 项任务已完成 &middot; 总耗时 {formatElapsedTime(conductor.missionStartedAt, conductor.completedAt ? new Date(conductor.completedAt).getTime() : now)}
             </p>
           </div>
           <div className="flex gap-2">
@@ -213,7 +215,7 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
               onClick={onNewMission}
               className="rounded-xl bg-[var(--theme-accent)] px-5 text-white hover:bg-[var(--theme-accent-strong)]"
             >
-              New Mission
+              新建任务
             </Button>
           </div>
         </div>
@@ -224,7 +226,7 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
         <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-card)] px-5 py-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--theme-muted)]">Output Path</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--theme-muted)]">输出路径</p>
               <p className="mt-1 truncate text-sm text-[var(--theme-text)]">{outputPath}</p>
             </div>
           </div>
@@ -234,12 +236,15 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
       {/* Worker output panels */}
       {workerOutputSections.length > 0 && (
         <section className="overflow-hidden rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-card)] p-6 shadow-[0_24px_80px_var(--theme-shadow)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-muted)]">Output</p>
-          <p className="mt-1 text-xs text-[var(--theme-muted-2)]">Agent work output</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-muted)]">执行输出</p>
+          <p className="mt-1 text-xs text-[var(--theme-muted-2)]">智能体产生的结果</p>
           <div className="mt-4 space-y-4">
             {workerOutputSections.map((section) => (
               <div key={section.key} className="overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-5 py-4">
-                <p className="text-xs font-medium text-[var(--theme-muted)]">{section.persona.emoji} {section.persona.name} &middot; {section.label}</p>
+                <p className="text-xs font-medium text-[var(--theme-muted)] inline-flex items-center gap-1">
+                  <EmojiIcon emoji={section.persona.emoji} size={12} />
+                  {section.persona.name} &middot; {section.label}
+                </p>
                 <pre className="mt-3 max-h-[400px] max-w-none overflow-auto whitespace-pre-wrap text-sm text-[var(--theme-text)]">{section.output}</pre>
               </div>
             ))}
@@ -250,7 +255,7 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
       {/* Fallback: stream text if no worker outputs */}
       {workerOutputSections.length === 0 && conductor.streamText && (
         <section className="overflow-hidden rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-card)] p-6 shadow-[0_24px_80px_var(--theme-shadow)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-muted)]">Output</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-muted)]">执行输出</p>
           <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-5 py-4">
             <Markdown className="max-h-[600px] max-w-none overflow-auto text-sm text-[var(--theme-text)]">{conductor.streamText}</Markdown>
           </div>
@@ -260,21 +265,21 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
       {/* Agent summary with worker list */}
       <section className="overflow-hidden rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-card)] p-6 shadow-[0_24px_80px_var(--theme-shadow)]">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-muted)]">Agent Summary</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-muted)]">智能体摘要</p>
           <span className={cn(
             'rounded-full px-3 py-1 text-xs font-medium',
             conductor.streamError
               ? 'border border-red-400/35 bg-red-500/10 text-red-300'
               : 'border border-emerald-400/35 bg-emerald-500/10 text-emerald-300',
           )}>
-            {conductor.streamError ? 'Stopped' : 'Complete'}
+            {conductor.streamError ? '已停止' : '已完成'}
           </span>
         </div>
         <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-5 py-4">
           {completeSummary ? (
             <Markdown className="max-h-[400px] max-w-none overflow-auto text-sm text-[var(--theme-text)]">{completeSummary}</Markdown>
           ) : (
-            <p className="text-sm text-[var(--theme-muted)]">No summary captured.</p>
+            <p className="text-sm text-[var(--theme-muted)]">暂无摘要。</p>
           )}
         </div>
         {conductor.workers.length > 0 && (
@@ -284,9 +289,12 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
               return (
                 <div key={worker.key} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm">
                   <span className="size-2 rounded-full bg-emerald-400" />
-                  <span className="font-medium text-[var(--theme-text)]">{persona.emoji} {persona.name}</span>
+                  <span className="font-medium text-[var(--theme-text)] inline-flex items-center gap-1">
+                    <EmojiIcon emoji={persona.emoji} size={14} />
+                    {persona.name}
+                  </span>
                   <span className="text-[var(--theme-muted)]">{worker.label}</span>
-                  <span className="ml-auto text-xs text-[var(--theme-muted)]">{getShortModelName(worker.model)} &middot; {worker.totalTokens.toLocaleString()} tok</span>
+                  <span className="ml-auto text-xs text-[var(--theme-muted)]">{getShortModelName(worker.model)} &middot; {worker.totalTokens.toLocaleString()} token</span>
                 </div>
               )
             })}
@@ -312,7 +320,7 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
             onClick={() => void conductor.retryMission()}
             className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card2)] px-4 text-[var(--theme-text)] hover:border-[var(--theme-accent)] hover:text-[var(--theme-accent-strong)]"
           >
-            Retry Mission
+            重试任务
           </Button>
         )}
         <Button
@@ -320,14 +328,14 @@ export function ConductorComplete({ conductor, onNewMission }: ConductorComplete
           onClick={handleExport}
           className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card2)] px-4 text-[var(--theme-text)] hover:border-[var(--theme-accent)] hover:text-[var(--theme-accent-strong)]"
         >
-          Export Markdown
+          导出文档
         </Button>
         <Button
           type="button"
           onClick={onNewMission}
           className="rounded-xl bg-[var(--theme-accent)] px-5 text-white hover:bg-[var(--theme-accent-strong)]"
         >
-          New Mission
+          新建任务
         </Button>
       </div>
     </div>

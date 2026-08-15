@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { EmojiIcon } from '@/components/emoji-icon'
 import type { AuthStatus } from '@/lib/hermes-auth'
 import { writeTextToClipboard } from '@/lib/clipboard'
 import { fetchHermesAuthStatus } from '@/lib/hermes-auth'
@@ -25,28 +26,28 @@ function getSetupSteps(
 
   return [
     {
-      title: 'Use any OpenAI-compatible backend',
-      command: 'Set HERMES_API_URL to your backend base URL',
-      note: 'Portable chat works with any backend that exposes /v1/chat/completions (Ollama, LiteLLM, vLLM, etc.)',
+      title: '使用任意 OpenAI 兼容后端',
+      command: '设置 HERMES_API_URL 为你的后端地址',
+      note: '便携对话支持任意提供 /v1/chat/completions 接口的后端（Ollama、LiteLLM、vLLM 等）',
     },
     {
-      title: 'Optional: run a Hermes gateway locally',
+      title: '可选：在本地运行 Hermes 执行引擎（网关）',
       command: 'git clone https://github.com/outsourc-e/hermes-agent.git',
-      note: 'Hermes gateway APIs unlock sessions, skills, memory, and other workspace extras automatically',
+      note: 'Hermes 执行引擎（网关）API 将自动解锁会话、技能、记忆等工作区增强功能',
     },
     {
-      title: 'Install the gateway',
+      title: '安装网关',
       command: `cd hermes-agent && ${python} -m venv .venv && ${platform === 'windows' ? '.venv\\Scripts\\activate' : 'source .venv/bin/activate'} && ${pip} install -e .`,
     },
     {
-      title: 'Enable the HTTP API server',
+      title: '启用 HTTP API 服务',
       command: 'echo "API_SERVER_ENABLED=true" >> ~/.hermes/.env',
-      note: 'The gateway HTTP API is opt-in. Without this, the gateway serves messaging platforms but does not expose port 8642 for the workspace.',
+      note: '网关 HTTP API 为可选开启。未开启时网关仅服务消息平台，不会为工作区开放 8642 端口。',
     },
     {
-      title: 'Start the gateway',
+      title: '启动网关',
       command: `cd hermes-agent && ${platform === 'windows' ? '.venv\\Scripts\\activate' : 'source .venv/bin/activate'} && hermes --gateway`,
-      note: 'Or use Auto-Start below if hermes-agent is already installed locally',
+      note: '如果 hermes-agent 已安装在本地，可使用下方的自动启动',
     },
   ]
 }
@@ -115,7 +116,6 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
       if (pollTimer) clearTimeout(pollTimer)
       clearTimeout(failureTimer)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -136,7 +136,7 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
   const handleAutoStart = async () => {
     setServerStarting(true)
     setServerError(null)
-    setServerLog(['Looking for hermes-agent...'])
+    setServerLog(['正在查找 hermes-agent...'])
     try {
       const res = await fetch('/api/start-hermes', {
         method: 'POST',
@@ -144,8 +144,8 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
       })
       const contentType = res.headers.get('content-type') || ''
       if (!contentType.includes('application/json')) {
-        const msg = `Unexpected response (${res.status})`
-        setServerLog([`Error: ${msg}`])
+        const msg = `意外响应（${res.status}）`
+        setServerLog([`错误：${msg}`])
         setServerError(msg)
         setServerStarting(false)
         return
@@ -154,23 +154,23 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
       const data = (await res.json()) as Record<string, unknown>
       if (res.ok && data.ok) {
         setServerLog([
-          String(data.message || 'Started — waiting for connection...'),
+          String(data.message || '已启动 —— 等待连接...'),
         ])
         setServerStarting(false)
         return
       }
 
-      const msg = String(data.error || 'Could not find hermes-agent')
+      const msg = String(data.error || '未找到 hermes-agent')
       const hint = data.hint ? String(data.hint) : ''
-      setServerLog([`Error: ${msg}`])
-      if (hint) setServerLog((prev) => [...prev, `Hint: ${hint}`])
+      setServerLog([`错误：${msg}`])
+      if (hint) setServerLog((prev) => [...prev, `提示：${hint}`])
       setServerError(msg)
       setServerStarting(false)
-      // Show manual steps when auto-start fails
+      // 自动启动失败时展示手动步骤
       setShowManual(true)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setServerLog([`Failed: ${msg}`])
+      setServerLog([`失败：${msg}`])
       setServerError(msg)
       setServerStarting(false)
       setShowManual(true)
@@ -187,13 +187,13 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
     >
       <div className="flex w-full max-w-lg flex-col items-center text-center">
         <img
-          src="/hermes-avatar.webp"
-          alt="Hermes"
+          src="/ti-work-logo.svg"
+          alt="Ti Work"
           className="mb-5 h-20 w-20 rounded-2xl object-cover shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
         />
 
         <h1 className="text-[2rem] font-semibold tracking-tight text-white">
-          Hermes Studio
+          Ti Work
         </h1>
 
         {/* Connecting spinner */}
@@ -205,7 +205,7 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
           aria-hidden={showFailureState}
         >
           <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white/80" />
-          <span>Connecting to your backend...</span>
+          <span>正在连接你的后端...</span>
         </div>
 
         {/* Failure state — setup guide */}
@@ -219,12 +219,11 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
         >
           <div className="w-full rounded-3xl border border-white/10 bg-white/5 p-5 text-left shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-sm">
             <p className="text-base font-medium text-white">
-              Welcome! Let&apos;s connect your backend
+              欢迎！连接你的后端
             </p>
             <p className="mt-2 text-sm leading-6 text-white/60">
-              Hermes Studio works with any OpenAI-compatible backend. Hermes
-              gateway APIs unlock enhanced features automatically when they are
-              available.
+              Ti Work 兼容任意 OpenAI 接口的后端。接入 Hermes
+              网关后，增强功能将自动解锁。
             </p>
 
             {/* Auto-start section */}
@@ -243,10 +242,10 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
                 {serverStarting ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white/90" />
-                    Detecting...
+                    正在检测...
                   </span>
                 ) : (
-                  'Auto-Start Hermes Gateway'
+                  '自动启动 Hermes 执行引擎（网关）'
                 )}
               </button>
 
@@ -275,7 +274,7 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
                 onClick={() => setShowManual(!showManual)}
                 className="text-xs font-medium text-white/50 transition hover:text-white/70"
               >
-                {showManual ? 'Hide' : 'Show'} manual setup
+                {showManual ? '收起' : '显示'}手动设置
               </button>
               <div className="h-px flex-1 bg-white/10" />
             </div>
@@ -307,7 +306,14 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
                         onClick={() => handleCopy(step.command, idx)}
                         className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white/60 transition hover:bg-white/10 hover:text-white/80"
                       >
-                        {copiedIdx === idx ? '✓ Copied' : 'Copy'}
+                        {copiedIdx === idx ? (
+                          <>
+                            {' '}
+                            <EmojiIcon emoji="✓" size={12} /> 已复制
+                          </>
+                        ) : (
+                          '复制'
+                        )}
                       </button>
                     </div>
                     <pre className="mt-2 overflow-x-auto rounded-lg bg-black/40 p-3 font-mono text-xs leading-5 text-white/80">
@@ -323,11 +329,11 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
               {/* Env var hint */}
               <div className="mt-4 rounded-xl border border-white/6 bg-white/3 p-3">
                 <p className="text-xs font-medium text-white/50">
-                  Point{' '}
+                  将{' '}
                   <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-white/70">
                     HERMES_API_URL
                   </code>{' '}
-                  at any OpenAI-compatible backend:
+                  指向任意 OpenAI 兼容后端：
                 </p>
                 <pre className="mt-2 overflow-x-auto font-mono text-xs text-white/60">
                   HERMES_API_URL=http://your-server:8642 pnpm dev
@@ -339,7 +345,7 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
 
         {!showFailureState ? (
           <p className="mt-6 text-xs text-white/45">
-            This page auto-refreshes when a compatible backend is detected
+            检测到兼容后端后，本页面将自动刷新
           </p>
         ) : null}
       </div>

@@ -14,21 +14,21 @@ function formatShort(timestamp: number): string {
   const date = new Date(timestamp)
   const now = new Date()
   if (isSameDay(date, now)) {
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat('zh-CN', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
     }).format(date)
   }
 
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('zh-CN', {
     day: '2-digit',
     month: 'short',
   }).format(date)
 }
 
 function formatFull(timestamp: number): string {
-  const value = new Intl.DateTimeFormat('en-US', {
+  const value = new Intl.DateTimeFormat('zh-CN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

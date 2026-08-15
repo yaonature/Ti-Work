@@ -42,7 +42,7 @@ export function normalise(raw: Record<string, unknown>): RichSession {
       (raw.startedAt as number) ||
       (raw.createdAt as number) ||
       0,
-  } as RichSession
+  }
 }
 
 /**

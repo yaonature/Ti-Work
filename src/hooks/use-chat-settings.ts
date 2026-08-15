@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -111,23 +111,23 @@ export function useChatSettings() {
 }
 
 export function useResolvedTheme() {
-  const theme = useChatSettingsStore((state) => state.settings.theme)
-  const [systemIsDark, setSystemIsDark] = useState(false)
+  const [mode, setMode] = useState<ThemeMode>(() => {
+    if (typeof document === 'undefined') return 'dark'
+    return document.documentElement.getAttribute('data-mode') === 'light'
+      ? 'light'
+      : 'dark'
+  })
 
+  // Live-track <html data-mode> so code blocks / tour follow the app mode.
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const media = window.matchMedia('(prefers-color-scheme: dark)')
-    setSystemIsDark(media.matches)
-    function handleChange(event: MediaQueryListEvent) {
-      setSystemIsDark(event.matches)
-    }
-    media.addEventListener('change', handleChange)
-    return () => media.removeEventListener('change', handleChange)
+    const el = document.documentElement
+    const update = () =>
+      setMode(el.getAttribute('data-mode') === 'light' ? 'light' : 'dark')
+    update()
+    const mo = new MutationObserver(update)
+    mo.observe(el, { attributes: true, attributeFilter: ['data-mode'] })
+    return () => mo.disconnect()
   }, [])
 
-  return useMemo(() => {
-    if (theme === 'dark') return 'dark'
-    if (theme === 'light') return 'light'
-    return systemIsDark ? 'dark' : 'light'
-  }, [theme, systemIsDark])
+  return mode
 }

@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import type { SessionUsage as ChartSessionUsage } from '@/lib/chart-utils'
 import {
   DialogClose,
   DialogDescription,
@@ -18,12 +19,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { formatModelName } from '@/lib/format-model-name'
 import {
+  CHART_DAYS,
   buildDayBuckets,
   formatTokens,
   progressColor,
-  CHART_DAYS,
 } from '@/lib/chart-utils'
-import type { SessionUsage as ChartSessionUsage } from '@/lib/chart-utils'
 
 type ModelUsage = {
   model: string
@@ -102,11 +102,11 @@ function formatResetTime(iso?: string): string {
   const date = new Date(iso)
   const now = new Date()
   const diffMs = date.getTime() - now.getTime()
-  if (diffMs <= 0) return 'resetting soon'
+  if (diffMs <= 0) return '即将重置'
   const hours = Math.floor(diffMs / 3_600_000)
   const mins = Math.floor((diffMs % 3_600_000) / 60_000)
-  if (hours > 0) return `resets in ${hours}h ${mins}m`
-  return `resets in ${mins}m`
+  if (hours > 0) return `${hours} 小时 ${mins} 分钟后重置`
+  return `${mins} 分钟后重置`
 }
 
 
@@ -189,23 +189,23 @@ function getActionableMessage(
   if (status === 'auth_expired') {
     if (provider === 'claude' || provider === 'codex') {
       const cliCmd = provider === 'claude' ? 'claude' : 'codex'
-      return `Run \`${cliCmd}\` in terminal to re-authenticate your session.`
+      return `请在终端运行 \`${cliCmd}\`，重新完成当前会话认证。`
     }
     if (provider === 'openai') {
-      return 'Run `chatgpt` in terminal to refresh your ChatGPT session, or update your API key in Settings → Providers.'
+      return '请在终端运行 `chatgpt` 刷新 ChatGPT 会话，或前往“设置 → 提供方”更新 API Key。'
     }
-    return 'Re-authenticate your provider session or update your API key in Settings → Providers.'
+    return '请重新完成提供方会话认证，或前往“设置 → 提供方”更新 API Key。'
   }
 
   if (status === 'missing_credentials') {
-    return "Add your API key in Settings → Providers, or run the provider's CLI to authenticate."
+    return '请前往“设置 → 提供方”填写 API Key，或运行该提供方的 CLI 完成认证。'
   }
 
   if (status === 'error') {
-    return "Check your network connection and try refreshing. If the issue persists, check the provider's status page."
+    return '请检查网络连接后重试；如果问题持续存在，再查看该提供方的状态页。'
   }
 
-  return originalMessage || 'Provider data unavailable.'
+  return originalMessage || '暂时无法获取提供方数据。'
 }
 
 function statusBadge(status: ProviderUsage['status']) {
@@ -213,25 +213,25 @@ function statusBadge(status: ProviderUsage['status']) {
     case 'ok':
       return (
         <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
-          Connected
+          已连接
         </span>
       )
     case 'auth_expired':
       return (
         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-          Auth Expired
+          认证已过期
         </span>
       )
     case 'missing_credentials':
       return (
         <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-600">
-          Not Configured
+          未配置
         </span>
       )
     case 'error':
       return (
         <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700">
-          Error
+          异常
         </span>
       )
     default:
@@ -249,10 +249,10 @@ function TokenTrendChart({ sessions }: { sessions: Array<SessionUsage> }) {
     return (
       <div className="rounded-2xl border border-primary-200 bg-white/70 p-4">
         <div className="mb-3 text-sm font-semibold text-primary-900">
-          Token usage — last {CHART_DAYS} days
+          令牌用量趋势，最近 {CHART_DAYS} 天
         </div>
         <div className="flex h-28 items-center justify-center text-sm text-primary-400">
-          No data yet. Send a message to start tracking.
+          暂无数据，发送一条消息后即可开始追踪。
         </div>
       </div>
     )
@@ -262,16 +262,16 @@ function TokenTrendChart({ sessions }: { sessions: Array<SessionUsage> }) {
     <div className="rounded-2xl border border-primary-200 bg-white/70 p-4">
       <div className="mb-1 flex items-center justify-between">
         <div className="text-sm font-semibold text-primary-900">
-          Token usage — last {CHART_DAYS} days
+          令牌用量趋势，最近 {CHART_DAYS} 天
         </div>
         <div className="flex items-center gap-3 text-[10px] text-primary-500">
           <span className="flex items-center gap-1">
             <span className="inline-block h-2 w-3 rounded-sm bg-[#6366f1] opacity-70" />
-            Input
+            输入
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block h-2 w-3 rounded-sm bg-[#22c55e] opacity-70" />
-            Output
+            输出
           </span>
         </div>
       </div>
@@ -318,7 +318,7 @@ function TokenTrendChart({ sessions }: { sessions: Array<SessionUsage> }) {
               value >= 1000
                 ? `${(value / 1000).toFixed(1)}k`
                 : String(value),
-              name === 'input' ? 'Input tokens' : 'Output tokens',
+              name === 'input' ? '输入令牌' : '输出令牌',
             ]}
           />
           <Area
@@ -345,24 +345,24 @@ function TokenTrendChart({ sessions }: { sessions: Array<SessionUsage> }) {
 
 function buildCsv(usage: UsageSummary): string {
   const rows: Array<string> = []
-  rows.push('Usage Summary')
-  rows.push('Metric,Value')
-  rows.push(`Input Tokens,${usage.inputTokens}`)
-  rows.push(`Output Tokens,${usage.outputTokens}`)
-  rows.push(`Context %,${usage.contextPercent}`)
-  rows.push(`Daily Cost,${usage.dailyCost}`)
+  rows.push('用量汇总')
+  rows.push('指标,数值')
+  rows.push(`输入令牌,${usage.inputTokens}`)
+  rows.push(`输出令牌,${usage.outputTokens}`)
+  rows.push(`上下文占比,${usage.contextPercent}`)
+  rows.push(`当日成本,${usage.dailyCost}`)
   rows.push('')
-  rows.push('Cost Per Model')
-  rows.push('Model,Input Tokens,Output Tokens,Cost (USD)')
+  rows.push('按模型统计成本')
+  rows.push('模型,输入令牌,输出令牌,成本（USD）')
   usage.models.forEach((model) => {
     rows.push(
       `${model.model},${model.inputTokens},${model.outputTokens},${model.costUsd.toFixed(4)}`,
     )
   })
   rows.push('')
-  rows.push('Session History')
+  rows.push('会话历史')
   rows.push(
-    'Session,Model,Input Tokens,Output Tokens,Cost (USD),Start,Last Updated',
+    '会话,模型,输入令牌,输出令牌,成本（USD）,开始时间,最后更新时间',
   )
   usage.sessions.forEach((session) => {
     rows.push(
@@ -426,12 +426,12 @@ export function UsageDetailsModal({
     <div className="flex max-h-[80vh] flex-col gap-4 overflow-hidden p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <DialogTitle>Usage Overview</DialogTitle>
+          <DialogTitle>用量概览</DialogTitle>
           <DialogDescription>
-            Live usage from your Hermes session and connected providers.
+            展示当前 Hermes 会话及已连接提供方的实时用量。
           </DialogDescription>
         </div>
-        <DialogClose className="text-primary-700">Close</DialogClose>
+        <DialogClose className="text-primary-700">关闭</DialogClose>
       </div>
 
       <div className="flex w-fit items-center gap-1 rounded-full border border-primary-100 bg-primary-50 p-1 text-xs">
@@ -446,7 +446,7 @@ export function UsageDetailsModal({
                 : 'text-primary-600 hover:text-primary-800'
             }`}
           >
-            {tab === 'session' ? 'Session' : 'Providers'}
+            {tab === 'session' ? '会话' : '提供方'}
           </button>
         ))}
       </div>
@@ -463,7 +463,7 @@ export function UsageDetailsModal({
             <div className="grid gap-3 md:grid-cols-3">
               <div className="rounded-2xl border border-primary-200 bg-white/60 p-3">
                 <div className="text-xs uppercase tracking-wide text-primary-500">
-                  Input Tokens
+                  输入令牌
                 </div>
                 <div className="text-xl font-semibold text-primary-900">
                   {formatTokens(usage.inputTokens)}
@@ -471,7 +471,7 @@ export function UsageDetailsModal({
               </div>
               <div className="rounded-2xl border border-primary-200 bg-white/60 p-3">
                 <div className="text-xs uppercase tracking-wide text-primary-500">
-                  Output Tokens
+                  输出令牌
                 </div>
                 <div className="text-xl font-semibold text-primary-900">
                   {formatTokens(usage.outputTokens)}
@@ -479,7 +479,7 @@ export function UsageDetailsModal({
               </div>
               <div className="rounded-2xl border border-primary-200 bg-white/60 p-3">
                 <div className="text-xs uppercase tracking-wide text-primary-500">
-                  Daily Cost
+                  当日成本
                 </div>
                 <div className="text-xl font-semibold text-primary-900">
                   {formatCurrency(usage.dailyCost)}
@@ -491,13 +491,12 @@ export function UsageDetailsModal({
 
             <div className="rounded-2xl border border-primary-200 bg-white/70 p-4">
               <div className="mb-3 text-sm font-semibold text-primary-900">
-                Cost per model
+                按模型统计成本
               </div>
               <div className="grid gap-2">
                 {usage.models.length === 0 ? (
                   <div className="text-sm text-primary-500">
-                    No model usage reported yet. Send a message to start
-                    tracking usage here.
+                    还没有模型用量数据，发送消息后这里会开始统计。
                   </div>
                 ) : (
                   usage.models.map((model) => (
@@ -509,8 +508,8 @@ export function UsageDetailsModal({
                         {formatModelName(model.model)}
                       </div>
                       <div className="text-primary-600">
-                        {formatTokens(model.inputTokens)} in ·{' '}
-                        {formatTokens(model.outputTokens)} out
+                        输入 {formatTokens(model.inputTokens)} · 输出{' '}
+                        {formatTokens(model.outputTokens)}
                       </div>
                       <div className="font-semibold text-primary-900">
                         {formatCurrency(model.costUsd)}
@@ -523,13 +522,12 @@ export function UsageDetailsModal({
 
             <div className="rounded-2xl border border-primary-200 bg-white/70 p-4">
               <div className="mb-3 text-sm font-semibold text-primary-900">
-                Session history
+                会话历史
               </div>
               <div className="grid gap-2">
                 {usage.sessions.length === 0 ? (
                   <div className="text-sm text-primary-500">
-                    No sessions reported yet. Start a chat to see session
-                    history here.
+                    还没有会话数据，开始对话后这里会显示历史记录。
                   </div>
                 ) : (
                   usage.sessions.map((session) => (
@@ -546,8 +544,8 @@ export function UsageDetailsModal({
                         </div>
                       </div>
                       <div className="text-primary-600">
-                        {formatTokens(session.inputTokens)} in ·{' '}
-                        {formatTokens(session.outputTokens)} out
+                        输入 {formatTokens(session.inputTokens)} · 输出{' '}
+                        {formatTokens(session.outputTokens)}
                       </div>
                       <div className="text-xs text-primary-500">
                         {formatTimestamp(session.startedAt)} →{' '}
@@ -564,10 +562,10 @@ export function UsageDetailsModal({
 
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="text-xs text-primary-500">
-                Context usage: {Math.round(usage.contextPercent)}%
+                上下文占用：{Math.round(usage.contextPercent)}%
               </div>
               <Button size="sm" variant="outline" onClick={handleExport}>
-                Export CSV
+                导出 CSV
               </Button>
             </div>
           </div>
@@ -581,7 +579,7 @@ export function UsageDetailsModal({
 
             <div className="flex items-center justify-between gap-3">
               <div className="text-xs text-primary-500">
-                Auto-polls every 30s · Last updated{' '}
+                每 30 秒自动刷新 · 最后更新于{' '}
                 {formatTimestamp(providerUpdatedAt ?? undefined)}
               </div>
               <Button
@@ -590,7 +588,7 @@ export function UsageDetailsModal({
                 onClick={handleRefreshProvider}
                 disabled={isRefreshing}
               >
-                {isRefreshing ? 'Refreshing...' : '🔄 Refresh'}
+                {isRefreshing ? '刷新中…' : '刷新'}
               </Button>
             </div>
 
@@ -598,12 +596,10 @@ export function UsageDetailsModal({
               {providerUsage.length === 0 ? (
                 <div className="rounded-2xl border border-primary-200 bg-white/70 p-6 text-center">
                   <div className="text-sm font-medium text-primary-700">
-                    No providers connected. Add a provider in Settings to start
-                    chatting.
+                    暂无已连接的提供方，请先在设置中添加提供方再开始对话。
                   </div>
                   <div className="mt-1 text-xs text-primary-500">
-                    Open Settings -{'>'} Providers to connect Claude CLI or add
-                    an API key.
+                    打开“设置 {'>'} 提供方”连接 Claude CLI 或填写 API Key。
                   </div>
                 </div>
               ) : (
@@ -631,7 +627,7 @@ export function UsageDetailsModal({
                           ) : null}
                           {isDefault ? (
                             <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
-                              ⭐ Default
+                              默认
                             </span>
                           ) : null}
                         </div>
@@ -660,7 +656,7 @@ export function UsageDetailsModal({
                               provider.message,
                             ) ? (
                             <div className="text-[10px] text-primary-500">
-                              Details: {provider.message}
+                              详情：{provider.message}
                             </div>
                           ) : null}
                         </div>
@@ -676,7 +672,7 @@ export function UsageDetailsModal({
                                 }
                                 className="rounded-lg border border-primary-200 bg-white px-3 py-1.5 text-xs font-medium text-primary-700 transition hover:bg-primary-50"
                               >
-                                Set as Default
+                                设为默认
                               </button>
                             ) : null}
                           </div>

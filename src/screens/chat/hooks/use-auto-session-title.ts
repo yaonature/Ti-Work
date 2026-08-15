@@ -166,7 +166,7 @@ export function useAutoSessionTitle({
         }),
       })
       if (!res.ok) {
-        const message = await res.text().catch(() => 'Failed to update title')
+        const message = await res.text().catch(() => '更新标题失败')
         throw new Error(message)
       }
       return payload

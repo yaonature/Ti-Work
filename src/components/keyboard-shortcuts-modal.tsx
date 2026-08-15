@@ -11,28 +11,28 @@ const MOD = isMac ? '⌘' : 'Ctrl'
 
 const SHORTCUT_GROUPS = [
   {
-    title: 'Navigation',
+    title: '导航',
     items: [
-      { keys: [`${MOD}+K`], label: 'Open Search' },
-      { keys: [`${MOD}+P`], label: 'Quick Open File' },
-      { keys: [`${MOD}+B`], label: 'Toggle Sidebar' },
-      { keys: [`${MOD}+J`], label: 'Toggle Chat Panel' },
-      { keys: [`${MOD}+Shift+L`], label: 'Activity Log' },
-      { keys: ['Ctrl+`'], label: 'Toggle Terminal' },
-      { keys: ['?'], label: 'Keyboard Shortcuts' },
+      { keys: [`${MOD}+K`], label: '打开搜索' },
+      { keys: [`${MOD}+P`], label: '快速打开文件' },
+      { keys: [`${MOD}+B`], label: '切换侧栏' },
+      { keys: [`${MOD}+J`], label: '切换会话面板' },
+      { keys: [`${MOD}+Shift+L`], label: '活动日志' },
+      { keys: ['Ctrl+`'], label: '切换终端' },
+      { keys: ['?'], label: '快捷键面板' },
     ],
   },
   {
-    title: 'Chat',
+    title: '会话',
     items: [
-      { keys: ['Enter'], label: 'Send Message' },
-      { keys: ['Shift+Enter'], label: 'New Line' },
-      { keys: ['Escape'], label: 'Close Modal / Cancel' },
+      { keys: ['Enter'], label: '发送消息' },
+      { keys: ['Shift+Enter'], label: '插入换行' },
+      { keys: ['Escape'], label: '关闭弹窗 / 取消' },
     ],
   },
   {
-    title: 'Editor',
-    items: [{ keys: [`${MOD}+S`], label: 'Save File' }],
+    title: '编辑器',
+    items: [{ keys: [`${MOD}+S`], label: '保存文件' }],
   },
 ]
 
@@ -85,7 +85,7 @@ export function KeyboardShortcutsModal() {
         >
           {/* Backdrop */}
           <motion.div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50"
             onClick={() => setIsOpen(false)}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -94,21 +94,21 @@ export function KeyboardShortcutsModal() {
 
           {/* Modal */}
           <motion.div
-            className="relative z-10 mx-4 w-full max-w-lg overflow-hidden rounded-2xl border border-primary-200 bg-primary-50/95 shadow-2xl backdrop-blur-xl"
+            className="relative z-10 mx-4 w-full max-w-lg overflow-hidden rounded-[20px] border border-[var(--theme-border)] bg-[var(--theme-panel)] shadow-[var(--theme-shadow-3)]"
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-primary-200 px-5 py-3.5">
-              <h2 className="text-sm font-semibold text-primary-900">
-                Keyboard Shortcuts
+            <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-5 py-3.5">
+              <h2 className="text-sm font-semibold text-[var(--theme-text)]">
+                键盘快捷键
               </h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="rounded-lg p-1.5 text-primary-500 transition hover:bg-primary-100 hover:text-primary-900"
-                aria-label="Close"
+                className="rounded-lg p-1.5 text-[var(--theme-muted)] transition hover:bg-[var(--theme-hover)] hover:text-[var(--theme-text)]"
+                aria-label="关闭"
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path
@@ -125,7 +125,7 @@ export function KeyboardShortcutsModal() {
             <div className="max-h-[60vh] overflow-y-auto p-5">
               {SHORTCUT_GROUPS.map((group) => (
                 <div key={group.title} className="mb-5 last:mb-0">
-                  <h3 className="mb-2.5 text-xs font-medium uppercase tracking-wider text-primary-500">
+                  <h3 className="mb-2.5 text-xs font-medium uppercase tracking-wider text-[var(--theme-muted)]">
                     {group.title}
                   </h3>
                   <div className="space-y-1.5">
@@ -134,14 +134,14 @@ export function KeyboardShortcutsModal() {
                         key={item.label}
                         className="flex items-center justify-between rounded-lg px-2 py-1.5"
                       >
-                        <span className="text-sm text-primary-700">
+                        <span className="text-sm text-[var(--theme-text)]">
                           {item.label}
                         </span>
                         <div className="flex items-center gap-1">
                           {item.keys.map((key) => (
                             <kbd
                               key={key}
-                              className="inline-flex min-w-[24px] items-center justify-center rounded-md border border-primary-200 bg-primary-100/80 px-1.5 py-0.5 text-xs font-medium text-primary-700"
+                              className="inline-flex min-w-[24px] items-center justify-center rounded-md border border-[var(--theme-border)] bg-[var(--theme-card2)] px-1.5 py-0.5 text-xs font-medium text-[var(--theme-text)]"
                             >
                               {key}
                             </kbd>
@@ -155,16 +155,16 @@ export function KeyboardShortcutsModal() {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-primary-200 px-5 py-2.5 text-center text-xs text-primary-500">
-              Press{' '}
-              <kbd className="mx-0.5 rounded border border-primary-200 bg-primary-100/80 px-1 text-[10px] font-medium">
+            <div className="border-t border-[var(--theme-border)] px-5 py-2.5 text-center text-xs text-[var(--theme-muted)]">
+              按{' '}
+              <kbd className="mx-0.5 rounded border border-[var(--theme-border)] bg-[var(--theme-card2)] px-1 text-[10px] font-medium">
                 ?
               </kbd>{' '}
-              to toggle ·{' '}
-              <kbd className="mx-0.5 rounded border border-primary-200 bg-primary-100/80 px-1 text-[10px] font-medium">
+              可切换显示 ·{' '}
+              <kbd className="mx-0.5 rounded border border-[var(--theme-border)] bg-[var(--theme-card2)] px-1 text-[10px] font-medium">
                 Esc
               </kbd>{' '}
-              to close
+              可关闭
             </div>
           </motion.div>
         </motion.div>

@@ -92,14 +92,14 @@ export function OnboardingWizard() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-[min(520px,92vw)] min-w-[320px] overflow-hidden rounded-2xl border border-primary-200 bg-primary-50 shadow-2xl"
+            className="relative w-[min(520px,92vw)] min-w-[320px] overflow-hidden rounded-[20px] border border-[var(--theme-border)] bg-[var(--theme-panel)] shadow-[var(--theme-shadow-3)]"
           >
             {/* Subtle gradient background pattern */}
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent-500/5 via-transparent to-transparent" />
@@ -108,7 +108,7 @@ export function OnboardingWizard() {
             <button
               onClick={skip}
               className="absolute right-4 top-4 z-10 rounded-full p-2 text-primary-500 transition-colors hover:bg-primary-100 hover:text-primary-700"
-              aria-label="Skip onboarding"
+              aria-label="跳过引导"
             >
               <HugeiconsIcon icon={Cancel01Icon} className="size-5" />
             </button>
@@ -146,8 +146,8 @@ export function OnboardingWizard() {
                       >
                         {step.id === 'welcome' ? (
                           <img
-                            src="/hermes-avatar.webp"
-                            alt="Hermes"
+                            src="/ti-work-logo.svg"
+                            alt="Ti Work"
                             className="size-16 rounded-2xl"
                           />
                         ) : (
@@ -159,11 +159,11 @@ export function OnboardingWizard() {
                         )}
                       </motion.div>
 
-                      <h2 className="mb-3 text-2xl font-semibold text-primary-900">
+                      <h2 className="mb-3 text-2xl font-semibold text-[var(--theme-text)]">
                         {step.title}
                       </h2>
 
-                      <p className="mb-8 max-w-md text-base leading-relaxed text-primary-600">
+                      <p className="mb-8 max-w-md text-base leading-relaxed text-[var(--theme-muted)]">
                         {step.description}
                       </p>
                     </>
@@ -190,7 +190,7 @@ export function OnboardingWizard() {
                       index < currentStep && 'hover:bg-primary-400',
                       index > currentStep && 'cursor-not-allowed opacity-50',
                     )}
-                    aria-label={`Go to step ${index + 1}`}
+                    aria-label={`跳转到第 ${index + 1} 步`}
                   />
                 ))}
               </div>
@@ -204,10 +204,10 @@ export function OnboardingWizard() {
                   className={cn('gap-2', isFirstStep && 'invisible')}
                 >
                   <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-                  Back
+                  上一步
                 </Button>
 
-                <span className="text-sm text-primary-500">
+                <span className="text-sm text-[var(--theme-muted)]">
                   {currentStep + 1} / {totalSteps}
                 </span>
 
@@ -217,7 +217,7 @@ export function OnboardingWizard() {
                     onClick={handleComplete}
                     className="gap-2 bg-accent-500 px-6 py-2.5 text-base font-medium shadow-lg shadow-accent-500/25 ring-1 ring-accent-400/20 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30"
                   >
-                    {step.completeLabel ?? 'Get Started'}
+                    {step.completeLabel ?? '开始使用'}
                     <HugeiconsIcon icon={ArrowRight01Icon} className="size-5" />
                   </Button>
                 ) : (
@@ -227,7 +227,7 @@ export function OnboardingWizard() {
                     disabled={!canProceed}
                     className="gap-2"
                   >
-                    {step.nextLabel ?? 'Next'}
+                    {step.nextLabel ?? '下一步'}
                     <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
                   </Button>
                 )}

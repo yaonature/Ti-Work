@@ -20,8 +20,8 @@ export interface WorkflowEdge {
 export interface Workflow {
   id: string
   crewId: string
-  tasks: WorkflowTask[]
-  edges: WorkflowEdge[]
+  tasks: Array<WorkflowTask>
+  edges: Array<WorkflowEdge>
   createdAt: number
   updatedAt: number
 }

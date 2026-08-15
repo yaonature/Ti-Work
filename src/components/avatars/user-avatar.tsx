@@ -16,7 +16,7 @@ function UserAvatarComponent({
   size = 28,
   className,
   src,
-  alt = 'User avatar',
+  alt = '用户头像',
 }: AvatarProps) {
   if (src && src.trim().length > 0) {
     return (

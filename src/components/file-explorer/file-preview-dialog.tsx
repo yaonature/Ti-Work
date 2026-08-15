@@ -69,7 +69,7 @@ export default function FilePreviewDialog({
       const params = new URLSearchParams({ action: 'read', path })
       if (profileName) params.set('profile', profileName)
       const res = await fetch(`/api/files?${params.toString()}`)
-      if (!res.ok) throw new Error('Failed to read file')
+      if (!res.ok) throw new Error('读取文件失败')
       const data = (await res.json()) as {
         type: 'text' | 'image'
         content: string
@@ -119,21 +119,21 @@ export default function FilePreviewDialog({
       <DialogContent className="w-[min(900px,96vw)]">
         <div className="p-5 border-b border-primary-200 flex items-center justify-between">
           <DialogTitle className="text-base font-semibold">
-            {path || 'File'}
+            {path || '文件'}
           </DialogTitle>
           <div className="flex gap-2">
             {isTextFile(path || '') ? (
               <Button onClick={handleSave} disabled={!dirty || loading}>
-                Save
+                保存
               </Button>
             ) : null}
-            <DialogClose render={<Button variant="outline">Close</Button>} />
+            <DialogClose render={<Button variant="outline">关闭</Button>} />
           </div>
         </div>
 
         <div className="p-4">
           {loading ? (
-            <div className="text-sm text-primary-500">Loading…</div>
+            <div className="text-sm text-primary-500">加载中…</div>
           ) : error ? (
             <div className="text-sm text-red-600">{error}</div>
           ) : path && isImageFile(path) ? (
@@ -149,7 +149,7 @@ export default function FilePreviewDialog({
           ) : (
             <div className="h-[60vh]">
               <textarea
-                className="h-full w-full resize-none rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 font-mono text-xs leading-relaxed text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                className="h-full w-full resize-none rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 py-2 font-mono text-xs leading-relaxed text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:outline-none focus:ring-2 focus:ring-accent-500/30"
                 value={content}
                 onChange={(e) => {
                   setContent(e.target.value)

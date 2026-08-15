@@ -76,7 +76,7 @@ function MemoryFileList({
           <div className="flex min-w-0 items-center gap-2">
             <HugeiconsIcon icon={BrainIcon} size={20} strokeWidth={1.5} />
             <h2 className="truncate text-sm font-medium text-balance">
-              Memory Files
+              记忆文件
             </h2>
           </div>
           <div className="flex items-center gap-1">
@@ -84,7 +84,7 @@ function MemoryFileList({
               size="icon-sm"
               variant="ghost"
               onClick={onRefresh}
-              aria-label="Refresh memory files"
+              aria-label="刷新记忆文件"
             >
               <HugeiconsIcon icon={RefreshIcon} size={20} strokeWidth={1.5} />
             </Button>
@@ -92,7 +92,7 @@ function MemoryFileList({
               size="icon-sm"
               variant="ghost"
               onClick={onToggleCollapse}
-              aria-label="Collapse memory file list"
+              aria-label="收起记忆文件列表"
               className="hidden lg:inline-flex"
             >
               <HugeiconsIcon
@@ -106,8 +106,8 @@ function MemoryFileList({
         </div>
         <p className="text-xs text-primary-600 text-pretty">
           {isDemo
-            ? 'Demo mode enabled because memory API data is unavailable.'
-            : 'Browse MEMORY.md and daily notes in memory/ or memories/.'}
+            ? '当前为演示模式，因为记忆 API 数据暂不可用。'
+            : '浏览 MEMORY.md 以及 memory/ 或 memories/ 下的每日笔记。'}
         </p>
       </div>
 
@@ -115,7 +115,7 @@ function MemoryFileList({
         <ScrollAreaViewport className="px-2 py-2">
           {loading ? (
             <div className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-xs text-primary-600 text-pretty">
-              Loading memory files...
+              正在加载记忆文件...
             </div>
           ) : null}
           {error ? (
@@ -144,7 +144,7 @@ function MemoryFileList({
                 </div>
                 {groups.length === 0 ? (
                   <div className="px-2 py-1.5 text-xs text-primary-500 text-pretty">
-                    No daily memory files found.
+                    未找到每日记忆文件。
                   </div>
                 ) : (
                   groups.map(function renderGroup(group) {

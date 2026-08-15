@@ -83,7 +83,7 @@ async function apiRequest(input: string, init?: RequestInit): Promise<unknown> {
     throw new Error(
       (typeof record?.error === 'string' && record.error) ||
         (typeof record?.message === 'string' && record.message) ||
-        `Request failed with status ${response.status}`,
+        `请求失败，状态码 ${response.status}`,
     )
   }
 
@@ -91,9 +91,9 @@ async function apiRequest(input: string, init?: RequestInit): Promise<unknown> {
 }
 
 function sectionLabel(section: MemorySection): string {
-  if (section === 'workspace') return 'Workspace Memory'
-  if (section === 'project') return 'Daily Logs'
-  return 'Agent Memory'
+  if (section === 'workspace') return '工作区记忆'
+  if (section === 'project') return '每日日志'
+  return '智能体记忆'
 }
 
 function matchesFilter(section: MemorySection, filter: MemoryFilter): boolean {
@@ -106,7 +106,7 @@ function matchesFilter(section: MemorySection, filter: MemoryFilter): boolean {
 function EmptyMemorySection({ label }: { label: string }) {
   return (
     <div className="rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)]/70 px-3 py-4 text-xs text-[var(--theme-muted)]">
-      No files found in {label.toLowerCase()}.
+      未在 {label} 中找到文件。
     </div>
   )
 }
@@ -145,7 +145,7 @@ export function WorkspaceSkillsScreen() {
         throw new Error(
           'error' in payload && typeof payload.error === 'string'
             ? payload.error
-            : 'Failed to load memory files',
+            : '加载记忆文件失败',
         )
       }
 
@@ -215,18 +215,18 @@ export function WorkspaceSkillsScreen() {
   }, [memoryQuery.data?.files, selectedMemoryPath])
 
   function handleComingSoon() {
-    toast('Coming soon', { type: 'info' })
+    toast('即将推出', { type: 'info' })
   }
 
   function handleClearAll() {
-    toast('Are you sure?', { type: 'warning' })
+    toast('确定吗？', { type: 'warning' })
     const confirmed =
       typeof window === 'undefined'
         ? true
-        : window.confirm('Are you sure you want to clear all memory?')
+        : window.confirm('清除所有记忆？')
 
     if (!confirmed) return
-    toast('Cleared', { type: 'success' })
+    toast('已清除', { type: 'success' })
   }
 
   return (
@@ -239,10 +239,10 @@ export function WorkspaceSkillsScreen() {
             </div>
             <div>
               <h1 className="text-base font-semibold text-[var(--theme-text)]">
-                Skills
+                技能
               </h1>
               <p className="mt-1 text-sm text-[var(--theme-muted)]">
-                Installed skills and workspace memory sources
+                已安装的技能和工作区记忆来源
               </p>
             </div>
           </div>
@@ -254,7 +254,7 @@ export function WorkspaceSkillsScreen() {
               <div className="flex flex-col gap-3 border-b border-[var(--theme-border)] pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-[15px] font-semibold text-[var(--theme-text)]">
-                    Skills
+                    技能
                   </h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -263,14 +263,14 @@ export function WorkspaceSkillsScreen() {
                     size="sm"
                     onClick={handleComingSoon}
                   >
-                    + Install Skill
+                    + 安装技能
                   </Button>
                   <Button
                     variant="secondary"
                     size="sm"
                     onClick={handleComingSoon}
                   >
-                    Browse Skills Hub
+                    浏览技能中心
                   </Button>
                 </div>
               </div>
@@ -278,17 +278,17 @@ export function WorkspaceSkillsScreen() {
               <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
                 {skillsQuery.isPending ? (
                   <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]/70 px-4 py-5 text-sm text-[var(--theme-muted)]">
-                    Loading skills...
+                    加载技能中...
                   </div>
                 ) : skillsQuery.isError ? (
                   <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-600">
                     {skillsQuery.error instanceof Error
                       ? skillsQuery.error.message
-                      : 'Failed to load skills'}
+                      : '加载技能失败'}
                   </div>
                 ) : visibleSkills.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)]/70 px-4 py-5 text-sm text-[var(--theme-muted)]">
-                    No skills found in `~/.hermes/skills` for Hermes.
+                    在 `~/.hermes/skills` 中未找到技能。
                   </div>
                 ) : (
                   visibleSkills.map((skill) => {
@@ -330,7 +330,7 @@ export function WorkspaceSkillsScreen() {
                                   STATUS_BADGE_CLASS[skill.status],
                                 )}
                               >
-                                {skill.status}
+                                {skill.status === 'active' ? '已启用' : skill.status}
                               </span>
                             </span>
                             <span className="mt-1 block text-sm text-[var(--theme-muted)]">
@@ -364,8 +364,7 @@ export function WorkspaceSkillsScreen() {
                                   />
                                   <div className="space-y-1">
                                     <p>
-                                      Installed and ready to use in the
-                                      workspace.
+                                      已安装，可在工作区中使用。
                                     </p>
                                     <p className="break-all text-xs text-[var(--theme-muted)]">
                                       {skill.path}
@@ -376,12 +375,12 @@ export function WorkspaceSkillsScreen() {
                                   size="sm"
                                   variant="secondary"
                                   onClick={() =>
-                                    toast(`${skill.name} is installed`, {
+                                    toast(`${skill.name} 已安装`, {
                                       type: 'info',
                                     })
                                   }
                                 >
-                                  Enabled
+                                  已启用
                                 </Button>
                               </div>
                             </motion.div>
@@ -396,7 +395,7 @@ export function WorkspaceSkillsScreen() {
               {selectedSkill ? (
                 <div className="mt-4 space-y-3">
                   <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]/70 px-4 py-3 text-sm text-[var(--theme-muted)]">
-                    Selected skill:{' '}
+                    已选技能：{' '}
                     <span className="font-medium text-[var(--theme-text)]">
                       {selectedSkill.name}
                     </span>
@@ -415,14 +414,14 @@ export function WorkspaceSkillsScreen() {
                       <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
                         {skillContentQuery.error instanceof Error
                           ? skillContentQuery.error.message
-                          : 'Failed to load skill content'}
+                          : '加载技能内容失败'}
                       </div>
                     ) : (
                       <div className="max-h-96 overflow-y-auto rounded-lg border border-[var(--theme-border)] bg-white p-4 text-sm text-primary-800 prose prose-sm prose-primary max-w-none">
                         <SkillMarkdown
                           content={
                             skillContentQuery.data?.trim() ||
-                            'No content available.'
+                            '暂无可用内容。'
                           }
                         />
                       </div>
@@ -437,7 +436,7 @@ export function WorkspaceSkillsScreen() {
             <div className="flex h-full min-h-0 flex-col p-4 sm:p-5">
               <div className="flex flex-col gap-3 border-b border-[var(--theme-border)] pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-[15px] font-semibold text-[var(--theme-text)]">
-                  Memory
+                  记忆
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -445,14 +444,14 @@ export function WorkspaceSkillsScreen() {
                     size="sm"
                     onClick={handleComingSoon}
                   >
-                    Export
+                    导出
                   </Button>
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={handleClearAll}
                   >
-                    Clear All
+                    全部清除
                   </Button>
                 </div>
               </div>
@@ -468,7 +467,7 @@ export function WorkspaceSkillsScreen() {
                   <input
                     value={memorySearch}
                     onChange={(event) => setMemorySearch(event.target.value)}
-                    placeholder="Search memory..."
+                    placeholder="搜索记忆..."
                     className="w-full rounded-xl border border-[var(--theme-border)] bg-white px-10 py-2.5 text-sm text-[var(--theme-text)] outline-none transition-colors placeholder:text-[var(--theme-muted)] focus:border-accent-500/50"
                   />
                 </div>
@@ -488,7 +487,13 @@ export function WorkspaceSkillsScreen() {
                             : 'border-[var(--theme-border)] bg-white text-[var(--theme-muted)] hover:border-primary-300 hover:text-[var(--theme-text)]',
                         )}
                       >
-                        {filter}
+                        {filter === 'All'
+                          ? '全部'
+                          : filter === 'Workspace'
+                            ? '工作区'
+                            : filter === 'Project'
+                              ? '项目'
+                              : '智能体'}
                       </button>
                     )
                   })}
@@ -498,13 +503,13 @@ export function WorkspaceSkillsScreen() {
               <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pr-1">
                 {memoryQuery.isPending ? (
                   <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]/70 px-4 py-5 text-sm text-[var(--theme-muted)]">
-                    Loading memory files...
+                    加载记忆文件中...
                   </div>
                 ) : memoryQuery.isError ? (
                   <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-600">
                     {memoryQuery.error instanceof Error
                       ? memoryQuery.error.message
-                      : 'Failed to load memory files'}
+                      : '加载记忆文件失败'}
                   </div>
                 ) : (
                   <>
@@ -533,31 +538,31 @@ export function WorkspaceSkillsScreen() {
                 !memoryQuery.isError &&
                 filteredMemoryFiles.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)]/70 px-4 py-5 text-sm text-[var(--theme-muted)]">
-                    No memory files match the current filter.
+                    没有与当前筛选条件匹配的记忆文件。
                   </div>
                 ) : null}
 
                 <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]/70 p-4">
                   <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--theme-muted)]">
-                    Retention
+                    保留策略
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2">
-                      <span className="text-[var(--theme-muted)]">Workspace memory</span>
+                      <span className="text-[var(--theme-muted)]">工作区记忆</span>
                       <span className="font-medium text-[var(--theme-text)]">
-                        Permanent
+                        永久保留
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2">
-                      <span className="text-[var(--theme-muted)]">Project memory</span>
+                      <span className="text-[var(--theme-muted)]">项目记忆</span>
                       <span className="font-medium text-[var(--theme-text)]">
-                        Per-project
+                        按项目
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2">
-                      <span className="text-[var(--theme-muted)]">Agent memory</span>
+                      <span className="text-[var(--theme-muted)]">智能体记忆</span>
                       <span className="font-medium text-[var(--theme-text)]">
-                        30 day rolling
+                        30 天滚动
                       </span>
                     </div>
                   </div>

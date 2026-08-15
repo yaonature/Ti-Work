@@ -1,11 +1,12 @@
 /**
- * AgentStatusStrip — top telemetry bar for the hermes-os theme.
+ * AgentStatusStrip — top telemetry bar for the hermes-os / ti-work themes.
  *
  * Shows: brand mark | session context | active model | latency | connection status
- * Visible only when [data-theme='hermes-os'] is active (controlled via CSS).
+ * Visible only when [data-theme='hermes-os'] or [data-theme='ti-work'] is active (controlled via CSS).
  */
 import { useQuery } from '@tanstack/react-query'
 import { useRouterState } from '@tanstack/react-router'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 type ConnectionStatus = {
   status: 'connected' | 'enhanced' | 'partial' | 'disconnected'
@@ -63,17 +64,17 @@ export function AgentStatusStrip() {
   const sessionLabel = (() => {
     const m = pathname.match(/^\/chat\/(.+)$/)
     if (m) return m[1].slice(0, 12)
-    if (pathname === '/new') return 'new'
+    if (pathname === '/new') return '新建'
     return null
   })()
 
   const model = truncateModel(data?.activeModel ?? '')
   const statusLabel =
-    isLoading ? 'PROBING' :
-    data?.status === 'enhanced' ? 'ENHANCED' :
-    data?.status === 'connected' ? 'ONLINE' :
-    data?.status === 'partial' ? 'PARTIAL' :
-    'OFFLINE'
+    isLoading ? '探测中' :
+    data?.status === 'enhanced' ? '增强模式' :
+    data?.status === 'connected' ? '在线' :
+    data?.status === 'partial' ? '部分可用' :
+    '离线'
 
   return (
     <div className="agent-status-strip" aria-hidden="true">
@@ -82,8 +83,10 @@ export function AgentStatusStrip() {
         className="flex items-center gap-1.5 shrink-0 select-none"
         style={{ color: '#38bdf8', fontWeight: 600, letterSpacing: '0.12em' }}
       >
-        <span style={{ fontSize: 13, lineHeight: 1 }}>◈</span>
-        <span style={{ fontSize: 9.5 }}>HERMES OS</span>
+        <span style={{ fontSize: 13, lineHeight: 1 }}>
+          <EmojiIcon emoji="◈" size={13} />
+        </span>
+        <span style={{ fontSize: 9.5 }}>太一中枢</span>
       </span>
 
       {/* Separator */}
@@ -92,10 +95,10 @@ export function AgentStatusStrip() {
       {/* Session */}
       {sessionLabel ? (
         <span style={{ color: 'rgba(103,232,249,0.55)', fontSize: 9 }}>
-          SESSION <span style={{ color: 'rgba(103,232,249,0.85)' }}>{sessionLabel}</span>
+          会话 <span style={{ color: 'rgba(103,232,249,0.85)' }}>{sessionLabel}</span>
         </span>
       ) : (
-        <span style={{ color: 'rgba(103,232,249,0.3)', fontSize: 9 }}>NO ACTIVE SESSION</span>
+        <span style={{ color: 'rgba(103,232,249,0.3)', fontSize: 9 }}>当前无活跃会话</span>
       )}
 
       {/* Grow */}

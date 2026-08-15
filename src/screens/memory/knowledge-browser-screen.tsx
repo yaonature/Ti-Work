@@ -82,7 +82,7 @@ async function readJson<T>(url: string): Promise<T> {
   const response = await fetch(url)
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(text || `Request failed (${response.status})`)
+    throw new Error(text || `请求失败（HTTP ${response.status}）`)
   }
   return (await response.json()) as T
 }
@@ -198,7 +198,7 @@ function getNodePalette(type?: string) {
   return NODE_TYPE_PALETTE[key] ?? NODE_TYPE_PALETTE.default
 }
 
-function runForce(sim: SimNode[], edgeList: KnowledgeGraphEdge[], iters = 280) {
+function runForce(sim: Array<SimNode>, edgeList: Array<KnowledgeGraphEdge>, iters = 280) {
   const idx = new Map(sim.map((n, i) => [n.id, i]))
   const REPEL = 5000
   const ATTRACT = 0.045
@@ -255,9 +255,9 @@ function GraphCanvas({
   onSelect: (path: string) => void
 }) {
   // Compute stable force-directed positions once per nodes/edges change
-  const simNodes = useMemo<SimNode[]>(() => {
+  const simNodes = useMemo<Array<SimNode>>(() => {
     if (nodes.length === 0) return []
-    const result: SimNode[] = nodes.map((n, i) => {
+    const result: Array<SimNode> = nodes.map((n, i) => {
       const angle = (Math.PI * 2 * i) / nodes.length
       const r = Math.min(GW, GH) * 0.32
       return {
@@ -353,7 +353,7 @@ function GraphCanvas({
     } else {
       drag.current = { kind: 'pan', nodeId: null, startCx: e.clientX, startCy: e.clientY, origX: tf.tx, origY: tf.ty }
     }
-    ;(e.currentTarget as SVGSVGElement).setPointerCapture(e.pointerId)
+    ;(e.currentTarget).setPointerCapture(e.pointerId)
   }
 
   function handlePointerMove(e: React.PointerEvent<SVGSVGElement>) {
@@ -372,7 +372,7 @@ function GraphCanvas({
 
   function handlePointerUp(e: React.PointerEvent<SVGSVGElement>) {
     drag.current.kind = null
-    ;(e.currentTarget as SVGSVGElement).releasePointerCapture(e.pointerId)
+    ;(e.currentTarget).releasePointerCapture(e.pointerId)
   }
 
   const zoomBy = (f: number) => setTf((p) => ({ ...p, k: Math.max(0.25, Math.min(4, p.k * f)) }))
@@ -432,7 +432,7 @@ function GraphCanvas({
           })}
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-2 w-2 rounded-full" style={{ background: NODE_TYPE_PALETTE.default.stroke }} />
-            <span className="text-[10px]" style={{ color: 'var(--theme-muted)' }}>other</span>
+            <span className="text-[10px]" style={{ color: 'var(--theme-muted)' }}>其他</span>
           </div>
         </div>
       )}
@@ -442,7 +442,7 @@ function GraphCanvas({
         className="absolute bottom-2 right-3 z-10 text-[10px]"
         style={{ color: 'var(--theme-muted)' }}
       >
-        {simNodes.length} nodes · {edges.length} edges
+        {simNodes.length} 个节点 · {edges.length} 条边
       </div>
 
       <svg
@@ -607,7 +607,7 @@ export function KnowledgeBrowserScreen() {
     [content],
   )
   const askUrl = `/chat?message=${encodeURIComponent(
-    `Tell me about: ${page?.title || selectedPath || 'this page'}\n\nContext:\n${content.slice(0, 500)}`,
+    `请介绍一下：${page?.title || selectedPath || '此页面'}\n\n上下文：\n${content.slice(0, 500)}`,
   )}`
   const searchResults = searchQuery.data?.results ?? []
 
@@ -662,7 +662,7 @@ export function KnowledgeBrowserScreen() {
               <input
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search knowledge"
+                placeholder="搜索知识库"
                 className="w-full rounded-xl py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-accent-500"
                 style={{
                   border: '1px solid var(--theme-border)',
@@ -678,8 +678,8 @@ export function KnowledgeBrowserScreen() {
             style={{ border: '1px solid var(--theme-border)' }}
           >
             {([
-              { key: 'browse', label: 'Pages', icon: File01Icon },
-              { key: 'graph', label: 'Graph', icon: Link01Icon },
+              { key: 'browse', label: '页面', icon: File01Icon },
+              { key: 'graph', label: '图谱', icon: Link01Icon },
             ] as const).map(({ key, label, icon }) => (
               <button
                 key={key}
@@ -708,7 +708,7 @@ export function KnowledgeBrowserScreen() {
             onClick={() => setMobileTreeOpen((value) => !value)}
           >
             <span className="text-xs font-semibold uppercase tracking-wide text-[var(--theme-muted)] ">
-              Knowledge Pages ({filteredPages.length})
+              知识页面（{filteredPages.length}）
             </span>
             <span className="text-[var(--theme-muted)]  md:hidden">
               <HugeiconsIcon
@@ -726,13 +726,13 @@ export function KnowledgeBrowserScreen() {
           ) : searchTerm ? (
             <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
               <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--theme-muted)] ">
-                Search Results
+                搜索结果
               </div>
               <div className="space-y-1">
                 {searchQuery.isLoading ? (
-                  <StateBox label="Searching knowledge..." />
+                  <StateBox label="正在搜索知识库..." />
                 ) : searchResults.length === 0 ? (
-                  <StateBox label="No matches found" />
+                  <StateBox label="没有匹配的结果" />
                 ) : (
                   searchResults.map((result, index) => (
                     <button
@@ -777,11 +777,11 @@ export function KnowledgeBrowserScreen() {
               <div className="space-y-3 overflow-y-auto pr-1 md:h-full">
                 <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)] p-2  ">
                   <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--theme-muted)] ">
-                    Tags
+                    标签
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     <TagPill
-                      label="All"
+                      label="全部"
                       count={pages.length}
                       active={selectedTag == null}
                       onClick={() => setSelectedTag(null)}
@@ -800,15 +800,15 @@ export function KnowledgeBrowserScreen() {
 
                 <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)] p-1  ">
                   {listQuery.isLoading ? (
-                    <StateBox label="Loading knowledge pages..." />
+                    <StateBox label="正在加载知识页面..." />
                   ) : listQuery.error instanceof Error ? (
                     <StateBox label={listQuery.error.message} error />
                   ) : filteredPages.length === 0 ? (
                     <StateBox
                       label={
                         selectedTag
-                          ? 'No pages match this tag'
-                          : 'No markdown pages found'
+                          ? '没有符合该标签的页面'
+                          : '未找到 Markdown 页面'
                       }
                     />
                   ) : (
@@ -827,11 +827,11 @@ export function KnowledgeBrowserScreen() {
         <section className={cn('min-h-0 rounded-2xl', view === 'graph' ? 'flex flex-col' : 'border border-[var(--theme-border)] bg-[var(--theme-bg)]  ')}>
           {view === 'graph' ? (
             graphQuery.isLoading ? (
-              <StateBox label="Loading graph..." />
+              <StateBox label="正在加载图谱..." />
             ) : graphQuery.error instanceof Error ? (
               <StateBox label={graphQuery.error.message} error />
             ) : (graphQuery.data?.nodes?.length ?? 0) === 0 ? (
-              <StateBox label="No graph data yet — add [[wikilinks]] to your knowledge pages" />
+              <StateBox label="暂无图谱数据 — 请在知识页面中添加 [[wikilinks]]" />
             ) : (
               <GraphCanvas
                 nodes={graphQuery.data?.nodes ?? []}
@@ -847,7 +847,7 @@ export function KnowledgeBrowserScreen() {
           {view === 'browse' ? <><div className="flex items-center justify-between border-b border-[var(--theme-border)] px-3 py-2 ">
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold text-[var(--theme-text)] ">
-                {page?.title || selectedPath || 'Select a page'}
+                {page?.title || selectedPath || '选择一个页面'}
               </div>
               {page ? (
                 <div className="text-xs text-[var(--theme-muted)] ">
@@ -866,26 +866,26 @@ export function KnowledgeBrowserScreen() {
                   size={14}
                   strokeWidth={1.7}
                 />
-                Ask agent about this
+                向智能体询问此内容
               </a>
             ) : null}
           </div>
 
           <div className="h-full overflow-auto p-2 md:p-3">
             {listQuery.isLoading ? (
-              <StateBox label="Loading knowledge base..." />
+              <StateBox label="正在加载知识库..." />
             ) : listQuery.error instanceof Error ? (
               <StateBox label={listQuery.error.message} error />
             ) : !knowledgeExists ? (
               <EmptyKnowledgeState knowledgeRoot={knowledgeRoot} />
             ) : !selectedPath ? (
-              <StateBox label="Select a page to start browsing" />
+              <StateBox label="选择一个页面开始浏览" />
             ) : readQuery.isLoading ? (
-              <StateBox label="Loading page..." />
+              <StateBox label="正在加载页面..." />
             ) : readQuery.error instanceof Error ? (
               <StateBox label={readQuery.error.message} error />
             ) : !page ? (
-              <StateBox label="Page not found" error />
+              <StateBox label="页面不存在" error />
             ) : (
               <div
                 className="rounded-xl"
@@ -899,7 +899,7 @@ export function KnowledgeBrowserScreen() {
                     {focusedResult && focusedResult.path === page.path ? (
                       <div className="rounded-xl border border-yellow-300/40 bg-yellow-300/10 px-3 py-2 text-sm text-[var(--theme-text)] dark:text-yellow-50">
                         <div className="font-medium">
-                          Search hit at line {focusLine}
+                          第 {focusLine} 行的搜索结果
                         </div>
                         <div className="mt-1 text-xs opacity-80">
                           {focusedResult.text}
@@ -963,11 +963,11 @@ export function KnowledgeBrowserScreen() {
                           size={16}
                           strokeWidth={1.7}
                         />
-                        Backlinks
+                        反向链接
                       </div>
                       {backlinks.length === 0 ? (
                         <div className="text-sm text-[var(--theme-muted)] ">
-                          No pages link here yet.
+                          暂无页面链接到此。
                         </div>
                       ) : (
                         <div className="flex flex-wrap gap-2">
@@ -991,26 +991,26 @@ export function KnowledgeBrowserScreen() {
                   </div>
 
                   <aside className="space-y-3">
-                    <MetadataCard label="Type" value={page.type} />
-                    <MetadataCard label="Domain" value={page.domain} />
-                    <MetadataCard label="Status" value={page.status} />
+                    <MetadataCard label="类型" value={page.type} />
+                    <MetadataCard label="领域" value={page.domain} />
+                    <MetadataCard label="状态" value={page.status} />
                     <MetadataCard
-                      label="Created"
+                      label="创建时间"
                       value={formatDate(page.created)}
                     />
                     <MetadataCard
-                      label="Updated"
+                      label="更新时间"
                       value={formatDate(page.updated || page.modified)}
                     />
-                    <MetadataCard label="Size" value={formatBytes(page.size)} />
+                    <MetadataCard label="大小" value={formatBytes(page.size)} />
                     <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]/70 p-3  ">
                       <div className="text-xs font-semibold uppercase tracking-wide text-[var(--theme-muted)] ">
-                        Tags
+                        标签
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {page.tags.length === 0 ? (
                           <span className="text-sm text-[var(--theme-muted)] ">
-                            No tags
+                            无标签
                           </span>
                         ) : (
                           page.tags.map((tag) => (
@@ -1033,11 +1033,11 @@ export function KnowledgeBrowserScreen() {
                           size={14}
                           strokeWidth={1.7}
                         />
-                        Wikilinks
+                        Wiki 链接
                       </div>
                       {page.wikilinks.length === 0 ? (
                         <div className="text-sm text-[var(--theme-muted)] ">
-                          No outbound links
+                          无链接
                         </div>
                       ) : (
                         <div className="flex flex-wrap gap-2">
@@ -1197,10 +1197,10 @@ function EmptyKnowledgeState({ knowledgeRoot }: { knowledgeRoot: string }) {
   return (
     <div className="flex min-h-32 flex-col justify-center rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-5 text-sm text-[var(--theme-muted)]   ">
       <div className="text-base font-semibold text-[var(--theme-text)] ">
-        No knowledge base found
+        未找到知识库
       </div>
       <p className="mt-2 text-pretty">
-        Create markdown files in <code>{knowledgeRoot}</code> to get started.
+        在 <code>{knowledgeRoot}</code> 中创建 Markdown 文件即可开始使用。
       </p>
       <a
         href="https://karpathy.ai/"
@@ -1209,7 +1209,7 @@ function EmptyKnowledgeState({ knowledgeRoot }: { knowledgeRoot: string }) {
         className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-[var(--theme-text)] underline decoration-primary-300 underline-offset-4 hover:decoration-primary-500 "
       >
         <HugeiconsIcon icon={Link01Icon} size={14} strokeWidth={1.7} />
-        See the Karpathy LLM wiki pattern
+        了解 Karpathy LLM wiki 模式
       </a>
     </div>
   )

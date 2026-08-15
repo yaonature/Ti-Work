@@ -4,23 +4,24 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { EmojiIcon } from '@/components/emoji-icon'
 import {
   ArrowLeft01Icon,
   BarChartIcon,
   Copy01Icon,
+  DashboardSpeed01Icon,
   Delete01Icon,
   MessageMultiple01Icon,
   PlayIcon,
   Share01Icon,
   UserMultiple02Icon,
-  DashboardSpeed01Icon,
 } from '@hugeicons/core-free-icons'
 import { DispatchDialog } from './components/dispatch-dialog'
 import { WorkflowBuilder } from './components/workflow-builder'
 import { CostPanel } from './components/cost-panel'
-import { Tabs, TabsList, TabsTab, TabsPanel } from '@/components/ui/tabs'
-import { AgentGrid } from '@/screens/operations/components/agent-grid'
 import type { Crew, CrewMember, CrewMemberStatus } from '@/lib/crews-api'
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
+import { AgentGrid } from '@/screens/operations/components/agent-grid'
 import { fetchOperationsOverview } from '@/lib/operations-api'
 import {
   cloneCrew,
@@ -56,10 +57,10 @@ const STATUS_INDICATOR: Record<
   CrewMemberStatus,
   { dot: string; label: string; pulse: boolean }
 > = {
-  idle: { dot: 'bg-[var(--theme-muted)]', label: 'Idle', pulse: false },
-  running: { dot: 'bg-[var(--theme-success)]', label: 'Running', pulse: true },
-  done: { dot: 'bg-[var(--theme-accent)]', label: 'Done', pulse: false },
-  error: { dot: 'bg-[var(--theme-danger)]', label: 'Error', pulse: false },
+  idle: { dot: 'bg-[var(--theme-muted)]', label: '空闲', pulse: false },
+  running: { dot: 'bg-[var(--theme-success)]', label: '运行中', pulse: true },
+  done: { dot: 'bg-[var(--theme-accent)]', label: '已完成', pulse: false },
+  error: { dot: 'bg-[var(--theme-danger)]', label: '错误', pulse: false },
 }
 
 function MemberCard({ member }: { member: CrewMember }) {
@@ -99,8 +100,9 @@ function MemberCard({ member }: { member: CrewMember }) {
       )}
 
       {member.profileName && (
-        <p className="mb-2 text-[10px] text-[var(--theme-muted)]">
-          📁 {member.profileName} workspace
+        <p className="mb-2 text-[10px] text-[var(--theme-muted)] inline-flex items-center gap-1">
+          <EmojiIcon emoji="📁" size={14} />
+          {member.profileName} 工作区
         </p>
       )}
       <Link
@@ -109,7 +111,7 @@ function MemberCard({ member }: { member: CrewMember }) {
         className="flex items-center gap-1.5 text-xs text-[var(--theme-accent)] hover:underline"
       >
         <HugeiconsIcon icon={MessageMultiple01Icon} size={12} />
-        Open chat
+        打开会话
       </Link>
     </div>
   )
@@ -117,7 +119,7 @@ function MemberCard({ member }: { member: CrewMember }) {
 
 // ─── Activity feed ────────────────────────────────────────────────────────────
 
-function ActivityFeed({ entries }: { entries: ActivityEntry[] }) {
+function ActivityFeed({ entries }: { entries: Array<ActivityEntry> }) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -127,7 +129,7 @@ function ActivityFeed({ entries }: { entries: ActivityEntry[] }) {
   if (entries.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center text-xs text-[var(--theme-muted)]">
-        No activity yet — dispatch a task to get started.
+        暂无活动——派发一个任务开始吧。
       </div>
     )
   }
@@ -156,7 +158,19 @@ function ActivityFeed({ entries }: { entries: ActivityEntry[] }) {
               })}
             </p>
             <p className="text-xs text-[var(--theme-text)] break-words">
-              {entry.text}
+              {(() => {
+                const firstChar = Array.from(entry.text)[0] ?? ''
+                // eslint-disable-next-line no-misleading-character-class
+                if (/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{25A0}-\u{25FF}]/u.test(firstChar)) {
+                  return (
+                    <span className="inline-flex items-center gap-1">
+                      <EmojiIcon emoji={firstChar} size={12} />
+                      {entry.text.slice(firstChar.length).trimStart()}
+                    </span>
+                  )
+                }
+                return entry.text
+              })()}
             </p>
           </div>
         </div>
@@ -175,7 +189,7 @@ export function CrewDetailScreen() {
 
   const [activeTab, setActiveTab] = useState<'overview' | 'workflow' | 'usage' | 'operations'>('overview')
   const [dispatchOpen, setDispatchOpen] = useState(false)
-  const [activity, setActivity] = useState<ActivityEntry[]>([])
+  const [activity, setActivity] = useState<Array<ActivityEntry>>([])
   const [liveMembers, setLiveMembers] = useState<
     Record<string, CrewMemberStatus>
   >({})
@@ -203,20 +217,20 @@ export function CrewDetailScreen() {
     mutationFn: () => deleteCrew(crewId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['crews'] })
-      toast('Crew deleted')
+      toast('多智能体已删除')
       void navigate({ to: '/crews' })
     },
-    onError: () => toast('Failed to delete crew', { type: 'error' }),
+    onError: () => toast('删除多智能体失败', { type: 'error' }),
   })
 
   const cloneMutation = useMutation({
     mutationFn: () => cloneCrew(crewId),
     onSuccess: (cloned) => {
       void queryClient.invalidateQueries({ queryKey: ['crews'] })
-      toast(`Cloned as "${cloned.name}"`)
+      toast(`已复制为"${cloned.name}"`)
       void navigate({ to: '/crews/$crewId', params: { crewId: cloned.id } })
     },
-    onError: (err) => toast(err instanceof Error ? err.message : 'Failed to clone crew', { type: 'error' }),
+    onError: (err) => toast(err instanceof Error ? err.message : '复制多智能体失败', { type: 'error' }),
   })
 
   const dispatchMutation = useMutation({
@@ -224,7 +238,7 @@ export function CrewDetailScreen() {
       dispatchTask(crewId, task, target),
     onSuccess: ({ dispatched }) => {
       setDispatchOpen(false)
-      toast(`Task dispatched to ${dispatched.length} agent${dispatched.length !== 1 ? 's' : ''}`)
+      toast(`已向 ${dispatched.length} 个智能体派发任务`)
       // Optimistically set targeted members to running
       setLiveMembers((prev) => {
         const next = { ...prev }
@@ -233,7 +247,7 @@ export function CrewDetailScreen() {
       })
     },
     onError: (err) =>
-      toast(err instanceof Error ? err.message : 'Dispatch failed', {
+      toast(err instanceof Error ? err.message : '派发失败', {
         type: 'error',
       }),
   })
@@ -297,13 +311,13 @@ export function CrewDetailScreen() {
 
         let text = ''
         if (kind === 'tool') {
-          text = `🔧 ${typeof payload.name === 'string' ? payload.name : 'tool'}`
+          text = `🔧 ${typeof payload.name === 'string' ? payload.name : '工具'}`
           if (typeof payload.phase === 'string') text += ` (${payload.phase})`
         } else if (kind === 'error') {
           text =
             typeof payload.message === 'string'
               ? payload.message
-              : 'An error occurred'
+              : '发生错误'
         } else {
           text = typeof payload.text === 'string' ? payload.text : ''
         }
@@ -369,12 +383,12 @@ export function CrewDetailScreen() {
     return () => {
       es.close()
     }
-  }, [crew, crewId, addActivity]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [crew, crewId, addActivity])
 
   if (crewQuery.isLoading) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-[var(--theme-muted)]">
-        Loading crew…
+        加载多智能体中…
       </div>
     )
   }
@@ -382,19 +396,19 @@ export function CrewDetailScreen() {
   if (!crew) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-sm text-[var(--theme-muted)]">Crew not found.</p>
+        <p className="text-sm text-[var(--theme-muted)]">未找到该多智能体。</p>
         <Link
           to="/crews"
           className="text-xs text-[var(--theme-accent)] hover:underline"
         >
-          ← Back to crews
+          ← 返回多智能体
         </Link>
       </div>
     )
   }
 
   // Merge live status with persisted status
-  const displayMembers: CrewMember[] = crew.members.map((m) => ({
+  const displayMembers: Array<CrewMember> = crew.members.map((m) => ({
     ...m,
     status: liveMembers[m.sessionKey] ?? m.status,
   }))
@@ -425,7 +439,7 @@ export function CrewDetailScreen() {
           </h1>
           {runningCount > 0 && (
             <span className="shrink-0 rounded-full bg-[var(--theme-success)]/20 px-2 py-0.5 text-[10px] font-medium text-[var(--theme-success)]">
-              {runningCount} running
+              {runningCount} 个运行中
             </span>
           )}
         </div>
@@ -436,19 +450,19 @@ export function CrewDetailScreen() {
             className="flex items-center gap-1.5 rounded-lg bg-[var(--theme-accent)] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
           >
             <HugeiconsIcon icon={PlayIcon} size={13} />
-            Dispatch Task
+            派发任务
           </button>
           <button
             onClick={() => cloneMutation.mutate()}
             disabled={cloneMutation.isPending}
-            title="Clone crew"
+            title="复制多智能体"
             className="rounded-lg p-1.5 text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-hover)] hover:text-[var(--theme-text)] disabled:opacity-40"
           >
             <HugeiconsIcon icon={Copy01Icon} size={16} />
           </button>
           <button
             onClick={() => deleteMutation.mutate()}
-            title="Delete crew"
+            title="删除多智能体"
             className="rounded-lg p-1.5 text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-hover)] hover:text-[var(--theme-danger)]"
           >
             <HugeiconsIcon icon={Delete01Icon} size={16} />
@@ -462,19 +476,19 @@ export function CrewDetailScreen() {
           <TabsList variant="underline">
             <TabsTab value="overview">
               <HugeiconsIcon icon={UserMultiple02Icon} size={13} strokeWidth={1.7} />
-              Overview
+              概览
             </TabsTab>
             <TabsTab value="workflow">
               <HugeiconsIcon icon={Share01Icon} size={13} strokeWidth={1.7} />
-              Workflow
+              工作流
             </TabsTab>
             <TabsTab value="usage">
               <HugeiconsIcon icon={BarChartIcon} size={13} strokeWidth={1.7} />
-              Usage
+              用量
             </TabsTab>
             <TabsTab value="operations">
               <HugeiconsIcon icon={DashboardSpeed01Icon} size={13} strokeWidth={1.7} />
-              Operations
+              运维
             </TabsTab>
           </TabsList>
         </Tabs>
@@ -488,7 +502,7 @@ export function CrewDetailScreen() {
             {crew.goal && (
               <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)] p-4">
                 <p className="mb-1 text-xs font-medium text-[var(--theme-muted)]">
-                  Goal
+                  目标
                 </p>
                 <p className="text-sm text-[var(--theme-text)]">{crew.goal}</p>
               </div>
@@ -497,7 +511,7 @@ export function CrewDetailScreen() {
             {/* Agent grid */}
             <div>
               <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--theme-muted)]">
-                Agents ({crew.members.length})
+                智能体（{crew.members.length}）
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {displayMembers.map((member) => (
@@ -509,7 +523,7 @@ export function CrewDetailScreen() {
             {/* Activity feed */}
             <div>
               <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--theme-muted)]">
-                Live Activity
+                实时活动
               </h2>
               <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)] p-4">
                 <ActivityFeed entries={activity} />
@@ -536,7 +550,7 @@ export function CrewDetailScreen() {
               className="mb-4 text-xs font-medium uppercase tracking-wider"
               style={{ color: 'var(--theme-muted)' }}
             >
-              Active Agents
+              运行中的智能体
             </h2>
             <AgentGrid
               agents={(operationsQuery.data ?? []).filter(

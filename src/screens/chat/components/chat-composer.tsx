@@ -10,6 +10,7 @@ import {
   StopIcon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   memo,
@@ -147,8 +148,9 @@ type HermesProviderOption = {
 
 type HermesAvailableModelsResponse = {
   provider: string
-  models: Array<{ id: string; description: string }>
+  models: Array<{ id: string; name?: string; description: string }>
   providers: Array<HermesProviderOption>
+  fallback?: boolean
 }
 
 async function fetchModels(): Promise<{
@@ -158,6 +160,7 @@ async function fetchModels(): Promise<{
   currentProvider?: string
   providerLabels?: Record<string, string>
   providers?: Array<HermesProviderOption>
+  fallback?: boolean
 }> {
   // Prefer Hermes' current provider models; fetch other providers lazily if needed.
   try {
@@ -177,7 +180,7 @@ async function fetchModels(): Promise<{
       const currentProvider = readModelText(richData.provider)
       let models = (richData.models || []).map((model) => ({
         id: model.id,
-        name: model.id,
+        name: model.name || model.description || model.id,
         provider:
           ((model as Record<string, unknown>).provider as string) ||
           currentProvider ||
@@ -235,6 +238,7 @@ async function fetchModels(): Promise<{
         currentProvider,
         providerLabels,
         providers: authenticatedProviders,
+        fallback: richData.fallback === true,
       }
     }
   } catch {
@@ -681,7 +685,7 @@ async function readResponseError(response: Response): Promise<string> {
     return JSON.stringify(payload)
   } catch {
     const text = await response.text().catch(() => '')
-    return text || response.statusText || 'Request failed'
+    return text || response.statusText || '请求失败'
   }
 }
 
@@ -699,7 +703,7 @@ async function fetchCurrentModelFromStatus(): Promise<string> {
 
     const payload = (await response.json()) as SessionStatusApiResponse
     if (payload.ok === false) {
-      throw new Error(readText(payload.error) || 'Server unavailable')
+      throw new Error(readText(payload.error) || '服务器不可用')
     }
 
     return readModelFromStatusPayload(payload.payload ?? payload)
@@ -708,7 +712,7 @@ async function fetchCurrentModelFromStatus(): Promise<string> {
       (error instanceof DOMException && error.name === 'AbortError') ||
       (error instanceof Error && error.name === 'AbortError')
     ) {
-      throw new Error('Request timed out')
+      throw new Error('请求超时')
     }
     throw error
   } finally {
@@ -879,7 +883,7 @@ function ChatComposerComponent({
         provider && model ? `${provider}/${model}` : model || variables.model
       setModelNotice({
         tone: 'success',
-        message: `Model switched to ${resolvedModel}`,
+        message: `已切换到模型 ${resolvedModel}`,
       })
       setIsModelMenuOpen(false)
       void currentModelQuery.refetch()
@@ -889,7 +893,7 @@ function ChatComposerComponent({
       if (isTimeoutErrorMessage(message)) {
         setModelNotice({
           tone: 'error',
-          message: 'Request timed out',
+          message: '请求超时',
           retryModel: variables.model,
           retryProvider: variables.provider,
         })
@@ -897,7 +901,7 @@ function ChatComposerComponent({
       }
       setModelNotice({
         tone: 'error',
-        message: message || 'Failed to switch model',
+        message: message || '切换模型失败',
         retryModel: variables.model,
         retryProvider: variables.provider,
       })
@@ -972,6 +976,9 @@ function ChatComposerComponent({
   }, [modelsQuery.data])
   const modelButtonLabel =
     currentSelectedModel || currentModel || configuredModel || '⚕ Hermes Agent'
+  const modelButtonText = modelButtonLabel.startsWith('⚕')
+    ? modelButtonLabel.slice(2)
+    : modelButtonLabel
 
   // Measure composer height and set CSS variable for scroll padding
   useLayoutEffect(() => {
@@ -1193,7 +1200,7 @@ function ChatComposerComponent({
 
             if (file.size > MAX_ATTACHMENT_FILE_SIZE) {
               toast(
-                `“${file.name || 'file'}” is ${formatFileSize(file.size)}. Max upload input size is ${formatFileSize(MAX_ATTACHMENT_FILE_SIZE)}.`,
+                `“${file.name || '文件'}”大小为 ${formatFileSize(file.size)}。最大上传输入大小为 ${formatFileSize(MAX_ATTACHMENT_FILE_SIZE)}。`,
                 { type: 'warning' },
               )
               return null
@@ -1236,7 +1243,7 @@ function ChatComposerComponent({
             const transportBytes = estimateDataUrlBytes(dataUrl)
             if (transportBytes > MAX_TRANSPORT_IMAGE_SIZE) {
               toast(
-                `Image compressed to ${(transportBytes / (1024 * 1024)).toFixed(2)}mb — still over the 1mb limit. Try a smaller screenshot.`,
+                `图片已压缩至 ${(transportBytes / (1024 * 1024)).toFixed(2)}mb — 仍超过 1mb 限制。请尝试更小的截图。`,
                 { type: 'warning' },
               )
               return null
@@ -1275,8 +1282,8 @@ function ChatComposerComponent({
       if (skippedCount > 0) {
         toast(
           skippedCount === 1
-            ? '1 file could not be attached.'
-            : `${skippedCount} files could not be attached.`,
+            ? '1 个文件无法附加。'
+            : `${skippedCount} 个文件无法附加。`,
           { type: 'warning' },
         )
       }
@@ -1436,8 +1443,8 @@ function ChatComposerComponent({
 
   const hasDraft = value.trim().length > 0 || attachments.length > 0
   const promptPlaceholder = isMobileViewport
-    ? 'Message...'
-    : 'Ask anything... (↵ to send · ⇧↵ new line · ⌘⇧M switch model)'
+    ? '输入消息…'
+    : '想聊什么都可以…（↵ 发送 · ⇧↵ 换行 · ⌘⇧M 切换模型）'
   const slashCommandQuery = useMemo(() => readSlashCommandQuery(value), [value])
   const isSlashMenuOpen =
     slashCommandQuery !== null && !disabled && !isSlashMenuDismissed
@@ -1488,7 +1495,7 @@ function ChatComposerComponent({
           ])
           // Auto-add duration caption to message
           setValue((prev) => {
-            const caption = `🎤 Voice note (${secs}s)`
+            const caption = `🎤 语音笔记（${secs}秒）`
             const next =
               prev.trim().length > 0 ? `${prev}\n${caption}` : caption
             persistDraft(next)
@@ -1831,7 +1838,7 @@ function ChatComposerComponent({
 
         {isDraggingOver ? (
           <div className="pointer-events-none absolute inset-1 z-20 flex items-center justify-center rounded-[18px] border-2 border-dashed border-[var(--theme-accent)] bg-[var(--theme-panel)] text-sm font-medium text-[var(--theme-text)]">
-            Drop files to attach
+            拖放文件以附加
           </div>
         ) : null}
 
@@ -1858,26 +1865,28 @@ function ChatComposerComponent({
                         onClick={() =>
                           setPreviewImage({
                             url: attachment.previewUrl || '',
-                            name: attachment.name || 'Attached image',
+                            name: attachment.name || '附加的图片',
                           })
                         }
-                        aria-label={`Preview ${attachment.name || 'image'}`}
+                        aria-label={`预览 ${attachment.name || '图片'}`}
                       >
                         <img
                           src={attachment.previewUrl}
-                          alt={attachment.name || 'Attached image'}
+                          alt={attachment.name || '附加的图片'}
                           className="h-full w-full object-cover"
                         />
                       </button>
                     ) : (
                       <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm text-[var(--theme-text)]">
-                        <span className="mr-1">📄</span>
+                        <span className="mr-1 inline-flex items-center">
+                          <EmojiIcon emoji="📄" size={14} />
+                        </span>
                         <span className="truncate">{attachment.name}</span>
                       </div>
                     )}
                     <button
                       type="button"
-                      aria-label="Remove attachment"
+                      aria-label="移除附件"
                       onClick={(event) => {
                         event.preventDefault()
                         event.stopPropagation()
@@ -1911,7 +1920,7 @@ function ChatComposerComponent({
               {/* + button — opens bottom sheet actions menu */}
               <button
                 type="button"
-                aria-label="Actions"
+                aria-label="操作"
                 disabled={disabled}
                 onClick={(event) => {
                   event.stopPropagation()
@@ -1952,7 +1961,7 @@ function ChatComposerComponent({
                   <button
                     type="button"
                     onClick={handleAbort}
-                    aria-label="Stop generation"
+                    aria-label="停止生成"
                     className="size-9 rounded-full bg-red-500 flex items-center justify-center text-white transition-all duration-150"
                   >
                     <HugeiconsIcon icon={StopIcon} size={18} strokeWidth={2} />
@@ -1964,7 +1973,7 @@ function ChatComposerComponent({
                     type="button"
                     onClick={handleSubmit}
                     disabled={submitDisabled}
-                    aria-label="Send message"
+                    aria-label="发送消息"
                     className="size-9 rounded-full bg-accent-500 flex items-center justify-center text-white transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                   >
                     <HugeiconsIcon
@@ -1990,10 +1999,10 @@ function ChatComposerComponent({
                     onPointerLeave={handleMicPointerUp}
                     aria-label={
                       voiceRecorder.isRecording
-                        ? 'Recording voice note'
+                        ? '正在录制语音'
                         : voiceInput.isListening
-                          ? 'Stop listening'
-                          : 'Voice input'
+                          ? '停止聆听'
+                          : '语音输入'
                     }
                     disabled={disabled}
                     className={cn(
@@ -2022,7 +2031,7 @@ function ChatComposerComponent({
                     type="button"
                     onClick={handleSubmit}
                     disabled={submitDisabled}
-                    aria-label="Send message"
+                    aria-label="发送消息"
                     className="size-9 rounded-full bg-accent-500 flex items-center justify-center text-white transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <HugeiconsIcon
@@ -2040,7 +2049,7 @@ function ChatComposerComponent({
                   <>
                     <button
                       type="button"
-                      aria-label="Close actions"
+                      aria-label="关闭操作面板"
                       className="fixed inset-0 z-[199] bg-black/30"
                       onClick={() => {
                         setIsMobileActionsMenuOpen(false)
@@ -2050,12 +2059,12 @@ function ChatComposerComponent({
                     <div
                       className="fixed bottom-0 left-0 right-0 z-[200] rounded-t-2xl bg-[var(--theme-card)] shadow-2xl pb-safe  animate-in slide-in-from-bottom-10 duration-200"
                       role="dialog"
-                      aria-label="Actions"
+                      aria-label="操作"
                       onClick={(event) => event.stopPropagation()}
                     >
                       <div className="mx-auto mt-3 mb-4 h-1 w-10 rounded-full bg-[var(--theme-border)]" />
                       <div className="px-4 pb-2 text-sm font-semibold text-neutral-500 dark:text-neutral-400">
-                        Actions
+                        操作
                       </div>
                       <div className="grid grid-cols-2 gap-2 px-4 pb-4">
                         {/* Attach File — keep sheet open so iOS picker can layer on top */}
@@ -2076,7 +2085,7 @@ function ChatComposerComponent({
                             />
                           </span>
                           <span className="text-sm font-medium text-neutral-800 dark:text-neutral-100">
-                            Attach File
+                            附加文件
                           </span>
                         </button>
 
@@ -2100,8 +2109,11 @@ function ChatComposerComponent({
                               strokeWidth={1.5}
                             />
                           </span>
-                          <span className="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate max-w-full">
-                            {modelButtonLabel}
+                          <span className="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate max-w-full inline-flex items-center gap-1">
+                            {modelButtonLabel.startsWith('⚕') && (
+                              <EmojiIcon emoji="⚕" size={14} />
+                            )}
+                            {modelButtonText}
                           </span>
                         </button>
 
@@ -2122,7 +2134,7 @@ function ChatComposerComponent({
                               />
                             </span>
                             <span className="text-sm font-medium text-neutral-800 dark:text-neutral-100">
-                              Clear Draft
+                              清空草稿
                             </span>
                           </button>
                         ) : null}
@@ -2144,7 +2156,7 @@ function ChatComposerComponent({
                               />
                             </span>
                             <span className="text-sm font-medium text-neutral-800 dark:text-neutral-100">
-                              New Session
+                              新建会话
                             </span>
                           </button>
                         ) : null}
@@ -2161,14 +2173,14 @@ function ChatComposerComponent({
                   <>
                     <button
                       type="button"
-                      aria-label="Close model picker"
+                      aria-label="关闭模型选择器"
                       className="fixed inset-0 z-[209] bg-black/30"
                       onClick={() => setIsModelMenuOpen(false)}
                     />
                     <div
                       className="fixed bottom-0 left-0 right-0 z-[210] rounded-t-2xl bg-[var(--theme-card)] shadow-2xl pb-safe  animate-in slide-in-from-bottom-10 duration-200"
                       role="dialog"
-                      aria-label="Select model"
+                      aria-label="选择模型"
                       onClick={(event) => event.stopPropagation()}
                     >
                       <div className="mx-auto mt-3 mb-4 h-1 w-10 rounded-full bg-[var(--theme-border)]" />
@@ -2180,14 +2192,20 @@ function ChatComposerComponent({
                           const allModels = modelsQuery.data?.models ?? []
                           const defaultProvider =
                             modelsQuery.data?.currentProvider ?? ''
+                          const gatewayOfflineFallback =
+                            modelsQuery.data?.fallback === true
                           if (allModels.length === 0) {
                             return (
                               <div className="p-4 text-center text-sm text-neutral-500">
                                 <p className="font-medium text-[var(--theme-text)] dark:text-[var(--theme-muted)] mb-1">
-                                  No models available
+                                  {gatewayOfflineFallback
+                                    ? '未检测到已配置的模型服务商'
+                                    : '没有可用模型'}
                                 </p>
                                 <p className="text-xs">
-                                  Check your Hermes provider configuration.
+                                  {gatewayOfflineFallback
+                                    ? '请先配置 API Key 后重试。'
+                                    : '请检查你的 Hermes 服务提供方配置。'}
                                 </p>
                               </div>
                             )
@@ -2269,8 +2287,8 @@ function ChatComposerComponent({
                                   </span>
                                   {entry.isLocal && (
                                     <span className="text-[10px] text-neutral-400 px-1.5 py-0.5 rounded-full bg-[var(--theme-panel)] ">
-                                      local
-                                    </span>
+                                      本地
+                                      </span>
                                   )}
                                   {isActive && (
                                     <span className="size-1.5 rounded-full bg-accent-500 shrink-0" />
@@ -2289,8 +2307,8 @@ function ChatComposerComponent({
                                   }`}
                                   aria-label={
                                     isPinned(entry.id)
-                                      ? `Unpin ${entry.name}`
-                                      : `Pin ${entry.name}`
+                                      ? `取消置顶 ${entry.name}`
+                                      : `置顶 ${entry.name}`
                                   }
                                 >
                                   <svg
@@ -2313,6 +2331,25 @@ function ChatComposerComponent({
                           }
                           return (
                             <>
+                              {gatewayOfflineFallback && (
+                                <div className="mx-3 mb-2 flex items-start gap-2 rounded-lg border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    className="mt-0.5 shrink-0"
+                                  >
+                                    <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+                                  </svg>
+                                  <span>
+                                    执行引擎未启动，以下为已配置 API Key
+                                    的可用模型。启动引擎后自动恢复完整模型列表。
+                                  </span>
+                                </div>
+                              )}
                               {pinnedEntries.length > 0 && (
                                 <div className="mb-2 border-b border-[var(--theme-border)] pb-2">
                                   <div className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-400">
@@ -2327,7 +2364,7 @@ function ChatComposerComponent({
                                     >
                                       <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" />
                                     </svg>
-                                    <span>Pinned</span>
+                                    <span>已置顶</span>
                                   </div>
                                   {pinnedEntries.map(renderEntry)}
                                 </div>
@@ -2379,12 +2416,12 @@ function ChatComposerComponent({
             />
             <PromptInputActions className="justify-between px-1.5 md:px-3 gap-0.5 md:gap-2">
               <div className="flex min-w-0 flex-1 items-center gap-0 md:gap-1">
-                <PromptInputAction tooltip="Add attachment">
+                <PromptInputAction tooltip="添加附件">
                   <Button
                     size="icon-sm"
                     variant="ghost"
                     className="rounded-lg text-[var(--theme-muted)] hover:bg-[var(--theme-hover)] dark:hover:bg-primary-800 hover:text-[var(--theme-muted)]"
-                    aria-label="Add attachment"
+                    aria-label="添加附件"
                     disabled={disabled}
                     onClick={handleOpenAttachmentPicker}
                   >
@@ -2396,12 +2433,12 @@ function ChatComposerComponent({
                   </Button>
                 </PromptInputAction>
                 {hasDraft && !isLoading && (
-                  <PromptInputAction tooltip="Clear draft">
+                  <PromptInputAction tooltip="清空草稿">
                     <Button
                       size="icon-sm"
                       variant="ghost"
                       className="rounded-lg text-[var(--theme-muted)] hover:bg-[var(--theme-hover)] dark:hover:bg-primary-800 hover:text-red-600"
-                      aria-label="Clear draft"
+                      aria-label="清空草稿"
                       onClick={handleClearDraft}
                     >
                       <HugeiconsIcon
@@ -2428,10 +2465,13 @@ function ChatComposerComponent({
                     onClick={() => setIsModelMenuOpen((prev) => !prev)}
                     disabled={isModelSwitcherDisabled}
                     className="inline-flex h-7 max-w-[8rem] items-center rounded-full bg-[var(--theme-panel)] px-1.5 md:max-w-none md:px-2.5 text-[11px] font-medium text-[var(--theme-muted)] hover:bg-[var(--theme-hover)]  transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                    title={modelButtonLabel}
+                    title={modelButtonText}
                   >
-                    <span className="max-w-[5.5rem] truncate sm:max-w-[8.5rem] md:max-w-[12rem]">
-                      {modelButtonLabel}
+                    <span className="max-w-[5.5rem] truncate sm:max-w-[8.5rem] md:max-w-[12rem] inline-flex items-center gap-1">
+                      {modelButtonLabel.startsWith('⚕') && (
+                        <EmojiIcon emoji="⚕" size={12} />
+                      )}
+                      {modelButtonText}
                     </span>
                   </button>
                   {isModelMenuOpen && (
@@ -2446,10 +2486,14 @@ function ChatComposerComponent({
                             const allModels = modelsQuery.data?.models ?? []
                             const defaultProvider =
                               modelsQuery.data?.currentProvider ?? ''
+                            const gatewayOfflineFallback =
+                              modelsQuery.data?.fallback === true
                             if (allModels.length === 0) {
                               return (
                                 <div className="p-4 text-center text-sm text-neutral-500">
-                                  No models available
+                                  {gatewayOfflineFallback
+                                    ? '未检测到已配置的模型服务商，请先配置 API Key'
+                                    : '没有可用模型'}
                                 </div>
                               )
                             }
@@ -2529,7 +2573,7 @@ function ChatComposerComponent({
                                     </span>
                                     {entry.isLocal && (
                                       <span className="text-[10px] text-neutral-400 px-1.5 py-0.5 rounded-full bg-[var(--theme-panel)] dark:bg-neutral-700">
-                                        local
+                                        本地
                                       </span>
                                     )}
                                     {isActive && (
@@ -2549,8 +2593,8 @@ function ChatComposerComponent({
                                     }`}
                                     aria-label={
                                       isPinned(entry.id)
-                                        ? `Unpin ${entry.name}`
-                                        : `Pin ${entry.name}`
+                                        ? `取消置顶 ${entry.name}`
+                                        : `置顶 ${entry.name}`
                                     }
                                   >
                                     <svg
@@ -2573,6 +2617,25 @@ function ChatComposerComponent({
                             }
                             return (
                               <>
+                                {gatewayOfflineFallback && (
+                                  <div className="mb-1 flex items-start gap-2 rounded-lg border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      className="mt-0.5 shrink-0"
+                                    >
+                                      <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+                                    </svg>
+                                    <span>
+                                      执行引擎未启动，以下为已配置 API Key
+                                      的可用模型。启动引擎后自动恢复完整模型列表。
+                                    </span>
+                                  </div>
+                                )}
                                 {pinnedEntries.length > 0 && (
                                   <div className="mb-1 border-b border-[var(--theme-border)] dark:border-neutral-700 pb-1">
                                     <div className="mb-1 flex items-center gap-1 px-3 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
@@ -2587,7 +2650,7 @@ function ChatComposerComponent({
                                       >
                                         <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" />
                                       </svg>
-                                      <span>Pinned</span>
+                                      <span>已置顶</span>
                                     </div>
                                     {pinnedEntries.map(renderEntry)}
                                   </div>
@@ -2611,7 +2674,7 @@ function ChatComposerComponent({
                   )}
                 </div>
                 {/* Fast Mode toggle — priority queue for OpenAI/Anthropic (v0.9.0) */}
-                <PromptInputAction tooltip={fastMode ? 'Fast Mode on — click to disable' : 'Fast Mode — priority queue (OpenAI/Anthropic)'}>
+                <PromptInputAction tooltip={fastMode ? '快速模式已开启 — 点击关闭' : '快速模式 — 优先队列（OpenAI/Anthropic）'}>
                   <Button
                     type="button"
                     size="icon-sm"
@@ -2623,7 +2686,7 @@ function ChatComposerComponent({
                         ? 'text-accent-500 bg-[var(--theme-accent-subtle)] hover:bg-[var(--theme-accent-subtle)]'
                         : 'text-[var(--theme-muted)] hover:bg-[var(--theme-hover)] dark:hover:bg-primary-800 hover:text-[var(--theme-text)]',
                     )}
-                    aria-label={fastMode ? 'Disable Fast Mode' : 'Enable Fast Mode'}
+                    aria-label={fastMode ? '关闭快速模式' : '开启快速模式'}
                     aria-pressed={fastMode}
                   >
                     <HugeiconsIcon icon={FlashIcon} size={16} strokeWidth={1.5} />
@@ -2635,10 +2698,10 @@ function ChatComposerComponent({
                   <PromptInputAction
                     tooltip={
                       voiceRecorder.isRecording
-                        ? `Recording… ${Math.round(voiceRecorder.durationMs / 1000)}s`
+                        ? `正在录音… ${Math.round(voiceRecorder.durationMs / 1000)}秒`
                         : voiceInput.isListening
-                          ? 'Listening — tap to stop'
-                          : 'Tap: dictate · Hold: voice note'
+                          ? '正在聆听 — 点击停止'
+                          : '点击：听写 · 长按：语音笔记'
                     }
                   >
                     <Button
@@ -2667,10 +2730,10 @@ function ChatComposerComponent({
                       )}
                       aria-label={
                         voiceRecorder.isRecording
-                          ? 'Recording voice note'
+                          ? '正在录制语音'
                           : voiceInput.isListening
-                            ? 'Stop listening'
-                            : 'Voice input'
+                            ? '停止聆听'
+                            : '语音输入'
                       }
                       disabled={disabled}
                     >
@@ -2689,13 +2752,13 @@ function ChatComposerComponent({
                   </PromptInputAction>
                 ) : null}
                 {isLoading ? (
-                  <PromptInputAction tooltip="Stop generation">
+                  <PromptInputAction tooltip="停止生成">
                     <Button
                       onClick={handleAbort}
                       size="icon-sm"
                       variant="destructive"
                       className="rounded-md"
-                      aria-label="Stop generation"
+                      aria-label="停止生成"
                     >
                       <HugeiconsIcon
                         icon={StopIcon}
@@ -2706,14 +2769,14 @@ function ChatComposerComponent({
                   </PromptInputAction>
                 ) : (
                   <>
-                    <PromptInputAction tooltip="Send message">
+                    <PromptInputAction tooltip="发送消息">
                       <Button
                         type="button"
                         onClick={handleSubmit}
                         disabled={submitDisabled}
                         size="icon-sm"
                         className="rounded-full"
-                        aria-label="Send message"
+                        aria-label="发送消息"
                       >
                         <HugeiconsIcon
                           icon={ArrowUp02Icon}
@@ -2737,7 +2800,7 @@ function ChatComposerComponent({
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setPreviewImage(null)}
             role="dialog"
-            aria-label="Image preview"
+            aria-label="图片预览"
           >
             <button
               type="button"
@@ -2746,7 +2809,7 @@ function ChatComposerComponent({
                 e.stopPropagation()
                 setPreviewImage(null)
               }}
-              aria-label="Close preview"
+              aria-label="关闭预览"
             >
               <HugeiconsIcon icon={Cancel01Icon} size={24} strokeWidth={2} />
             </button>

@@ -13,8 +13,9 @@
  */
 
 import { useEffect, useState } from 'react'
-import { cn } from '@/lib/utils'
 import { AGENT_ACCENT_COLORS, AgentAvatar } from './agent-avatar'
+import { EmojiIcon } from '@/components/emoji-icon'
+import { cn } from '@/lib/utils'
 
 // ── Exported types ──
 
@@ -67,7 +68,7 @@ const OFFICE_MODEL_BADGE: Record<ModelPresetId, string> = {
 }
 
 const OFFICE_MODEL_LABEL: Record<ModelPresetId, string> = {
-  auto: 'Auto',
+  auto: '自动',
   opus: 'Opus',
   sonnet: 'Sonnet',
   codex: 'Codex',
@@ -85,7 +86,7 @@ export function getOfficeModelBadge(modelId: string): string {
 }
 
 export function getOfficeModelLabel(modelId: string): string {
-  if (!modelId) return 'Unknown'
+  if (!modelId) return '未知'
   return OFFICE_MODEL_LABEL[modelId as ModelPresetId] ?? modelId.split('/')[1] ?? modelId
 }
 
@@ -103,7 +104,7 @@ export type RemoteSession = {
 }
 
 export type OfficeViewProps = {
-  agentRows: AgentWorkingRow[]
+  agentRows: Array<AgentWorkingRow>
   missionRunning: boolean
   onViewOutput: (agentId: string) => void
   onNewMission?: () => void
@@ -112,7 +113,7 @@ export type OfficeViewProps = {
   processType: 'sequential' | 'hierarchical' | 'parallel'
   companyName?: string
   agentTasks?: Record<string, string>
-  remoteSessions?: RemoteSession[]
+  remoteSessions?: Array<RemoteSession>
   onViewRemoteOutput?: (sessionKey: string, label: string) => void
   /** Fixed pixel height for the office container (compact mode) */
   containerHeight?: number
@@ -152,21 +153,21 @@ const WARROOM_DESK_POSITIONS = [
 
 // ── Social spots ──
 
-const GRID_SOCIAL_SPOTS: SocialSpot[] = [
+const GRID_SOCIAL_SPOTS: Array<SocialSpot> = [
   { x: 840, y: 140, type: 'coffee' as const },
   { x: 840, y: 300, type: 'water' as const },
   { x: 60, y: 440, type: 'plant' as const },
   { x: 840, y: 460, type: 'snack' as const },
 ]
 
-const ROUNDTABLE_SOCIAL_SPOTS: SocialSpot[] = [
+const ROUNDTABLE_SOCIAL_SPOTS: Array<SocialSpot> = [
   { x: 450, y: 320, type: 'plant' },
   { x: 510, y: 320, type: 'snack' },
   { x: 870, y: 120, type: 'coffee' },
   { x: 870, y: 480, type: 'water' },
 ]
 
-const WARROOM_SOCIAL_SPOTS: SocialSpot[] = [
+const WARROOM_SOCIAL_SPOTS: Array<SocialSpot> = [
   { x: 56, y: 300, type: 'coffee' },
   { x: 56, y: 350, type: 'water' },
   { x: 904, y: 300, type: 'snack' },
@@ -181,17 +182,32 @@ const DESK_POSITIONS_BY_TEMPLATE: Record<OfficeLayoutTemplate, Array<{ x: number
   warroom: WARROOM_DESK_POSITIONS,
 }
 
-const SOCIAL_SPOTS_BY_TEMPLATE: Record<OfficeLayoutTemplate, SocialSpot[]> = {
+const SOCIAL_SPOTS_BY_TEMPLATE: Record<OfficeLayoutTemplate, Array<SocialSpot>> = {
   grid: GRID_SOCIAL_SPOTS,
   roundtable: ROUNDTABLE_SOCIAL_SPOTS,
   warroom: WARROOM_SOCIAL_SPOTS,
 }
 
-const LAYOUT_TEMPLATE_OPTIONS: Array<{ key: OfficeLayoutTemplate; label: string }> = [
-  { key: 'grid', label: '⊞ Grid' },
-  { key: 'roundtable', label: '○ Roundtable' },
-  { key: 'warroom', label: '▬▬ War Room' },
+const LAYOUT_TEMPLATE_OPTIONS: Array<{
+  key: OfficeLayoutTemplate
+  icon: string
+  label: string
+}> = [
+  { key: 'grid', icon: '⊞', label: '网格' },
+  { key: 'roundtable', icon: '○', label: '圆桌' },
+  { key: 'warroom', icon: '▬', label: '作战室' },
 ]
+
+/** 提取字符串末尾的 emoji 作为图标（如 '休息一下 ☕' → '休息一下' + ☕） */
+function splitTrailingEmoji(text: string): { emoji: string | null; text: string } {
+  if (!text) return { emoji: null, text }
+  const lastChar = Array.from(text).at(-1) ?? ''
+  // eslint-disable-next-line no-misleading-character-class
+  if (/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{25A0}-\u{25FF}]/u.test(lastChar)) {
+    return { emoji: lastChar, text: text.slice(0, text.length - lastChar.length).trimEnd() }
+  }
+  return { emoji: null, text }
+}
 
 // ── Helper functions ──
 
@@ -203,12 +219,12 @@ function truncateSpeech(text: string, max = 64): string {
 
 function getSpeechLine(agent: AgentWorkingRow, phase: number): string {
   if (agent.status === 'active' && agent.lastLine) return truncateSpeech(agent.lastLine, 60)
-  if (agent.currentTask) return `Working on ${truncateSpeech(agent.currentTask, 48)}`
-  if (agent.status === 'spawning') return 'Booting up...'
-  if (agent.status === 'paused') return 'On break ☕'
-  if (agent.status === 'error') return 'Need help!'
+  if (agent.currentTask) return `正在处理 ${truncateSpeech(agent.currentTask, 48)}`
+  if (agent.status === 'spawning') return '正在启动...'
+  if (agent.status === 'paused') return '休息一下 ☕'
+  if (agent.status === 'error') return '需要帮助！'
   // Idle agents cycle through social activities
-  const socialLines = ['Grabbing coffee ☕', 'Checking messages 📱', 'Stretching 🙆', 'Chatting with team 💬', 'Reading docs 📖', 'Getting water 💧']
+  const socialLines = ['喝杯咖啡 ☕', '查看消息 📱', '伸个懒腰 🙆', '与团队闲聊 💬', '阅读文档 📖', '接点水 💧']
   if (agent.status === 'idle' || agent.status === 'ready') {
     return socialLines[Math.floor(phase / 4) % socialLines.length]
   }
@@ -265,7 +281,7 @@ function truncateMonitorText(text: string, max = 30): string {
 function getDeskMonitorText(agent: AgentWorkingRow, agentTaskTitle?: string): string {
   const taskTitle = agentTaskTitle?.trim()
   if (taskTitle) return truncateMonitorText(taskTitle, 30)
-  if (agent.status === 'idle' || agent.status === 'ready') return 'Ready'
+  if (agent.status === 'idle' || agent.status === 'ready') return '就绪'
   return getAgentStatusMeta(agent.status).label
 }
 
@@ -282,13 +298,13 @@ export function getAgentStatusMeta(status: AgentWorkingStatus): {
   pulse?: boolean
 } {
   switch (status) {
-    case 'active': return { label: 'Active', className: 'text-emerald-600', dotClassName: 'bg-emerald-500', pulse: true }
+    case 'active': return { label: '进行中', className: 'text-emerald-600', dotClassName: 'bg-emerald-500', pulse: true }
     case 'ready':
-    case 'idle': return { label: 'Idle', className: 'text-neutral-600', dotClassName: 'bg-neutral-400' }
-    case 'error': return { label: 'Error', className: 'text-red-600', dotClassName: 'bg-red-500' }
-    case 'none': return { label: 'Offline', className: 'text-neutral-400', dotClassName: 'bg-neutral-400' }
-    case 'spawning': return { label: 'Starting', className: 'text-blue-600', dotClassName: 'bg-blue-500', pulse: true }
-    case 'paused': return { label: 'Paused', className: 'text-amber-700', dotClassName: 'bg-amber-500' }
+    case 'idle': return { label: '空闲', className: 'text-neutral-600', dotClassName: 'bg-neutral-400' }
+    case 'error': return { label: '错误', className: 'text-red-600', dotClassName: 'bg-red-500' }
+    case 'none': return { label: '离线', className: 'text-neutral-400', dotClassName: 'bg-neutral-400' }
+    case 'spawning': return { label: '启动中', className: 'text-blue-600', dotClassName: 'bg-blue-500', pulse: true }
+    case 'paused': return { label: '已暂停', className: 'text-amber-700', dotClassName: 'bg-amber-500' }
     default: return { label: String(status), className: 'text-neutral-600', dotClassName: 'bg-neutral-400' }
   }
 }
@@ -356,9 +372,11 @@ function CoffeeMachineSVG({ x, y }: { x: number; y: number }) {
       <rect x="-20" y="-30" width="40" height="50" rx="5" fill="#78716c" />
       <rect x="-14" y="-24" width="28" height="20" rx="3" fill="#292524" />
       <circle cx="0" cy="-14" r="6" fill="#dc2626" opacity="0.8" />
-      <text x="0" y="-11" fontSize="6" fill="white" textAnchor="middle">☕</text>
+      <g transform="translate(-6 -17)" color="#ffffff">
+        <EmojiIcon emoji="☕" size={12} />
+      </g>
       <rect x="-16" y="20" width="32" height="6" rx="2" fill="#a8a29e" />
-      <text x="0" y="38" fontSize="8" fill="#78716c" textAnchor="middle">Coffee</text>
+      <text x="0" y="38" fontSize="8" fill="#78716c" textAnchor="middle">咖啡</text>
     </g>
   )
 }
@@ -370,7 +388,7 @@ function WaterCoolerSVG({ x, y }: { x: number; y: number }) {
       <circle cx="0" cy="-26" r="10" fill="#bfdbfe" stroke="#93c5fd" strokeWidth="1.5" />
       <circle cx="-5" cy="0" r="2" fill="#0ea5e9" />
       <circle cx="5" cy="0" r="2" fill="#ef4444" />
-      <text x="0" y="32" fontSize="8" fill="#64748b" textAnchor="middle">Water</text>
+      <text x="0" y="32" fontSize="8" fill="#64748b" textAnchor="middle">饮水</text>
     </g>
   )
 }
@@ -379,8 +397,10 @@ function SnackBarSVG({ x, y }: { x: number; y: number }) {
   return (
     <g transform={`translate(${x} ${y})`}>
       <rect x="-24" y="-16" width="48" height="28" rx="4" fill="#fef3c7" stroke="#fbbf24" strokeWidth="1" />
-      <text x="0" y="2" fontSize="14" textAnchor="middle">🍪</text>
-      <text x="0" y="24" fontSize="8" fill="#92400e" textAnchor="middle">Snacks</text>
+      <g transform="translate(-7 -5)" color="#92400e">
+        <EmojiIcon emoji="🍪" size={14} />
+      </g>
+      <text x="0" y="24" fontSize="8" fill="#92400e" textAnchor="middle">零食</text>
     </g>
   )
 }
@@ -408,14 +428,14 @@ function formatRuntime(startedAt: number, tokenCount?: number): string {
     time = mins < 60 ? `${mins}m` : `${Math.floor(mins / 60)}h`
   }
   const tokens = typeof tokenCount === 'number' ? tokenCount : 0
-  return `${time} · ${tokens}t`
+  return `${time} · ${tokens} token`
 }
 
 function kindLabel(kind: string): string {
-  if (kind === 'subagent' || kind === 'sub-agent') return 'Sub-Agent'
-  if (kind === 'main') return 'Main'
-  if (kind === 'chat') return 'Chat'
-  return kind.charAt(0).toUpperCase() + kind.slice(1)
+  if (kind === 'subagent' || kind === 'sub-agent') return '子智能体'
+  if (kind === 'main') return '主'
+  if (kind === 'chat') return '对话'
+  return kind
 }
 
 function RemoteSessionCard({ session, onClick }: { session: RemoteSession; onClick: () => void }) {
@@ -449,7 +469,7 @@ function RemoteSessionCard({ session, onClick }: { session: RemoteSession; onCli
     >
       <div className="relative">
         <div className="h-8 w-8 rounded-full bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center text-lg">
-          🤖
+          <EmojiIcon emoji="🤖" size={18} />
         </div>
         <span className={cn('absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-neutral-800', statusColor)} />
       </div>
@@ -489,7 +509,7 @@ export function OfficeView({
   onNewMission,
   selectedOutputAgentId,
   activeTemplateName: _activeTemplateName,
-  companyName = 'Mission Control',
+  companyName = '任务指挥中心',
   agentTasks = {},
   remoteSessions = [],
   onViewRemoteOutput,
@@ -510,10 +530,10 @@ export function OfficeView({
   const deskPositions = DESK_POSITIONS_BY_TEMPLATE[layoutTemplate]
   const socialSpots = SOCIAL_SPOTS_BY_TEMPLATE[layoutTemplate]
   const socialLabelPosition = layoutTemplate === 'roundtable'
-    ? { x: 450, y: 108, text: 'Collaboration Ring' }
+    ? { x: 450, y: 108, text: '社交区' }
     : layoutTemplate === 'warroom'
-      ? { x: 480, y: 112, text: 'Briefing Lounge' }
-      : { x: 840, y: 110, text: 'Break Area' }
+      ? { x: 480, y: 112, text: '简报区' }
+      : { x: 840, y: 110, text: '休息区' }
 
   const changeLayout = (nextTemplate: OfficeLayoutTemplate) => {
     setLayoutTemplate(nextTemplate)
@@ -550,9 +570,11 @@ export function OfficeView({
     return (
       <div className={cn('flex items-center justify-center p-8', compact ? 'h-full' : 'min-h-[320px]')}>
         <div className="text-center">
-          <p className="mb-3 text-4xl">🏢</p>
-          <p className="text-sm font-semibold text-neutral-600 dark:text-neutral-300">Empty office</p>
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Add agents in Configure to fill the office.</p>
+          <p className="mb-3">
+            <EmojiIcon emoji="🏢" size={40} />
+          </p>
+          <p className="text-sm font-semibold text-neutral-600 dark:text-neutral-300">办公区空无一人</p>
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">先在设置中添加智能体，它们会显示在这里。</p>
         </div>
       </div>
     )
@@ -612,11 +634,11 @@ export function OfficeView({
       {/* Header bar */}
       {hideHeader ? null : <div className="flex shrink-0 flex-wrap items-start justify-between gap-2 border-b border-neutral-200 bg-white/80 px-5 py-3 backdrop-blur dark:border-slate-700 dark:bg-slate-800/80">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-base font-bold text-neutral-900 dark:text-white">Mission Control</span>
+          <span className="text-base font-bold text-neutral-900 dark:text-white">任务指挥中心</span>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-[10px] font-medium text-neutral-600 dark:text-neutral-400 tabular-nums">{agentRows.length} agents</span>
-            <span className="rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 tabular-nums">{activeCount} working</span>
-            <span className="rounded-full bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-400 tabular-nums">{sessionCount} sessions</span>
+            <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-[10px] font-medium text-neutral-600 dark:text-neutral-400 tabular-nums">{agentRows.length} 个智能体</span>
+            <span className="rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 tabular-nums">{activeCount} 进行中</span>
+            <span className="rounded-full bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-400 tabular-nums">{sessionCount} 个会话</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -626,7 +648,7 @@ export function OfficeView({
                 <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60" />
                 <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
               </span>
-              Mission Live
+              任务进行中
             </span>
           ) : null}
           <button
@@ -634,7 +656,7 @@ export function OfficeView({
             onClick={() => onNewMission?.()}
             className="min-h-11 rounded-lg bg-accent-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-600 sm:px-4 sm:py-2 sm:text-sm"
           >
-            + New Mission
+            + 新建任务
           </button>
         </div>
       </div>}
@@ -655,7 +677,7 @@ export function OfficeView({
               >
                 <div className={cn('flex size-9 shrink-0 items-center justify-center rounded-full', accent.avatar)}>
                   {emoji ? (
-                    <span className="text-base leading-none" aria-hidden>{emoji}</span>
+                    <EmojiIcon emoji={emoji} size={16} />
                   ) : (
                     <AgentAvatar index={index % 10} color={accent.hex} size={22} />
                   )}
@@ -678,9 +700,9 @@ export function OfficeView({
             type="button"
             onClick={() => setLayoutPickerOpen((v) => !v)}
             className="inline-flex min-h-11 items-center rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-slate-700 dark:bg-slate-800 dark:text-neutral-300 dark:hover:bg-slate-700 sm:px-4 sm:py-2 sm:text-sm"
-            title="Change office layout"
+            title="更改办公区布局"
           >
-            <span>✏️</span>
+            <EmojiIcon emoji="✏️" size={14} />
           </button>
           {layoutPickerOpen && (
             <div className="absolute right-0 top-full z-50 mt-1 min-w-[120px] overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
@@ -696,7 +718,19 @@ export function OfficeView({
                       : 'text-neutral-700 dark:text-slate-300',
                   )}
                 >
-                  {opt.label}
+                  {(() => {
+                    const firstChar = Array.from(opt.label)[0] ?? ''
+                    // eslint-disable-next-line no-misleading-character-class
+                    if (/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{25A0}-\u{25FF}]/u.test(firstChar)) {
+                      return (
+                        <span className="inline-flex items-center gap-1">
+                          <EmojiIcon emoji={firstChar} size={12} />
+                          {opt.label.slice(firstChar.length).trim()}
+                        </span>
+                      )
+                    }
+                    return opt.label
+                  })()}
                 </button>
               ))}
             </div>
@@ -853,7 +887,15 @@ export function OfficeView({
               {/* Speech bubble */}
               {showSpeech ? (
                 <span className="pointer-events-none relative mb-2 max-w-[180px] rounded-lg bg-white px-3 py-1.5 text-xs leading-snug text-neutral-700 shadow-lg dark:bg-slate-800 dark:text-slate-200">
-                  <span className="block truncate">{speechLine}</span>
+                  {(() => {
+                    const { emoji: speechEmoji, text: speechText } = splitTrailingEmoji(speechLine)
+                    return (
+                      <span className="block truncate inline-flex items-center gap-1">
+                        {speechText}
+                        {speechEmoji && <EmojiIcon emoji={speechEmoji} size={12} />}
+                      </span>
+                    )
+                  })()}
                   <span className="absolute left-1/2 top-full h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-white dark:bg-slate-800" />
                 </span>
               ) : null}
@@ -873,8 +915,8 @@ export function OfficeView({
                   style={{ width: isActive ? 46 : 40, height: isActive ? 46 : 40 }}
                 >
                   {emoji ? (
-                    <span className="select-none leading-none" style={{ fontSize: isActive ? 30 : 26 }} aria-hidden>
-                      {emoji}
+                    <span className="select-none leading-none" aria-hidden>
+                      <EmojiIcon emoji={emoji} size={isActive ? 30 : 26} />
                     </span>
                   ) : (
                     <AgentAvatar
@@ -898,11 +940,11 @@ export function OfficeView({
                   <span className="size-1 animate-pulse rounded-full bg-emerald-500" />
                   <span className="size-1 animate-pulse rounded-full bg-emerald-500 [animation-delay:120ms]" />
                   <span className="size-1 animate-pulse rounded-full bg-emerald-500 [animation-delay:240ms]" />
-                  <span className="ml-0.5">Working</span>
+                  <span className="ml-0.5">工作中</span>
                 </span>
               ) : isIdle && !pos.atDesk ? (
                 <span className="mt-1 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
-                  On break
+                  休息中
                 </span>
               ) : null}
 
@@ -922,9 +964,9 @@ export function OfficeView({
             className="mb-2 flex w-full items-center justify-between px-1 text-left"
           >
             <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
-              Remote Sessions
+              远程会话
             </p>
-            <span className="text-[10px] text-neutral-400">{remoteCollapsed ? 'Show' : 'Hide'}</span>
+            <span className="text-[10px] text-neutral-400">{remoteCollapsed ? '展开' : '收起'}</span>
           </button>
           {!remoteCollapsed ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -943,12 +985,12 @@ export function OfficeView({
       {/* Footer — hidden in compact mode */}
       {!compact ? (
         <div className="hidden items-center justify-between border-t border-neutral-200 bg-white/80 px-4 py-2 text-xs text-neutral-500 backdrop-blur dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-400 md:flex">
-          <span>{agentRows.length}/{deskPositions.length} desks occupied</span>
+          <span>已占用工位 {agentRows.length}/{deskPositions.length}</span>
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-emerald-500" /> Working</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-neutral-400" /> Idle</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500" /> Error</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-neutral-400" /> Empty</span>
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-emerald-500" /> 工作中</span>
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-neutral-400" /> 空闲</span>
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500" /> 错误</span>
+            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-neutral-400" /> 空置</span>
           </div>
         </div>
       ) : null}

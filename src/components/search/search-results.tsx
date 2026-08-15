@@ -21,10 +21,10 @@ export function SearchResults({
   if (results.length === 0) {
     return (
       <EmptyState
-        icon={Search01Icon as any}
-        title="No results found"
+        icon={Search01Icon}
+        title="未找到结果"
         description={
-          query ? `Try a different search term` : 'Start typing to search'
+          query ? `请尝试其他搜索词` : '输入以开始搜索'
         }
       />
     )

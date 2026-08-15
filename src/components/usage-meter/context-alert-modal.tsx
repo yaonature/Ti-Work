@@ -2,6 +2,7 @@
 
 import { memo } from 'react'
 import { DialogContent, DialogRoot } from '@/components/ui/dialog'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { cn } from '@/lib/utils'
 
 type ContextAlertModalProps = {
@@ -69,14 +70,13 @@ function ContextAlertModalComponent({
             <div>
               <h3 className="text-sm font-semibold text-primary-900">
                 {isCritical
-                  ? 'Context Window Almost Full'
+                  ? '上下文窗口即将占满'
                   : isDanger
-                    ? 'Context Window Getting Full'
-                    : 'Auto-Compaction Warning'}
+                    ? '上下文窗口正在接近上限'
+                    : '自动压缩提醒'}
               </h3>
               <p className="text-xs text-primary-500 mt-0.5">
-                {Math.round(contextPercent)}% of your model's context window is
-                in use
+                当前已使用模型上下文窗口的 {Math.round(contextPercent)}%
               </p>
             </div>
           </div>
@@ -95,42 +95,42 @@ function ContextAlertModalComponent({
           {/* What this means */}
           <div className="bg-primary-50 rounded-lg p-3 mb-4">
             <p className="text-xs font-medium text-primary-800 mb-2">
-              What does this mean?
+              这意味着什么？
             </p>
             <p className="text-xs text-primary-600 leading-relaxed">
               {isCritical
-                ? "Your conversation history is nearly at the model's limit. Responses may become less accurate as the model loses access to earlier context. You should start a new chat soon."
+                ? '你的会话历史已经接近模型上限。随着模型逐渐失去更早的上下文，回复可能会变得不够准确。建议尽快开始一个新会话。'
                 : isDanger
-                  ? 'Your conversation is getting long. The model may start forgetting earlier messages. Consider starting a new chat for best results.'
-                  : 'Hermes will auto-compact your context soon (it triggers at ~40% usage). Older messages will be summarized. Consider writing a handoff or starting a new chat to preserve full context.'}
+                  ? '你的会话已经比较长了，模型可能会开始遗忘较早的消息。为了获得更好的效果，建议新开一个会话。'
+                  : 'Hermes 很快会自动压缩上下文（约在使用量达到 40% 时触发）。较早的消息会被总结归纳。若想保留完整上下文，建议先写一份交接摘要或直接开始新会话。'}
             </p>
           </div>
 
           {/* Recommendations */}
           <div className="space-y-2 mb-5">
             <p className="text-xs font-medium text-primary-800">
-              Recommendations
+              建议操作
             </p>
             <div className="space-y-1.5">
               {isCritical && (
                 <Recommendation
                   icon="🆕"
-                  text="Start a new chat to reset context"
+                  text="开启一个新会话，重置上下文"
                   emphasis
                 />
               )}
               <Recommendation
                 icon="🗜️"
-                text="Enable auto-compaction in Settings → Config to automatically manage context"
+                text="在“设置 → 配置”中启用自动压缩，让系统自动管理上下文"
               />
               <Recommendation
                 icon="📋"
-                text="Summarize important details before starting a new chat"
+                text="在开始新会话前，先整理一份重要信息摘要"
               />
               {!isCritical && (
                 <Recommendation
                   icon="💡"
-                  text="Keep messages concise to use context efficiently"
+                  text="尽量让消息更简洁，以更高效地使用上下文"
                 />
               )}
             </div>
@@ -140,16 +140,16 @@ function ContextAlertModalComponent({
           <div className="flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="rounded-lg border border-primary-200 bg-surface px-4 py-2 text-xs font-medium text-primary-700 hover:bg-primary-50 transition-colors"
+              className="rounded-lg border border-accent-200 bg-transparent px-4 py-2 text-xs font-medium text-accent-800 hover:bg-accent-50 transition-colors"
             >
-              Got it
+              知道了
             </button>
             {isDanger && (
               <a
                 href="/new"
-                className="rounded-lg bg-primary-900 px-4 py-2 text-xs font-medium text-white hover:bg-primary-800 transition-colors"
+                className="rounded-lg bg-accent-500 px-4 py-2 text-xs font-medium text-white hover:bg-accent-600 transition-colors"
               >
-                New Chat
+                新建会话
               </a>
             )}
           </div>
@@ -170,7 +170,9 @@ function Recommendation({
 }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="text-xs shrink-0 mt-px">{icon}</span>
+      <span className="text-xs shrink-0 mt-px">
+        <EmojiIcon emoji={icon} size={14} />
+      </span>
       <span
         className={cn(
           'text-xs text-primary-600 leading-relaxed',

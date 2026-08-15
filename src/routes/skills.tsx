@@ -7,6 +7,6 @@ export const Route = createFileRoute('/skills')({
 })
 
 function SkillsRoute() {
-  usePageTitle('Skills')
+  usePageTitle('技能')
   return <SkillsScreen />
 }

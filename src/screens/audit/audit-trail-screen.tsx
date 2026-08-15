@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
+  AlertCircleIcon,
   Cancel01Icon,
   CheckmarkCircle01Icon,
   Clock01Icon,
@@ -12,7 +13,6 @@ import {
   Search01Icon,
   TaskEdit01Icon,
   UserIcon,
-  AlertCircleIcon,
 } from '@hugeicons/core-free-icons'
 import { cn } from '@/lib/utils'
 
@@ -30,15 +30,15 @@ interface AuditEvent {
 interface AuditResponse {
   ok: boolean
   total: number
-  sessions: string[]
-  events: AuditEvent[]
+  sessions: Array<string>
+  events: Array<AuditEvent>
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
 async function fetchAudit(params: {
   sessionKey?: string
-  types: string[]
+  types: Array<string>
   since?: number
   until?: number
   limit: number
@@ -60,20 +60,34 @@ async function fetchAudit(params: {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
-  tool: 'Tool Call',
-  user_message: 'User Message',
-  approval: 'Approval',
+  tool: '工具调用',
+  user_message: '用户消息',
+  approval: '审批',
 }
 
 const ALL_TYPES = ['tool', 'user_message', 'approval']
 
 const DATE_RANGES = [
-  { label: 'Last hour', ms: 60 * 60 * 1000 },
-  { label: 'Last 6h', ms: 6 * 60 * 60 * 1000 },
-  { label: 'Last 24h', ms: 24 * 60 * 60 * 1000 },
-  { label: 'Last 7d', ms: 7 * 24 * 60 * 60 * 1000 },
-  { label: 'All time', ms: 0 },
+  { label: '最近 1 小时', ms: 60 * 60 * 1000 },
+  { label: '最近 6 小时', ms: 6 * 60 * 60 * 1000 },
+  { label: '最近 24 小时', ms: 24 * 60 * 60 * 1000 },
+  { label: '最近 7 天', ms: 7 * 24 * 60 * 60 * 1000 },
+  { label: '全部时间', ms: 0 },
 ]
+
+const TOOL_PHASE_LABELS: Record<string, string> = {
+  complete: '已完成',
+  error: '异常',
+  start: '开始',
+  calling: '调用中',
+  unknown: '未知',
+}
+
+const APPROVAL_STATUS_LABELS: Record<string, string> = {
+  pending: '待处理',
+  approved: '已批准',
+  rejected: '已拒绝',
+}
 
 function formatTs(ts: number): string {
   const d = new Date(ts)
@@ -102,6 +116,7 @@ function ToolEventCard({ event }: { event: AuditEvent }) {
   const [expanded, setExpanded] = useState(false)
   const p = event.payload
   const phase = typeof p.phase === 'string' ? p.phase : 'unknown'
+  const phaseLabel = TOOL_PHASE_LABELS[phase] ?? phase
   const name = typeof p.name === 'string' ? p.name : 'unknown'
   const args = p.args
   const result = typeof p.result === 'string' ? p.result : undefined
@@ -153,7 +168,7 @@ function ToolEventCard({ event }: { event: AuditEvent }) {
                       : 'bg-[var(--theme-card2)] text-[var(--theme-muted)] border-[var(--theme-border)]',
               )}
             >
-              {phase}
+              {phaseLabel}
             </span>
           </div>
 
@@ -168,7 +183,7 @@ function ToolEventCard({ event }: { event: AuditEvent }) {
               {argsStr && (
                 <div>
                   <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-[var(--theme-muted)]">
-                    Args
+                    参数
                   </div>
                   <pre className="max-h-40 overflow-auto rounded-lg bg-[var(--theme-card2)] p-2 text-[10px] text-[var(--theme-text)] font-mono whitespace-pre-wrap break-all">
                     {truncate(argsStr, 2000)}
@@ -178,7 +193,7 @@ function ToolEventCard({ event }: { event: AuditEvent }) {
               {result && (
                 <div>
                   <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-[var(--theme-muted)]">
-                    Result
+                    结果
                   </div>
                   <pre className="max-h-40 overflow-auto rounded-lg bg-[var(--theme-card2)] p-2 text-[10px] text-[var(--theme-text)] font-mono whitespace-pre-wrap break-all">
                     {truncate(result, 2000)}
@@ -222,9 +237,9 @@ function UserMessageCard({ event }: { event: AuditEvent }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-[var(--theme-text)]">User</span>
+            <span className="text-sm font-semibold text-[var(--theme-text)]">用户</span>
             <span className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-card2)] px-2 py-px text-[10px] text-[var(--theme-muted)]">
-              message
+              消息
             </span>
           </div>
           {text && (
@@ -244,8 +259,9 @@ function UserMessageCard({ event }: { event: AuditEvent }) {
 
 function ApprovalCard({ event }: { event: AuditEvent }) {
   const p = event.payload
-  const toolName = typeof p.toolName === 'string' ? p.toolName : 'Unknown tool'
+  const toolName = typeof p.toolName === 'string' ? p.toolName : '未知工具'
   const status = typeof p.status === 'string' ? p.status : 'pending'
+  const statusLabel = APPROVAL_STATUS_LABELS[status] ?? status
 
   return (
     <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
@@ -255,13 +271,13 @@ function ApprovalCard({ event }: { event: AuditEvent }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-[var(--theme-text)]">Approval</span>
+            <span className="text-sm font-semibold text-[var(--theme-text)]">审批</span>
             <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-px text-[10px] text-amber-400">
-              {status}
+              {statusLabel}
             </span>
           </div>
           <p className="mt-1 text-xs text-[var(--theme-muted)]">
-            Tool: <span className="font-mono">{toolName}</span>
+            工具：<span className="font-mono">{toolName}</span>
           </p>
         </div>
         <div className="shrink-0 text-right">
@@ -288,7 +304,7 @@ const PAGE_SIZE = 50
 
 export function AuditTrailScreen() {
   const [selectedSession, setSelectedSession] = useState<string>('')
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(ALL_TYPES)
+  const [selectedTypes, setSelectedTypes] = useState<Array<string>>(ALL_TYPES)
   const [dateRangeIdx, setDateRangeIdx] = useState(4) // All time
   const [page, setPage] = useState(0)
 
@@ -328,15 +344,15 @@ export function AuditTrailScreen() {
       <div className="shrink-0 border-b border-[var(--theme-border)] px-6 py-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-[var(--theme-text)]">Audit Trail</h1>
+            <h1 className="text-lg font-semibold text-[var(--theme-text)]">审计记录</h1>
             <p className="mt-0.5 text-xs text-[var(--theme-muted)]">
-              Timeline of all agent and tool actions across sessions
+              所有会话中智能体与工具操作的完整时间线
             </p>
           </div>
           {total > 0 && (
             <div className="flex items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-1 text-xs text-[var(--theme-muted)]">
               <HugeiconsIcon icon={Clock01Icon} size={12} />
-              {total.toLocaleString()} events
+              {total.toLocaleString()} 个事件
             </div>
           )}
         </div>
@@ -354,7 +370,7 @@ export function AuditTrailScreen() {
               }}
               className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-2.5 py-1 text-xs text-[var(--theme-text)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-accent)]"
             >
-              <option value="">All sessions</option>
+              <option value="">所有会话</option>
               {sessions.map((s) => (
                 <option key={s} value={s}>
                   {shortSession(s)}
@@ -408,18 +424,18 @@ export function AuditTrailScreen() {
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
         {isLoading ? (
           <div className="flex h-40 items-center justify-center text-sm text-[var(--theme-muted)]">
-            Loading audit events…
+            正在加载审计事件…
           </div>
         ) : isError ? (
           <div className="flex h-40 items-center justify-center text-sm text-[var(--theme-danger)]">
-            Failed to load audit events
+            加载审计事件失败
           </div>
         ) : events.length === 0 ? (
           <div className="flex h-40 flex-col items-center justify-center gap-2 text-center">
             <HugeiconsIcon icon={Search01Icon} size={24} className="text-[var(--theme-muted)]" />
-            <p className="text-sm text-[var(--theme-muted)]">No audit events found</p>
+            <p className="text-sm text-[var(--theme-muted)]">未找到审计事件</p>
             <p className="text-xs text-[var(--theme-muted)]">
-              Events are recorded as agents run. Try adjusting the filters or date range.
+              事件会在智能体运行时被记录，请尝试调整筛选条件或时间范围。
             </p>
           </div>
         ) : (
@@ -435,8 +451,8 @@ export function AuditTrailScreen() {
       {totalPages > 1 && (
         <div className="shrink-0 flex items-center justify-between border-t border-[var(--theme-border)] px-6 py-3">
           <span className="text-xs text-[var(--theme-muted)]">
-            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of{' '}
-            {total.toLocaleString()}
+            显示第 {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} 条，共{' '}
+            {total.toLocaleString()} 条
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -444,7 +460,7 @@ export function AuditTrailScreen() {
               disabled={page === 0}
               className="rounded-lg border border-[var(--theme-border)] px-3 py-1 text-xs text-[var(--theme-muted)] hover:text-[var(--theme-text)] disabled:opacity-40"
             >
-              Previous
+              上一页
             </button>
             <span className="text-xs text-[var(--theme-muted)]">
               {page + 1} / {totalPages}
@@ -454,7 +470,7 @@ export function AuditTrailScreen() {
               disabled={page >= totalPages - 1}
               className="rounded-lg border border-[var(--theme-border)] px-3 py-1 text-xs text-[var(--theme-muted)] hover:text-[var(--theme-text)] disabled:opacity-40"
             >
-              Next
+              下一页
             </button>
           </div>
         </div>

@@ -14,8 +14,8 @@ export type AgentPersona = {
 /** Default persona pool — assigned round-robin or by task matching */
 export const AGENT_PERSONAS: Array<AgentPersona> = [
   {
-    name: 'Roger',
-    role: 'Frontend Developer',
+    name: '罗杰',
+    role: '前端开发',
     emoji: '🎨',
     color: 'text-blue-400',
     specialties: [
@@ -34,8 +34,8 @@ export const AGENT_PERSONAS: Array<AgentPersona> = [
     ],
   },
   {
-    name: 'Sally',
-    role: 'Backend Architect',
+    name: '莎莉',
+    role: '后端架构',
     emoji: '🏗️',
     color: 'text-purple-400',
     specialties: [
@@ -54,8 +54,8 @@ export const AGENT_PERSONAS: Array<AgentPersona> = [
     ],
   },
   {
-    name: 'Bill',
-    role: 'Marketing Expert',
+    name: '比尔',
+    role: '营销专家',
     emoji: '📣',
     color: 'text-orange-400',
     specialties: [
@@ -71,8 +71,8 @@ export const AGENT_PERSONAS: Array<AgentPersona> = [
     ],
   },
   {
-    name: 'Ada',
-    role: 'QA Engineer',
+    name: '艾达',
+    role: '质量保障工程师',
     emoji: '🔍',
     color: 'text-emerald-400',
     specialties: [
@@ -90,8 +90,8 @@ export const AGENT_PERSONAS: Array<AgentPersona> = [
     ],
   },
   {
-    name: 'Max',
-    role: 'DevOps Specialist',
+    name: '麦克斯',
+    role: '运维专家',
     emoji: '⚙️',
     color: 'text-amber-400',
     specialties: [
@@ -109,8 +109,8 @@ export const AGENT_PERSONAS: Array<AgentPersona> = [
     ],
   },
   {
-    name: 'Luna',
-    role: 'Research Analyst',
+    name: '露娜',
+    role: '研究分析师',
     emoji: '🔬',
     color: 'text-cyan-400',
     specialties: [
@@ -127,8 +127,8 @@ export const AGENT_PERSONAS: Array<AgentPersona> = [
     ],
   },
   {
-    name: 'Kai',
-    role: 'Full-Stack Engineer',
+    name: '凯',
+    role: '全栈工程师',
     emoji: '⚡',
     color: 'text-yellow-400',
     specialties: [
@@ -144,8 +144,8 @@ export const AGENT_PERSONAS: Array<AgentPersona> = [
     ],
   },
   {
-    name: 'Nova',
-    role: 'Security Specialist',
+    name: '星枢',
+    role: '安全专家',
     emoji: '🛡️',
     color: 'text-red-400',
     specialties: [

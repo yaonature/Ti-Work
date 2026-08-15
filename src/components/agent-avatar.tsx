@@ -7,6 +7,7 @@ import {
   TooltipRoot,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { LobsterIcon } from '@/components/emoji-icon'
 import { cn } from '@/lib/utils'
 
 export type AgentAvatarPreference = 'lobster' | 'logo'
@@ -25,12 +26,6 @@ function getContainerSizeClassName(size: AgentAvatarSize): string {
   if (size === 'sm') return 'size-6'
   if (size === 'lg') return 'size-10'
   return 'size-8'
-}
-
-function getEmojiSizeClassName(size: AgentAvatarSize): string {
-  if (size === 'sm') return 'text-base'
-  if (size === 'lg') return 'text-2xl'
-  return 'text-xl'
 }
 
 function getLogoSizeClassName(size: AgentAvatarSize): string {
@@ -127,23 +122,22 @@ function AgentAvatar({
             getContainerSizeClassName(size),
             className,
           )}
-          aria-label="Toggle agent avatar"
+          aria-label="切换智能体头像"
           onClick={function handleToggleAvatar(event) {
             event.stopPropagation()
             toggleAgentAvatarPreference(preference as AgentAvatarPreference)
           }}
         >
           {preference === 'lobster' ? (
-            <span
-              className={cn('leading-none', getEmojiSizeClassName(size))}
-              aria-hidden="true"
-            >
-              🦞
+            <span className="flex items-center justify-center" aria-hidden="true">
+              <LobsterIcon
+                size={size === 'sm' ? 16 : size === 'lg' ? 26 : 20}
+              />
             </span>
           ) : (
             <img
-              src="/hermes-avatar.webp"
-              alt="Hermes"
+              src="/ti-work-logo.svg"
+              alt="Ti Work"
               className={cn(
                 getLogoSizeClassName(size),
                 iconClassName,
@@ -152,7 +146,7 @@ function AgentAvatar({
             />
           )}
         </TooltipTrigger>
-        <TooltipContent side="top">Click to switch avatar</TooltipContent>
+        <TooltipContent side="top">点击切换头像</TooltipContent>
       </TooltipRoot>
     </TooltipProvider>
   )

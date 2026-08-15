@@ -156,7 +156,7 @@ function getPortableHistoryContent(message: ChatMessage): string {
     Array.isArray(message.attachments) &&
     message.attachments.length > 0
   ) {
-    return 'Please review the attached content.'
+    return '请查看附件内容。'
   }
   return ''
 }
@@ -218,7 +218,7 @@ function exportConversationTranscript(payload: {
       const lines = [`## ${role}`]
       if (text) lines.push(text)
       if (attachments.length > 0) {
-        lines.push('', 'Attachments:')
+        lines.push('', '附件：')
         for (const attachment of attachments) {
           lines.push(`- ${attachment}`)
         }
@@ -941,7 +941,7 @@ export function ChatScreen({
     messages: historyMessages.map((m) => ({
       role: m.role as 'user' | 'assistant',
       content: textFromMessage(m),
-    })) as any,
+    })),
     availableModels: availableModelIds,
   })
 
@@ -1036,9 +1036,9 @@ export function ChatScreen({
           }
           return
         }
-        const errorMessage = `Failed to send message. ${messageText}`
+        const errorMessage = `发送消息失败。${messageText}`
         setError(errorMessage)
-        toast('Failed to send message', { type: 'error' })
+        toast('发送消息失败', { type: 'error' })
         showErrorToast(messageText)
         setPendingGeneration(false)
         setWaitingForResponse(false)
@@ -1356,7 +1356,7 @@ export function ChatScreen({
       }
     } catch (err) {
       setError(
-        `Failed to switch model. ${err instanceof Error ? err.message : String(err)}`,
+        `切换模型失败。${err instanceof Error ? err.message : String(err)}`,
       )
     }
   }, [suggestion, resolvedSessionKey, dismiss])
@@ -1401,7 +1401,7 @@ export function ChatScreen({
           }
         : statusQuery.data && !statusQuery.data.ok
           ? {
-              message: statusQuery.data.error || 'Hermes unavailable',
+              message: statusQuery.data.error || 'Hermes 不可用',
               status: statusQuery.data.status,
             }
           : null
@@ -1503,7 +1503,7 @@ export function ChatScreen({
     }
     const messageText = sessionsError ?? historyError ?? statusError?.message
     if (!messageText) {
-      if (error?.startsWith('Failed to load')) {
+      if (error?.startsWith('加载')) {
         setError(null)
       }
       return
@@ -1512,11 +1512,11 @@ export function ChatScreen({
       navigate({ to: '/', replace: true })
     }
     const message = sessionsError
-      ? `Failed to load sessions. ${sessionsError}`
+      ? `加载会话失败。${sessionsError}`
       : historyError
-        ? `Failed to load history. ${historyError}`
+        ? `加载历史记录失败。${historyError}`
         : statusError
-          ? `Hermes unavailable. ${statusError.message}`
+          ? `Hermes 不可用。${statusError.message}`
           : null
     if (message) setError(message)
   }, [
@@ -2090,7 +2090,7 @@ export function ChatScreen({
           activeSessionKey ||
           activeFriendlyId
         clearHistoryMessages(queryClient, activeFriendlyId, sessionKey)
-        toast('Chat cleared', { type: 'success' })
+        toast('会话已清空', { type: 'success' })
         return true
       }
 
@@ -2116,7 +2116,7 @@ export function ChatScreen({
           messages: finalDisplayMessages,
         })
         if (exported) {
-          toast('Conversation exported', { type: 'success' })
+          toast('对话已导出', { type: 'success' })
         }
         return true
       }

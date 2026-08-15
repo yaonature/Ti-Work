@@ -8,6 +8,7 @@
  */
 import { useState } from 'react'
 import type { ApprovalRequest } from '@/lib/approvals-store'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { cn } from '@/lib/utils'
 
 interface ApprovalCardProps {
@@ -37,11 +38,11 @@ export function ApprovalCard({ approval, onResolve }: ApprovalCardProps) {
             : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400',
         )}
       >
-        <span className="shrink-0 font-bold">
-          {wasApproved ? '✓' : '✗'}
+        <span className="shrink-0 font-bold inline-flex items-center">
+          <EmojiIcon emoji={wasApproved ? '✓' : '✗'} size={12} />
         </span>
         <span className="font-medium">
-          {wasApproved ? 'Approved' : 'Denied'}:
+          {wasApproved ? '已批准' : '已拒绝'}：
         </span>
         <span className="truncate font-mono">{approval.action}</span>
       </div>
@@ -56,8 +57,9 @@ export function ApprovalCard({ approval, onResolve }: ApprovalCardProps) {
       {/* Header row */}
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-            🔐 Approval Required &mdash; {approval.agentName || 'Agent'}
+          <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 inline-flex items-center gap-1">
+            <EmojiIcon emoji="🔐" size={12} />
+            需要审批 &mdash; {approval.agentName || '智能体'}
           </p>
 
           {/* Action / command — always shown, not truncated */}
@@ -80,7 +82,7 @@ export function ApprovalCard({ approval, onResolve }: ApprovalCardProps) {
             onClick={() => setExpanded((v) => !v)}
             className="shrink-0 text-[10px] text-amber-500 underline hover:text-amber-700 dark:text-amber-600 dark:hover:text-amber-400"
           >
-            {expanded ? 'less' : 'details'}
+            {expanded ? '收起' : '详情'}
           </button>
         )}
       </div>
@@ -92,28 +94,28 @@ export function ApprovalCard({ approval, onResolve }: ApprovalCardProps) {
           onClick={() => onResolve(approval, 'approved', 'once')}
           className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 active:bg-emerald-700"
         >
-          Approve Once
+          仅批准本次
         </button>
         <button
           type="button"
           onClick={() => onResolve(approval, 'approved', 'session')}
           className="rounded-lg bg-emerald-600/80 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 active:bg-emerald-800"
         >
-          This Session
+          本会话允许
         </button>
         <button
           type="button"
           onClick={() => onResolve(approval, 'always-allowed', 'always')}
           className="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600 active:bg-blue-700"
         >
-          Always Allow
+          始终允许
         </button>
         <button
           type="button"
           onClick={() => onResolve(approval, 'denied')}
           className="rounded-lg border border-red-200 bg-surface px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 active:bg-red-100 dark:border-red-800/50 dark:text-red-400 dark:hover:bg-red-900/30"
         >
-          Deny
+          拒绝
         </button>
       </div>
     </div>

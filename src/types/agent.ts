@@ -14,7 +14,7 @@ export interface AgentDefinition {
   roleLabel: string
   systemPrompt: string
   model: string | null
-  tags: string[]
+  tags: Array<string>
   isBuiltIn: boolean
   createdAt: number
   updatedAt: number
@@ -27,7 +27,7 @@ export type CreateAgentInput = {
   roleLabel: string
   systemPrompt: string
   model?: string | null
-  tags?: string[]
+  tags?: Array<string>
 }
 
 export type UpdateAgentInput = Partial<CreateAgentInput>

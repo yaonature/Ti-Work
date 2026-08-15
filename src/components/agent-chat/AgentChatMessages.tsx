@@ -46,7 +46,7 @@ export function AgentChatMessages({
     return (
       <div className="grid min-h-40 place-items-center px-6 py-8">
         <p className="text-center text-sm text-pretty text-primary-700">
-          Start the conversation with this agent.
+          开始与此智能体对话。
         </p>
       </div>
     )
@@ -100,8 +100,8 @@ export function AgentChatMessages({
                   )}
                 >
                   <MessageTimestamp timestamp={message.timestamp} />
-                  {message.status === 'sending' ? <span>sending…</span> : null}
-                  {message.status === 'error' ? <span>failed</span> : null}
+                  {message.status === 'sending' ? <span>发送中…</span> : null}
+                  {message.status === 'error' ? <span>失败</span> : null}
                 </div>
               </div>
             </motion.div>
@@ -119,7 +119,7 @@ export function AgentChatMessages({
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary-500/60" />
             <span className="relative inline-flex size-2 rounded-full bg-primary-600" />
           </span>
-          Agent is typing…
+          智能体正在输入…
         </motion.div>
       ) : null}
 

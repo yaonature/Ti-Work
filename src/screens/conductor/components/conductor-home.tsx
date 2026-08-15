@@ -15,16 +15,17 @@ import {
   Settings01Icon,
   TaskDone01Icon,
 } from '@hugeicons/core-free-icons'
-import { Button } from '@/components/ui/button'
-import { Markdown } from '@/components/prompt-kit/markdown'
-import { cn } from '@/lib/utils'
 import { OfficeView } from './office-view'
-import { CostTracker, type CostWorker } from './cost-tracker'
-import { getAgentPersona, AGENT_NAMES } from './agent-avatar'
+import { CostTracker  } from './cost-tracker'
+import { AGENT_NAMES, getAgentPersona } from './agent-avatar'
+import type {CostWorker} from './cost-tracker';
 import type { AgentWorkingRow } from './office-view'
 import type { MissionHistoryEntry, MissionHistoryWorkerDetail } from '@/types/conductor'
 import type { GatewaySession } from '@/lib/gateway-api'
 import type { useConductorGateway } from '../hooks/use-conductor-gateway'
+import { cn } from '@/lib/utils'
+import { Markdown } from '@/components/prompt-kit/markdown'
+import { Button } from '@/components/ui/button'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,10 +51,10 @@ const QUICK_ACTIONS: Array<{
   icon: typeof Search01Icon
   prompt: string
 }> = [
-  { id: 'research', label: 'Research', icon: Search01Icon, prompt: 'Research the problem space, gather constraints, compare approaches, and propose the most viable plan.' },
-  { id: 'build', label: 'Build', icon: PlayIcon, prompt: 'Build the requested feature end-to-end, including implementation, validation, and a concise delivery summary.' },
-  { id: 'review', label: 'Review', icon: TaskDone01Icon, prompt: 'Review the current implementation for correctness, regressions, missing tests, and release risks.' },
-  { id: 'deploy', label: 'Deploy', icon: Rocket01Icon, prompt: 'Prepare the work for deployment, verify readiness, and summarize any operational follow-ups.' },
+  { id: 'research', label: '调研', icon: Search01Icon, prompt: '调研问题空间，梳理约束条件，比较可选方案，并提出最可行的执行计划。' },
+  { id: 'build', label: '构建', icon: PlayIcon, prompt: '端到端交付所需功能，包括实现、验证和简洁的交接总结。' },
+  { id: 'review', label: '审查', icon: TaskDone01Icon, prompt: '审查当前实现，检查正确性、潜在回归、缺失测试和发布风险。' },
+  { id: 'deploy', label: '部署', icon: Rocket01Icon, prompt: '为部署做好准备，确认发布就绪状态，并总结后续操作。' },
 ]
 
 const OFFICE_NAMES = AGENT_NAMES.slice(0, 6)
@@ -64,35 +65,47 @@ const ACTIVITY_PAGE_SIZE = 3
 // ---------------------------------------------------------------------------
 
 function formatRelativeTime(value: string | null | undefined, now: number): string {
-  if (!value) return 'just now'
+  if (!value) return '刚刚'
   const ms = new Date(value).getTime()
-  if (!Number.isFinite(ms)) return 'just now'
+  if (!Number.isFinite(ms)) return '刚刚'
   const diffSeconds = Math.max(0, Math.floor((now - ms) / 1000))
-  if (diffSeconds < 10) return 'just now'
-  if (diffSeconds < 60) return `${diffSeconds}s ago`
+  if (diffSeconds < 10) return '刚刚'
+  if (diffSeconds < 60) return `${diffSeconds}秒前`
   const diffMinutes = Math.floor(diffSeconds / 60)
-  if (diffMinutes < 60) return `${diffMinutes}m ago`
+  if (diffMinutes < 60) return `${diffMinutes}分钟前`
   const diffHours = Math.floor(diffMinutes / 60)
-  return `${diffHours}h ago`
+  return `${diffHours}小时前`
 }
 
 function formatDurationRange(startIso: string | null | undefined, endIso: string | null | undefined, now: number): string {
   const startMs = startIso ? new Date(startIso).getTime() : 0
-  if (!Number.isFinite(startMs) || startMs === 0) return '0s'
+  if (!Number.isFinite(startMs) || startMs === 0) return '0秒'
   const endMs = endIso ? new Date(endIso).getTime() : now
   const totalSeconds = Math.max(0, Math.floor(((Number.isFinite(endMs) ? endMs : now) - startMs) / 1000))
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
-  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`
-  if (minutes > 0) return `${minutes}m ${seconds}s`
-  return `${seconds}s`
+  if (hours > 0) return `${hours}小时 ${minutes}分 ${seconds}秒`
+  if (minutes > 0) return `${minutes}分 ${seconds}秒`
+  return `${seconds}秒`
 }
 
 function getShortModelName(model: string | null | undefined): string {
-  if (!model) return 'Unknown'
+  if (!model) return '未知'
   const parts = model.split('/')
   return parts[parts.length - 1] || model
+}
+
+function getActivityFilterLabel(filter: 'all' | 'completed' | 'failed'): string {
+  if (filter === 'all') return '全部'
+  if (filter === 'completed') return '已完成'
+  return '失败'
+}
+
+function getSessionStatusLabel(status: 'running' | 'completed' | 'failed'): string {
+  if (status === 'completed') return '已完成'
+  if (status === 'failed') return '失败'
+  return '运行中'
 }
 
 function deriveSessionStatus(session: GatewaySession): 'running' | 'completed' | 'failed' {
@@ -128,7 +141,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
   const hasMissionHistory = conductor.missionHistory.length > 0
 
   // Build office rows for idle home view
-  const homeOfficeRows = useMemo<AgentWorkingRow[]>(() => {
+  const homeOfficeRows = useMemo<Array<AgentWorkingRow>>(() => {
     const sessions = conductor.recentSessions
     if (sessions.length === 0) {
       return OFFICE_NAMES.slice(0, 3).map((name, i) => ({
@@ -136,13 +149,13 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
         name,
         modelId: 'auto',
         status: 'idle' as const,
-        lastLine: 'Waiting for work...',
+        lastLine: '等待任务中…',
         taskCount: 0,
-        roleDescription: 'Worker',
+        roleDescription: '工作智能体',
       }))
     }
     return sessions.slice(0, 6).map((session, i) => {
-      const s = session as GatewaySession
+      const s = session
       const updatedAt = typeof s.updatedAt === 'string' ? new Date(s.updatedAt).getTime() : 0
       const statusText = `${s.status ?? ''} ${s.kind ?? ''}`.toLowerCase()
       const status: AgentWorkingRow['status'] = /error|failed/.test(statusText) ? 'error'
@@ -153,10 +166,10 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
         name: OFFICE_NAMES[i % OFFICE_NAMES.length],
         modelId: s.model ?? 'auto',
         status,
-        lastLine: s.task ?? s.label ?? s.title ?? s.derivedTitle ?? 'Working...',
+        lastLine: s.task ?? s.label ?? s.title ?? s.derivedTitle ?? '处理中…',
         lastAt: updatedAt || undefined,
         taskCount: 0,
-        roleDescription: s.label ?? 'Worker',
+        roleDescription: s.label ?? '工作智能体',
         sessionKey: s.key ?? undefined,
       }
     })
@@ -174,7 +187,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
   const safeActivityPage = Math.min(activityPage, activityTotalPages - 1)
   const visibleActivityItems = activityItems.slice(safeActivityPage * ACTIVITY_PAGE_SIZE, (safeActivityPage + 1) * ACTIVITY_PAGE_SIZE)
 
-  const historyMissionCostWorkers = useMemo<CostWorker[]>(
+  const historyMissionCostWorkers = useMemo<Array<CostWorker>>(
     () =>
       (selectedHistoryEntry?.workerDetails ?? []).map((worker, index) => ({
         id: `${selectedHistoryEntry?.id ?? 'history'}-${index}`,
@@ -201,7 +214,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
     const historyWorkerDetails = selectedHistoryEntry.workerDetails ?? []
     const historySummary = selectedHistoryEntry.completeSummary ?? selectedHistoryEntry.streamText
     const historyOutputText = selectedHistoryEntry.outputText?.trim() || selectedHistoryEntry.streamText?.trim() || ''
-    const historyStatusLabel = selectedHistoryEntry.status === 'completed' ? 'Complete' : 'Stopped'
+    const historyStatusLabel = selectedHistoryEntry.status === 'completed' ? '已完成' : '已停止'
     const historyStatusClasses =
       selectedHistoryEntry.status === 'completed'
         ? 'border border-emerald-400/35 bg-emerald-500/10 text-emerald-300'
@@ -214,18 +227,18 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
           onClick={() => conductor.setSelectedHistoryEntry(null)}
           className="inline-flex items-center gap-2 self-start rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-muted)] transition-colors hover:border-[var(--theme-border2)] hover:text-[var(--theme-text)]"
         >
-          <span aria-hidden="true">&larr;</span> Back
+          <span aria-hidden="true">&larr;</span> 返回
         </button>
 
         <div className="overflow-hidden rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-card)] p-6 shadow-[0_24px_80px_var(--theme-shadow)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className={cn('text-xs font-semibold uppercase tracking-[0.24em]', selectedHistoryEntry.status === 'completed' ? 'text-[var(--theme-accent)]' : 'text-red-400')}>
-                {selectedHistoryEntry.status === 'completed' ? 'Mission Complete' : 'Mission Stopped'}
+                {selectedHistoryEntry.status === 'completed' ? '任务已完成' : '任务已停止'}
               </p>
               <h1 className="mt-2 text-xl font-semibold tracking-tight text-[var(--theme-text)] sm:text-2xl">{selectedHistoryEntry.goal}</h1>
               <p className="mt-2 text-xs text-[var(--theme-muted-2)]">
-                {selectedHistoryEntry.workerCount}/{Math.max(selectedHistoryEntry.workerCount, 1)} workers finished &middot; {formatDurationRange(selectedHistoryEntry.startedAt, selectedHistoryEntry.completedAt, now)} total elapsed
+                {selectedHistoryEntry.workerCount}/{Math.max(selectedHistoryEntry.workerCount, 1)} 项任务已完成 &middot; 总耗时 {formatDurationRange(selectedHistoryEntry.startedAt, selectedHistoryEntry.completedAt, now)}
               </p>
             </div>
             <Button
@@ -236,14 +249,14 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
               }}
               className="rounded-xl bg-[var(--theme-accent)] px-5 text-white hover:bg-[var(--theme-accent-strong)]"
             >
-              New Mission
+              新建任务
             </Button>
           </div>
         </div>
 
         <section className="overflow-hidden rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-card)] p-6 shadow-[0_24px_80px_var(--theme-shadow)]">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-muted)]">Agent Summary</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-muted)]">智能体摘要</p>
             <span className={cn('rounded-full px-3 py-1 text-xs font-medium', historyStatusClasses)}>
               {historyStatusLabel}
             </span>
@@ -252,7 +265,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
             {historySummary ? (
               <Markdown className="max-h-[400px] max-w-none overflow-auto text-sm text-[var(--theme-text)]">{historySummary}</Markdown>
             ) : (
-              <p className="text-sm text-[var(--theme-muted)]">No summary captured.</p>
+              <p className="text-sm text-[var(--theme-muted)]">暂无摘要。</p>
             )}
           </div>
           {historyWorkerDetails.length > 0 && (
@@ -262,7 +275,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
                   <span className={cn('size-2 rounded-full', selectedHistoryEntry.status === 'completed' ? 'bg-emerald-400' : 'bg-red-400')} />
                   <span className="font-medium text-[var(--theme-text)]">{worker.personaEmoji} {worker.personaName}</span>
                   <span className="text-[var(--theme-muted)]">{worker.label}</span>
-                  <span className="ml-auto text-xs text-[var(--theme-muted)]">{getShortModelName(worker.model)} &middot; {worker.totalTokens.toLocaleString()} tok</span>
+                  <span className="ml-auto text-xs text-[var(--theme-muted)]">{getShortModelName(worker.model)} &middot; {worker.totalTokens.toLocaleString()} token</span>
                 </div>
               ))}
             </div>
@@ -281,7 +294,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
 
         {historyOutputText && (
           <section className="overflow-hidden rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-card)] p-6 shadow-[0_24px_80px_var(--theme-shadow)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-muted)]">Worker Output</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-muted)]">执行输出</p>
             <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-5 py-4">
               <Markdown className="max-h-[600px] max-w-none overflow-auto text-sm text-[var(--theme-text)]">{historyOutputText}</Markdown>
             </div>
@@ -291,7 +304,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
         {!historySummary && historyWorkerDetails.length === 0 && !historyOutputText && (
           <section className="overflow-hidden rounded-3xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-card)] p-6">
             <p className="text-center text-sm text-[var(--theme-muted)]">
-              No detailed output was captured for this mission.
+              该任务没有详细的输出记录。
             </p>
           </section>
         )}
@@ -305,7 +318,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
       <div className="space-y-2 text-center">
         <div className="relative flex items-center justify-center">
           <div className="inline-flex items-center gap-2.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card)] px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.24em] text-[var(--theme-muted)]">
-            Conductor
+            任务指挥中心
             <span className="size-2.5 rounded-full bg-emerald-400" />
           </div>
           <div className="absolute right-0 flex items-center gap-2">
@@ -313,7 +326,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
               type="button"
               onClick={() => setMissionModalOpen(true)}
               className="inline-flex items-center justify-center rounded-xl bg-[var(--theme-accent)] p-2 text-white shadow-sm transition-colors hover:bg-[var(--theme-accent-strong)]"
-              aria-label="New Mission"
+              aria-label="新建任务"
             >
               <HugeiconsIcon icon={Rocket01Icon} size={18} strokeWidth={1.7} />
             </button>
@@ -321,25 +334,25 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
               type="button"
               onClick={onSettingsOpen}
               className="inline-flex items-center justify-center rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)] p-2 text-[var(--theme-muted)] transition-colors hover:border-[var(--theme-accent)] hover:text-[var(--theme-accent-strong)]"
-              aria-label="Open conductor settings"
+              aria-label="打开调度设置"
             >
               <HugeiconsIcon icon={Settings01Icon} size={18} strokeWidth={1.7} />
             </button>
           </div>
         </div>
-        <p className="text-sm text-[var(--theme-muted-2)]">Launch a mission and watch your agent team build it live.</p>
+        <p className="text-sm text-[var(--theme-muted-2)]">发起一项任务，实时观看智能体团队协同工作。</p>
       </div>
 
       {conductor.hasPersistedMission && (
         <div className="rounded-2xl border border-[var(--theme-accent)]/30 bg-[var(--theme-accent-soft)] px-5 py-4">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-[var(--theme-text)]">A previous mission was in progress. Resume where you left off?</p>
+            <p className="text-sm text-[var(--theme-text)]">之前的任务仍在运行，是否从中断处继续？</p>
             <Button
               type="button"
               onClick={() => setMissionModalOpen(true)}
               className="rounded-xl bg-[var(--theme-accent)] px-4 text-white hover:bg-[var(--theme-accent-strong)]"
             >
-              Resume
+              继续任务
             </Button>
           </div>
         </div>
@@ -360,7 +373,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
       {(hasMissionHistory || conductor.recentSessions.length > 0) ? (
         <section className="mt-6 w-full space-y-3">
           <div className="flex items-center gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--theme-muted)]">Recent Missions</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--theme-muted)]">最近任务</h2>
             {activityTotalPages > 1 && (
               <div className="ml-auto flex items-center gap-1.5">
                 <span className="text-[10px] text-[var(--theme-muted-2)]">{safeActivityPage + 1}/{activityTotalPages}</span>
@@ -396,7 +409,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
                     : 'border-[var(--theme-border)] text-[var(--theme-muted-2)] hover:border-[var(--theme-accent)] hover:text-[var(--theme-text)]',
                 )}
               >
-                {filter}
+                {getActivityFilterLabel(filter)}
               </button>
             ))}
           </div>
@@ -421,10 +434,10 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
                               : 'border-red-400/35 bg-red-500/10 text-red-300',
                           )}
                         >
-                          {entry.status === 'completed' ? 'Complete' : 'Failed'}
+                          {entry.status === 'completed' ? '已完成' : '失败'}
                         </span>
                         <span className="w-[52px] shrink-0 text-right text-xs text-[var(--theme-muted-2)]">{formatRelativeTime(entry.completedAt, now)}</span>
-                        <span className="w-[72px] shrink-0 text-right text-xs text-[var(--theme-muted)]">{entry.totalTokens.toLocaleString()} tok</span>
+                        <span className="w-[72px] shrink-0 text-right text-xs text-[var(--theme-muted)]">{entry.totalTokens.toLocaleString()} token</span>
                       </button>
                     )
                   })
@@ -449,25 +462,25 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
                             : 'border-sky-400/35 bg-sky-500/10 text-sky-300',
                         )}>
                           <span className={cn('mr-1 inline-block size-1.5 rounded-full align-middle', dotClass)} />
-                          {sessionStatus}
+                          {getSessionStatusLabel(sessionStatus)}
                         </span>
                         <span className="shrink-0 text-xs text-[var(--theme-muted-2)]">{formatRelativeTime(updatedAt, now)}</span>
-                        <span className="shrink-0 text-xs text-[var(--theme-muted)]">{tokens.toLocaleString()} tok</span>
+                        <span className="shrink-0 text-xs text-[var(--theme-muted)]">{tokens.toLocaleString()} token</span>
                       </div>
                     )
                   })}
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-[var(--theme-border)] px-4 py-6 text-center text-sm text-[var(--theme-muted)]">
-              No {activityFilter === 'all' ? '' : `${activityFilter} `}{hasMissionHistory ? 'missions' : 'sessions'} found
+              未找到{hasMissionHistory ? '任务' : '会话'}记录{activityFilter === 'all' ? '' : `（${getActivityFilterLabel(activityFilter)}）`}
             </div>
           )}
         </section>
       ) : (
         <section className="mt-6 w-full">
           <div className="rounded-xl border border-dashed border-[var(--theme-border)] px-4 py-8 text-center">
-            <p className="text-sm text-[var(--theme-muted)]">No missions yet.</p>
-            <p className="mt-1 text-xs text-[var(--theme-muted-2)]">Launch your first mission and it will appear here.</p>
+            <p className="text-sm text-[var(--theme-muted)]">还没有任务。</p>
+            <p className="mt-1 text-xs text-[var(--theme-muted-2)]">发起第一个任务后，它会显示在这里。</p>
           </div>
         </section>
       )}
@@ -475,23 +488,23 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
       {/* Mission launch modal */}
       {missionModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--theme-bg)_48%,transparent)] px-4 py-6 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
           onClick={() => setMissionModalOpen(false)}
         >
           <div
-            className="w-full max-w-2xl rounded-3xl border border-[var(--theme-border2)] bg-[var(--theme-card)] p-5 shadow-[0_24px_80px_var(--theme-shadow)] sm:p-6"
+            className="w-full max-w-2xl rounded-[20px] border border-[var(--theme-border2)] bg-[var(--theme-panel)] p-5 shadow-[var(--theme-shadow-3)] sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold tracking-tight text-[var(--theme-text)]">New Mission</h2>
-                <p className="mt-1 text-sm text-[var(--theme-muted-2)]">Describe the mission, constraints, and desired outcome.</p>
+                <h2 className="text-lg font-semibold tracking-tight text-[var(--theme-text)]">新建任务</h2>
+                <p className="mt-1 text-sm text-[var(--theme-muted-2)]">描述目标、约束条件和预期结果。</p>
               </div>
               <button
                 type="button"
                 onClick={() => setMissionModalOpen(false)}
                 className="inline-flex size-9 items-center justify-center rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card2)] text-lg text-[var(--theme-muted)] transition-colors hover:border-[var(--theme-accent)] hover:text-[var(--theme-accent-strong)]"
-                aria-label="Close new mission dialog"
+                aria-label="关闭新建任务对话框"
               >
                 &times;
               </button>
@@ -523,7 +536,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
               <textarea
                 value={goalDraft}
                 onChange={(e) => setGoalDraft(e.target.value)}
-                placeholder={`${QUICK_ACTIONS.find((a) => a.id === selectedAction)?.label ?? 'Build'}: describe the mission, constraints, and desired outcome.`}
+                placeholder={`${QUICK_ACTIONS.find((a) => a.id === selectedAction)?.label ?? '构建'}：描述目标、约束条件和预期结果。`}
                 disabled={conductor.isSending}
                 rows={8}
                 className="min-h-[220px] w-full rounded-3xl border border-[var(--theme-border2)] bg-[var(--theme-bg)] px-4 py-4 text-sm text-[var(--theme-text)] outline-none transition-colors placeholder:text-[var(--theme-muted-2)] focus:border-[var(--theme-accent)] disabled:cursor-not-allowed disabled:opacity-60 md:text-base"
@@ -535,7 +548,7 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
                   disabled={!goalDraft.trim() || conductor.isSending}
                   className="rounded-full bg-[var(--theme-accent)] px-5 text-white hover:bg-[var(--theme-accent-strong)]"
                 >
-                  {conductor.isSending ? 'Launching...' : 'Launch Mission'}
+                  {conductor.isSending ? '正在启动…' : '发起任务'}
                   <HugeiconsIcon icon={ArrowRight01Icon} size={16} strokeWidth={1.7} />
                 </Button>
               </div>

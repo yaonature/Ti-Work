@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/scroll-area'
 import { Markdown } from '@/components/prompt-kit/markdown'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { writeTextToClipboard } from '@/lib/clipboard'
 import { toast } from '@/components/ui/toast'
 
@@ -101,6 +102,23 @@ const DEFAULT_CATEGORIES = [
   'Finance & Crypto',
 ]
 
+const CATEGORY_LABELS: Record<string, string> = {
+  'All': '全部',
+  'Web & Frontend': 'Web 与前端',
+  'Coding Agents': '编码智能体',
+  'Git & GitHub': 'Git 与 GitHub',
+  'DevOps & Cloud': 'DevOps 与云',
+  'Browser & Automation': '浏览器与自动化',
+  'Image & Video': '图像与视频',
+  'Search & Research': '搜索与研究',
+  'AI & LLMs': 'AI 与 LLM',
+  'Productivity': '效率工具',
+  'Marketing & Sales': '营销与销售',
+  'Communication': '沟通协作',
+  'Data & Analytics': '数据与分析',
+  'Finance & Crypto': '金融与加密',
+}
+
 function resolveSkillSearchTier(
   skill: SkillSummary,
   query: string,
@@ -166,7 +184,7 @@ export function SkillsScreen() {
         error?: string
       }
       if (!response.ok) {
-        throw new Error(payload.error || 'Failed to fetch skills')
+        throw new Error(payload.error || '加载技能失败')
       }
       return payload
     },
@@ -186,7 +204,7 @@ export function SkillsScreen() {
       )
       const payload = (await response.json()) as HubSearchResponse
       if (!response.ok) {
-        throw new Error(payload.error || 'Failed to search skills hub')
+        throw new Error(payload.error || '搜索技能中心失败')
       }
       return payload
     },
@@ -331,14 +349,14 @@ export function SkillsScreen() {
       }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Action failed')
+        throw new Error(data.error || '操作失败')
       }
 
       if (
         (action === 'install' || action === 'uninstall') &&
         data.ok === false
       ) {
-        throw new Error(data.error || 'Action failed')
+        throw new Error(data.error || '操作失败')
       }
 
       await Promise.all([
@@ -347,9 +365,9 @@ export function SkillsScreen() {
       ])
 
       if (action === 'install') {
-        toast(`${payload.skillId} installed`, { type: 'success', icon: '✅' })
+        toast(`${payload.skillId} 已安装`, { type: 'success', icon: '✅' })
       } else if (action === 'uninstall') {
-        toast(`${payload.skillId} uninstalled`, { type: 'info', icon: '🗑️' })
+        toast(`${payload.skillId} 已卸载`, { type: 'info', icon: '🗑️' })
       }
 
       setSelectedSkill(function updateSelectedSkill(current) {
@@ -410,14 +428,13 @@ export function SkillsScreen() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1.5">
               <p className="text-xs font-medium uppercase text-[var(--theme-muted)] tabular-nums">
-                Hermes Studio Marketplace
+                Ti Work 市场
               </p>
               <h1 className="text-2xl font-medium text-ink text-balance sm:text-3xl">
-                Skills Browser
+                技能浏览器
               </h1>
               <p className="text-sm text-[var(--theme-muted)] text-pretty sm:text-base">
-                Discover, install, and manage skills across your local workspace
-                and Skills Hub.
+                在本地工作区与技能中心发现、安装和管理技能。
               </p>
             </div>
           </div>
@@ -431,16 +448,16 @@ export function SkillsScreen() {
                 variant="default"
               >
                 <TabsTab value="installed" className="flex-1 sm:min-w-[132px]">
-                  Installed
+                  已安装
                 </TabsTab>
                 <TabsTab
                   value="marketplace"
                   className="flex-1 sm:min-w-[168px]"
                 >
-                  Marketplace
+                  市场
                 </TabsTab>
                 <TabsTab value="featured" className="flex-1 sm:min-w-[120px]">
-                  Featured
+                  精选
                 </TabsTab>
               </TabsList>
 
@@ -449,7 +466,7 @@ export function SkillsScreen() {
                   <input
                     value={searchInput}
                     onChange={(event) => handleSearchChange(event.target.value)}
-                    placeholder="Search by name, tags, or description"
+                    placeholder="按名称、标签或描述搜索"
                     className="h-9 w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 text-sm text-ink outline-none transition-colors focus:border-[var(--theme-accent)] sm:min-w-[220px]"
                   />
 
@@ -463,7 +480,7 @@ export function SkillsScreen() {
                     >
                       {categories.map((item) => (
                         <option key={item} value={item}>
-                          {item}
+                          {CATEGORY_LABELS[item] ?? item}
                         </option>
                       ))}
                     </select>
@@ -481,8 +498,8 @@ export function SkillsScreen() {
                       }
                       className="h-9 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 text-sm text-ink outline-none"
                     >
-                      <option value="name">Name A-Z</option>
-                      <option value="category">Category</option>
+                      <option value="name">名称 A-Z</option>
+                      <option value="category">分类</option>
                     </select>
                   ) : null}
                 </div>
@@ -496,7 +513,7 @@ export function SkillsScreen() {
             ) : null}
             {actionSkillId && actionType === 'install' ? (
               <p className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700   ">
-                Installing {actionSkillId}... This may take up to 2 minutes.
+                正在安装 {actionSkillId}... 可能需要 2 分钟。
               </p>
             ) : null}
 
@@ -522,34 +539,34 @@ export function SkillsScreen() {
                 <input
                   value={searchInput}
                   onChange={(event) => handleSearchChange(event.target.value)}
-                  placeholder="Search skills..."
+                  placeholder="搜索技能..."
                   className="h-10 w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 text-sm text-ink outline-none transition-colors focus:border-primary"
                 />
                 <div className="text-xs text-[var(--theme-muted)] sm:text-right">
                   {hubQuery.data?.source === 'skillsmp'
-                    ? 'Source: skillsmp.com'
+                    ? '来源：skillsmp.com'
                     : hubQuery.data?.source === 'installed-fallback'
-                      ? 'Source: local ~/.hermes/skills'
+                      ? '来源：本地 ~/.hermes/skills'
                       : ''}
                 </div>
               </div>
 
               {hubQuery.data?.source === 'no-api-key' ? (
                 <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)] px-4 py-4 text-sm text-[var(--theme-text)]">
-                  <p className="font-medium mb-1">skillsmp.com API key not configured</p>
+                  <p className="font-medium mb-1">未配置 skillsmp.com API 密钥</p>
                   <p className="text-[var(--theme-muted)] text-pretty">
-                    To search the Skills marketplace, add your API key in{' '}
+                    要搜索技能市场，请在{' '}
                     <a href="/settings" className="underline underline-offset-2 hover:opacity-80">
-                      Settings → Integrations
+                      设置 → 集成
                     </a>
-                    .{' '}
+                    中添加你的 API 密钥。{' '}
                     <a
                       href="https://skillsmp.com/docs/api"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline underline-offset-2 hover:opacity-80"
                     >
-                      Get your key at skillsmp.com →
+                      在 skillsmp.com 获取 API 密钥 →
                     </a>
                   </p>
                 </div>
@@ -557,7 +574,7 @@ export function SkillsScreen() {
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {hubQuery.error instanceof Error
                     ? hubQuery.error.message
-                    : 'Failed to load marketplace skills.'}
+                    : '加载市场技能失败。'}
                 </div>
               ) : null}
 
@@ -568,11 +585,11 @@ export function SkillsScreen() {
                 tab="marketplace"
                 emptyState={{
                   title: searchInput.trim()
-                    ? 'No skills found'
-                    : 'Search Skills',
+                    ? '未找到技能'
+                    : '搜索技能',
                   description: searchInput.trim()
-                    ? 'Try a different search term.'
-                    : 'Start typing to search available skills.',
+                    ? '尝试不同的搜索词。'
+                    : '输入关键词开始搜索可用技能。',
                 }}
                 onOpenDetails={setSelectedSkill}
                 onInstall={(skillId) => {
@@ -612,7 +629,7 @@ export function SkillsScreen() {
         {tab !== 'featured' && tab !== 'marketplace' ? (
           <footer className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 py-2.5 text-sm text-[var(--theme-muted)] tabular-nums">
             <span>
-              {(skillsQuery.data?.total || 0).toLocaleString()} total skills
+              共 {(skillsQuery.data?.total || 0).toLocaleString()} 个技能
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -621,7 +638,7 @@ export function SkillsScreen() {
                 disabled={page <= 1 || skillsQuery.isPending}
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
               >
-                Previous
+                上一页
               </Button>
               <span className="min-w-[82px] text-center">
                 {page} / {totalPages}
@@ -634,7 +651,7 @@ export function SkillsScreen() {
                   setPage((current) => Math.min(totalPages, current + 1))
                 }
               >
-                Next
+                下一页
               </Button>
             </div>
           </footer>
@@ -654,11 +671,11 @@ export function SkillsScreen() {
             <div className="flex max-h-[85vh] flex-col">
               <div className="border-b border-[var(--theme-border)] px-5 py-4">
                 <DialogTitle className="text-balance">
-                  {selectedSkill.icon} {selectedSkill.name}
+                  <EmojiIcon emoji={selectedSkill.icon} size={16} />{' '}
+                  {selectedSkill.name}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-pretty">
-                  by {selectedSkill.author} • {selectedSkill.category} •{' '}
-                  {selectedSkill.fileCount.toLocaleString()} files
+                  作者：{selectedSkill.author} • {CATEGORY_LABELS[selectedSkill.category] ?? selectedSkill.category} • {selectedSkill.fileCount.toLocaleString()} 个文件
                 </DialogDescription>
                 {selectedSkill.security && (
                   <div className="mt-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)] overflow-hidden">
@@ -675,7 +692,7 @@ export function SkillsScreen() {
                   <div className="space-y-3">
                     {selectedSkill.homepage ? (
                       <p className="text-sm text-[var(--theme-muted)] text-pretty">
-                        Homepage:{' '}
+                        主页：{' '}
                         <a
                           href={selectedSkill.homepage}
                           target="_blank"
@@ -699,7 +716,7 @@ export function SkillsScreen() {
                         ))
                       ) : (
                         <span className="rounded-md border border-[var(--theme-border)] bg-[var(--theme-panel)] px-2 py-0.5 text-xs text-[var(--theme-muted)]">
-                          No triggers listed
+                          未列出触发器
                         </span>
                       )}
                     </div>
@@ -719,7 +736,7 @@ export function SkillsScreen() {
 
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--theme-border)] px-5 py-3">
                 <p className="text-sm text-[var(--theme-muted)] text-pretty">
-                  Source:{' '}
+                  来源：{' '}
                   <code className="inline-code">
                     {selectedSkill.sourcePath}
                   </code>
@@ -736,7 +753,13 @@ export function SkillsScreen() {
                         })
                       }}
                     >
-                      {actionSkillId === selectedSkill.id ? '⏳ Removing…' : 'Uninstall'}
+                      {actionSkillId === selectedSkill.id ? (
+                        <>
+                          <EmojiIcon emoji="⏳" size={12} /> 卸载中…
+                        </>
+                      ) : (
+                        '卸载'
+                      )}
                     </Button>
                   ) : (
                     <Button
@@ -746,7 +769,13 @@ export function SkillsScreen() {
                         runSkillAction('install', { skillId: selectedSkill.id })
                       }
                     >
-                      {actionSkillId === selectedSkill.id ? '⏳ Installing…' : 'Install'}
+                      {actionSkillId === selectedSkill.id ? (
+                        <>
+                          <EmojiIcon emoji="⏳" size={12} /> 安装中…
+                        </>
+                      ) : (
+                        '安装'
+                      )}
                     </Button>
                   )}
                   <Button
@@ -754,7 +783,7 @@ export function SkillsScreen() {
                     size="sm"
                     onClick={() => setSelectedSkill(null)}
                   >
-                    Close
+                    关闭
                   </Button>
                 </div>
               </div>
@@ -786,24 +815,24 @@ const SECURITY_BADGE: Record<
   { label: string; badgeClass: string; confidence: string }
 > = {
   safe: {
-    label: 'Benign',
+    label: '安全',
     badgeClass: 'bg-green-100 text-green-700 border-green-200',
-    confidence: 'HIGH CONFIDENCE',
+    confidence: '高置信度',
   },
   low: {
-    label: 'Benign',
+    label: '安全',
     badgeClass: 'bg-green-100 text-green-700 border-green-200',
-    confidence: 'MODERATE',
+    confidence: '中',
   },
   medium: {
-    label: 'Caution',
+    label: '谨慎',
     badgeClass: 'bg-amber-100 text-amber-700 border-amber-200',
-    confidence: 'REVIEW RECOMMENDED',
+    confidence: '建议审查',
   },
   high: {
-    label: 'Warning',
+    label: '警告',
     badgeClass: 'bg-red-100 text-red-700 border-red-200',
-    confidence: 'MANUAL REVIEW',
+    confidence: '需要人工审查',
   },
 }
 
@@ -859,21 +888,21 @@ function SecurityScanCard({ security }: { security: SecurityRisk }) {
 
   const summaryText =
     security.flags.length === 0
-      ? 'No risky patterns detected. This skill appears safe to install.'
+      ? '未检测到风险模式，该技能可以安全安装。'
       : security.level === 'high'
-        ? `Found ${security.flags.length} potential security concern${security.flags.length !== 1 ? 's' : ''}. Review before installing.`
-        : `The skill's code was scanned for common risk patterns. ${security.flags.length} item${security.flags.length !== 1 ? 's' : ''} noted.`
+        ? `发现 ${security.flags.length} 个潜在安全风险，安装前请审查。`
+        : `已扫描该技能代码中的常见风险模式，发现 ${security.flags.length} 个。`
 
   return (
     <div className="text-xs">
       <div className="px-3 pt-3 pb-2">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-muted)] mb-2">
-          Security Scan
+          安全扫描
         </p>
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <span className="text-[var(--theme-muted)] font-medium w-16 shrink-0">
-              Hermes Studio
+              Ti Work
             </span>
             <span
               className={cn(
@@ -904,8 +933,10 @@ function SecurityScanCard({ security }: { security: SecurityRisk }) {
             }}
             className="flex w-full items-center justify-between px-3 py-2 text-accent-500 hover:text-accent-600 transition-colors"
           >
-            <span className="text-[11px] font-medium">Details</span>
-            <span className="text-[10px]">{showDetails ? '▲' : '▼'}</span>
+            <span className="text-[11px] font-medium">详情</span>
+            <span className="text-[10px]">
+              <EmojiIcon emoji={showDetails ? '▲' : '▼'} size={12} />
+            </span>
           </button>
           {showDetails && (
             <div className="px-3 pb-3 space-y-1">
@@ -914,7 +945,9 @@ function SecurityScanCard({ security }: { security: SecurityRisk }) {
                   key={flag}
                   className="flex items-start gap-2 text-[var(--theme-muted)]"
                 >
-                  <span className="mt-0.5 text-[9px] text-[var(--theme-muted)]">●</span>
+                  <span className="mt-0.5 text-[var(--theme-muted)]">
+                    <EmojiIcon emoji="●" size={9} />
+                  </span>
                   <span>{flag}</span>
                 </div>
               ))}
@@ -924,8 +957,7 @@ function SecurityScanCard({ security }: { security: SecurityRisk }) {
       )}
       <div className="border-t border-primary-100 px-3 py-2">
         <p className="text-[10px] text-[var(--theme-muted)] italic">
-          Like a lobster shell, security has layers — review code before you run
-          it.
+          多层防护 — 运行前请务必审查代码。
         </p>
       </div>
     </div>
@@ -951,11 +983,11 @@ function SkillsGrid({
     return (
       <div className="rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-panel)]/40 px-4 py-8 text-center">
         <p className="text-sm font-medium text-[var(--theme-text)]">
-          {emptyState?.title || 'No skills found'}
+          {emptyState?.title || '未找到技能'}
         </p>
         <p className="mt-1 text-xs text-[var(--theme-muted)] text-pretty max-w-sm mx-auto">
           {emptyState?.description ||
-            'Try adjusting your filters or search term'}
+            '尝试调整筛选条件或搜索词'}
         </p>
       </div>
     )
@@ -977,12 +1009,12 @@ function SkillsGrid({
             >
               <div className="mb-2 flex items-start justify-between gap-2">
                 <div className="space-y-1">
-                  <p className="text-xl leading-none">{skill.icon}</p>
+                  <EmojiIcon emoji={skill.icon} size={20} />
                   <h3 className="line-clamp-1 text-base font-medium text-ink text-balance">
                     {skill.name}
                   </h3>
                   <p className="line-clamp-1 text-xs text-[var(--theme-muted)]">
-                    by {skill.author}
+                    作者：{skill.author}
                   </p>
                 </div>
                 <span
@@ -993,7 +1025,7 @@ function SkillsGrid({
                       : 'border-[var(--theme-border)] bg-[var(--theme-panel)] text-[var(--theme-muted)]',
                   )}
                 >
-                  {skill.installed ? 'Installed' : 'Available'}
+                  {skill.installed ? '已安装' : '可安装'}
                 </span>
               </div>
 
@@ -1022,7 +1054,7 @@ function SkillsGrid({
                   size="sm"
                   onClick={() => onOpenDetails(skill)}
                 >
-                  Details
+                  详情
                 </Button>
 
                 {tab === 'installed' ? (
@@ -1034,9 +1066,9 @@ function SkillsGrid({
                         onCheckedChange={(checked) =>
                           onToggle(skill.id, checked)
                         }
-                        aria-label={`Toggle ${skill.name}`}
+                        aria-label={`切换 ${skill.name}`}
                       />
-                      {skill.enabled ? 'Enabled' : 'Disabled'}
+                      {skill.enabled ? '已启用' : '已停用'}
                     </div>
                     <Button
                       variant="outline"
@@ -1044,7 +1076,7 @@ function SkillsGrid({
                       disabled={isActing}
                       onClick={() => onUninstall(skill.id)}
                     >
-                      {isActing ? '⏳' : 'Uninstall'}
+                      {isActing ? <EmojiIcon emoji="⏳" size={14} /> : '卸载'}
                     </Button>
                   </div>
                 ) : skill.installed ? (
@@ -1054,7 +1086,7 @@ function SkillsGrid({
                     disabled={isActing}
                     onClick={() => onUninstall(skill.id)}
                   >
-                    {isActing ? '⏳' : 'Uninstall'}
+                    {isActing ? <EmojiIcon emoji="⏳" size={14} /> : '卸载'}
                   </Button>
                 ) : (
                   <Button
@@ -1062,7 +1094,13 @@ function SkillsGrid({
                     disabled={isActing}
                     onClick={() => onInstall(skill.id)}
                   >
-                    {isActing ? '⏳ Installing…' : 'Install'}
+                    {isActing ? (
+                      <>
+                        <EmojiIcon emoji="⏳" size={14} /> 安装中…
+                      </>
+                    ) : (
+                      '安装'
+                    )}
                   </Button>
                 )}
               </div>
@@ -1098,7 +1136,7 @@ function FeaturedGrid({
   if (skills.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-panel)]/40 px-4 py-10 text-center text-sm text-[var(--theme-muted)] text-pretty">
-        Featured picks are currently unavailable.
+        暂无精选推荐。
       </div>
     )
   }
@@ -1115,12 +1153,12 @@ function FeaturedGrid({
             <div className="mb-3 flex items-start justify-between gap-2">
               <div className="space-y-1">
                 <p className="text-xs font-medium uppercase text-[var(--theme-muted)] tabular-nums">
-                  {skill.featuredGroup || 'Staff Pick'}
+                  {skill.featuredGroup || '编辑精选'}
                 </p>
                 <h3 className="text-lg font-medium text-ink text-balance">
-                  {skill.icon} {skill.name}
+                  <EmojiIcon emoji={skill.icon} size={16} /> {skill.name}
                 </h3>
-                <p className="text-sm text-[var(--theme-muted)]">by {skill.author}</p>
+                <p className="text-sm text-[var(--theme-muted)]">作者：{skill.author}</p>
               </div>
 
               <span
@@ -1131,7 +1169,7 @@ function FeaturedGrid({
                     : 'border-[var(--theme-border)] bg-[var(--theme-panel)] text-[var(--theme-muted)]',
                 )}
               >
-                {skill.installed ? 'Installed' : 'Staff Pick'}
+                {skill.installed ? '已安装' : '编辑精选'}
               </span>
             </div>
 
@@ -1145,7 +1183,7 @@ function FeaturedGrid({
                 size="sm"
                 onClick={() => onOpenDetails(skill)}
               >
-                Details
+                详情
               </Button>
               {skill.installed ? (
                 <Button
@@ -1154,7 +1192,7 @@ function FeaturedGrid({
                   disabled={isActing}
                   onClick={() => onUninstall(skill.id)}
                 >
-                  Uninstall
+                  卸载
                 </Button>
               ) : (
                 <Button
@@ -1162,7 +1200,7 @@ function FeaturedGrid({
                   disabled={isActing}
                   onClick={() => onInstall(skill.id)}
                 >
-                  Install
+                  安装
                 </Button>
               )}
             </div>

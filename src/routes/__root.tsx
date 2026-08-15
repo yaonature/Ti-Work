@@ -30,8 +30,10 @@ const APP_CSP = [
 ].join('; ')
 
 const THEME_STORAGE_KEY = 'hermes-theme'
-const DEFAULT_THEME = 'hermes-os'
+const MODE_STORAGE_KEY = 'hermes-theme-mode'
+const DEFAULT_THEME = 'ti-work'
 const VALID_THEMES = [
+  'ti-work',
   'hermes-os',
   'hermes-official',
   'hermes-classic',
@@ -47,10 +49,12 @@ const themeScript = `
     const root = document.documentElement
     const storedTheme = localStorage.getItem('${THEME_STORAGE_KEY}')
     const theme = ${JSON.stringify(VALID_THEMES)}.includes(storedTheme) ? storedTheme : '${DEFAULT_THEME}'
+    const mode = localStorage.getItem('${MODE_STORAGE_KEY}') === 'light' ? 'light' : 'dark'
     root.classList.remove('light', 'system')
-    root.classList.add('dark')
+    root.classList.toggle('dark', mode === 'dark')
     root.setAttribute('data-theme', theme)
-    root.style.setProperty('color-scheme', 'dark')
+    root.setAttribute('data-mode', mode)
+    root.style.setProperty('color-scheme', mode)
 
     // Demo mode
     try {
@@ -67,13 +71,24 @@ const themeColorScript = `
   try {
     const root = document.documentElement
     const theme = root.getAttribute('data-theme') || '${DEFAULT_THEME}'
-    const colors = {
+    const mode = root.getAttribute('data-mode') === 'light' ? 'light' : 'dark'
+    const darkColors = {
+      'ti-work': '#1D1D20',
       'hermes-os': '#080c14',
       'hermes-official': '#0A0E1A',
       'hermes-classic': '#0d0f12',
       'hermes-slate': '#0d1117',
       'hermes-mono': '#111111',
     }
+    const lightColors = {
+      'ti-work': '#FFFFFF',
+      'hermes-os': '#F6F8FC',
+      'hermes-official': '#F6F8FC',
+      'hermes-classic': '#F5F2ED',
+      'hermes-slate': '#F6F8FA',
+      'hermes-mono': '#FAFAFA',
+    }
+    const colors = mode === 'light' ? lightColors : darkColors
     const nextColor = colors[theme] || colors['${DEFAULT_THEME}']
 
     let meta = document.querySelector('meta[name="theme-color"]')
@@ -83,7 +98,7 @@ const themeColorScript = `
       document.head.appendChild(meta)
     }
     meta.setAttribute('content', nextColor)
-    root.style.setProperty('color-scheme', 'dark')
+    root.style.setProperty('color-scheme', mode)
   } catch {}
 })()
 `
@@ -100,12 +115,12 @@ export const Route = createRootRoute({
           'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual',
       },
       {
-        title: 'Hermes Studio',
+        title: 'Ti Work',
       },
       {
         name: 'description',
         content:
-          'Hermes Studio — premium AI agent operating system for chat, tools, files, memory, and jobs.',
+          'Ti Work：面向企业团队的 AI 智能体工作平台，统一管理会话、工具、文件、记忆与任务流。',
       },
       {
         property: 'og:image',
@@ -126,7 +141,7 @@ export const Route = createRootRoute({
       // PWA meta tags
       {
         name: 'theme-color',
-        content: '#0A0E1A',
+        content: '#1D1D20',
       },
       {
         name: 'apple-mobile-web-app-capable',
@@ -144,8 +159,8 @@ export const Route = createRootRoute({
       },
       {
         rel: 'icon',
-        type: 'image/png',
-        href: '/hermes-avatar.png',
+        type: 'image/svg+xml',
+        href: '/ti-work-logo.svg',
       },
       // PWA manifest and icons
       {
@@ -166,7 +181,7 @@ export const Route = createRootRoute({
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-primary-50">
         <h1 className="text-2xl font-semibold text-primary-900 mb-4">
-          Something went wrong
+          页面加载失败
         </h1>
         <pre className="p-4 bg-primary-100 rounded-lg text-sm text-primary-700 max-w-full overflow-auto mb-6">
           {error instanceof Error ? error.message : String(error)}
@@ -175,7 +190,7 @@ export const Route = createRootRoute({
           onClick={() => (window.location.href = '/')}
           className="px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors"
         >
-          Return Home
+          返回首页
         </button>
       </div>
     )
@@ -224,7 +239,7 @@ function RootLayout() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning>
       <head>
         <meta httpEquiv="Content-Security-Policy" content={APP_CSP} />
         <script
@@ -251,10 +266,23 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             __html: `
           (function(){
             if (document.getElementById('splash-screen')) return;
-            var bg = '#0A0E1A', txt = '#E6EAF2', muted = '#9AA5BD', accent = '#6366F1';
+            var bg = '#1D1D20', txt = '#FAFAFA', muted = '#A1A1AA', accent = '#148AFF';
             try {
               var theme = localStorage.getItem('${THEME_STORAGE_KEY}') || '${DEFAULT_THEME}';
-              if (theme === 'hermes-classic') {
+              var mode = localStorage.getItem('${MODE_STORAGE_KEY}') === 'light' ? 'light' : 'dark';
+              if (theme === 'ti-work') {
+                if (mode === 'light') {
+                  bg = '#FFFFFF';
+                  txt = '#09090B';
+                  muted = '#71717A';
+                  accent = '#0A84FF';
+                } else {
+                  bg = '#1D1D20';
+                  txt = '#FAFAFA';
+                  muted = '#A1A1AA';
+                  accent = '#148AFF';
+                }
+              } else if (theme === 'hermes-classic') {
                 bg = '#0d0f12';
                 txt = '#eceff4';
                 muted = '#7f8a96';
@@ -292,16 +320,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               }
             } catch(e){}
 
-            var isDark = !['hermes-official-light','hermes-classic-light','hermes-slate-light','hermes-mono-light'].includes(theme);
-            var quips = ["Consulting the oracle...","Loading ancient knowledge...","Warming up the messenger...","Calibrating tool chain...","Summoning Hermes...","Preparing the workspace...","Bridging realms...","Initializing agent runtime..."];
+            var isDark = !['hermes-official-light','hermes-classic-light','hermes-slate-light','hermes-mono-light'].includes(theme) && mode !== 'light';
+            var quips = ["正在咨询智者...","正在加载企业工作区...","正在校准工具链...","正在准备工作区...","正在同步工作流...","正在初始化智能体运行时...","正在建立安全会话...","Ti Work 正在处理..."];
             var quip = quips[Math.floor(Math.random() * quips.length)];
 
             var d = document.createElement('div');
             d.id = 'splash-screen';
             d.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:'+bg+';transition:opacity 0.5s ease;';
-            d.innerHTML = '<img src="/hermes-avatar.webp" alt="Hermes" style="width:80px;height:80px;margin-bottom:20px;border-radius:16px;filter:drop-shadow(0 8px 32px color-mix(in srgb,'+accent+' 45%, transparent))" />'
-              + '<img src="'+(isDark ? '/hermes-banner.png' : '/hermes-banner-light.png')+'" alt="Hermes Studio" style="width:280px;height:auto;margin-bottom:8px;filter:drop-shadow(0 4px 16px '+(isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.1)')+')" />'
-              + '<div style="font:400 14px/1 system-ui,-apple-system,sans-serif;letter-spacing:0.04em;color:'+muted+'">Studio</div>'
+            d.innerHTML = '<img src="/ti-work-logo.svg" alt="Ti Work" style="width:80px;height:80px;margin-bottom:20px;filter:drop-shadow(0 8px 32px color-mix(in srgb,'+accent+' 45%, transparent))" />'
+              + '<div style="font:600 30px/1 \'Space Grotesk\',\'Inter\',system-ui,sans-serif;letter-spacing:-0.02em;color:'+txt+'">Ti Work</div>'
+              + '<div style="margin-top:8px;font:400 14px/1 system-ui,-apple-system,sans-serif;letter-spacing:0.04em;color:'+muted+'">企业级 AI 工作流操作系统</div>'
               + '<div style="margin-top:28px;width:140px;height:3px;background:'+(isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)')+';border-radius:3px;overflow:hidden;position:relative"><div id=splash-bar style="width:0%;height:100%;background:'+accent+';border-radius:3px;transition:width 0.4s ease"></div></div>';
             document.body.prepend(d);
 

@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router'
-import { Card } from '@/components/ds/card'
-import { StatusBadge } from '@/components/ds/status-badge'
 import type { OperationAgent, OperationAgentStatus } from '@/types/operation'
 import type { Status } from '@/components/ds/status-badge'
+import { Card } from '@/components/ds/card'
+import { StatusBadge } from '@/components/ds/status-badge'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 function agentStatusToStatus(s: OperationAgentStatus): Status {
   switch (s) {
@@ -21,10 +22,10 @@ function formatTokens(n: number): string {
 
 function timeAgo(iso: string): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000
-  if (diff < 60) return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
+  if (diff < 60) return '刚刚'
+  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`
+  return `${Math.floor(diff / 86400)}天前`
 }
 
 interface AgentCardProps {
@@ -51,7 +52,9 @@ export function AgentCard({ agent }: AgentCardProps) {
           {/* Header: emoji + name + status */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-xl leading-none">{agent.emoji}</span>
+              <span className="text-xl leading-none">
+                <EmojiIcon emoji={agent.emoji} size={20} />
+              </span>
               <div className="min-w-0">
                 <div
                   className="text-sm font-medium truncate"
@@ -86,9 +89,9 @@ export function AgentCard({ agent }: AgentCardProps) {
           {/* Footer: tokens + last activity */}
           <div className="flex items-center justify-between text-xs" style={{ color: 'var(--theme-muted)' }}>
             {agent.totalTokens > 0 ? (
-              <span>{formatTokens(agent.totalTokens)} tokens</span>
+              <span>{formatTokens(agent.totalTokens)} token</span>
             ) : (
-              <span>0 tokens</span>
+              <span>0 token</span>
             )}
             {agent.lastActivity && (
               <span>{timeAgo(agent.lastActivity)}</span>

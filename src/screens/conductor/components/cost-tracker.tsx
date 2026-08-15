@@ -30,7 +30,7 @@ export function CostTracker({
   onToggle,
 }: {
   totalTokens: number
-  workers: CostWorker[]
+  workers: Array<CostWorker>
   expanded: boolean
   onToggle: () => void
 }) {
@@ -45,14 +45,14 @@ export function CostTracker({
         className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left"
       >
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--theme-muted)' }}>Mission Cost</p>
-          <p className="mt-1 text-sm" style={{ color: 'var(--theme-muted-2)' }}>Approximate at $5 / 1M tokens blended.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--theme-muted)' }}>任务成本</p>
+          <p className="mt-1 text-sm" style={{ color: 'var(--theme-muted-2)' }}>按 $5 / 100万 token 混合估算。</p>
         </div>
         <span
           className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium"
           style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-card2)', color: 'var(--theme-text)' }}
         >
-          {expanded ? 'Hide' : 'Show'}
+          {expanded ? '隐藏' : '显示'}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className={cn('transition-transform duration-200', expanded ? 'rotate-180' : 'rotate-0')}>
             <path d="M6 9l6 6 6-6" />
           </svg>
@@ -63,19 +63,19 @@ export function CostTracker({
         <div className="space-y-4 px-5 pb-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-bg)' }}>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--theme-muted)' }}>Total Tokens</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--theme-muted)' }}>总 Token</p>
               <p className="mt-2 text-2xl font-semibold" style={{ color: 'var(--theme-text)' }}>{totalTokens.toLocaleString()}</p>
             </div>
             <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-bg)' }}>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--theme-muted)' }}>Estimated Cost</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--theme-muted)' }}>预计成本</p>
               <p className="mt-2 text-2xl font-semibold" style={{ color: 'var(--theme-text)' }}>{formatUsd(estimatedCost)}</p>
             </div>
           </div>
 
           <div className="overflow-hidden rounded-2xl border" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-bg)' }}>
             <div className="flex items-center justify-between border-b px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-muted)' }}>
-              <span>Workers</span>
-              <span>Cost</span>
+              <span>智能体</span>
+              <span>成本</span>
             </div>
             {workers.length > 0 ? (
               <div>
@@ -83,13 +83,13 @@ export function CostTracker({
                   <div key={worker.id} className="flex items-center gap-3 border-t px-4 py-3 text-sm" style={{ borderColor: 'var(--theme-border)' }}>
                     <span className="font-medium" style={{ color: 'var(--theme-text)' }}>{worker.personaEmoji} {worker.personaName}</span>
                     <span className="min-w-0 flex-1 truncate" style={{ color: 'var(--theme-muted)' }}>{worker.label}</span>
-                    <span className="text-xs" style={{ color: 'var(--theme-muted)' }}>{worker.totalTokens.toLocaleString()} tok</span>
+                    <span className="text-xs" style={{ color: 'var(--theme-muted)' }}>{worker.totalTokens.toLocaleString()} token</span>
                     <span className="min-w-[4.5rem] text-right font-medium" style={{ color: 'var(--theme-text)' }}>{formatUsd(estimateTokenCost(worker.totalTokens))}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="px-4 py-3 text-sm" style={{ color: 'var(--theme-muted)' }}>Per-worker token details were not captured.</div>
+              <div className="px-4 py-3 text-sm" style={{ color: 'var(--theme-muted)' }}>未记录各智能体的 token 明细。</div>
             )}
           </div>
         </div>

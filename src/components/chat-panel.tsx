@@ -70,12 +70,12 @@ export function ChatPanel() {
     ? activeSession.label ||
       activeSession.title ||
       activeSession.derivedTitle ||
-      'Chat'
+      '会话'
     : activeFriendlyId === 'main'
-      ? 'Main Session'
+      ? '主会话'
       : isNewChat
-        ? 'New Chat'
-        : 'Chat'
+        ? '新建会话'
+        : '会话'
 
   const handleSessionResolved = useCallback(
     (payload: { friendlyId: string; sessionKey: string }) => {
@@ -184,7 +184,7 @@ export function ChatPanel() {
                           size="icon-sm"
                           variant="ghost"
                           className="text-primary-600 hover:text-primary-900"
-                          aria-label="New chat"
+                          aria-label="新建会话"
                         >
                           <HugeiconsIcon
                             icon={PencilEdit02Icon}
@@ -194,7 +194,7 @@ export function ChatPanel() {
                         </Button>
                       }
                     />
-                    <TooltipContent side="bottom">New chat</TooltipContent>
+                    <TooltipContent side="bottom">新建会话</TooltipContent>
                   </TooltipRoot>
                   <TooltipRoot>
                     <TooltipTrigger
@@ -204,7 +204,7 @@ export function ChatPanel() {
                           size="icon-sm"
                           variant="ghost"
                           className="text-primary-600 hover:text-primary-900"
-                          aria-label="Expand to full chat"
+                          aria-label="展开到完整会话页"
                         >
                           <HugeiconsIcon
                             icon={ArrowExpand01Icon}
@@ -214,7 +214,7 @@ export function ChatPanel() {
                         </Button>
                       }
                     />
-                    <TooltipContent side="bottom">Full view</TooltipContent>
+                    <TooltipContent side="bottom">完整视图</TooltipContent>
                   </TooltipRoot>
                 </TooltipProvider>
                 <Button
@@ -222,8 +222,8 @@ export function ChatPanel() {
                   variant="ghost"
                   onClick={handleClose}
                   className="text-primary-600 hover:text-primary-900"
-                  aria-label="Close chat panel"
-                  title="Close (Esc)"
+                  aria-label="关闭会话面板"
+                  title="关闭（Esc）"
                 >
                   <HugeiconsIcon
                     icon={Cancel01Icon}

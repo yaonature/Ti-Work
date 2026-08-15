@@ -4,7 +4,7 @@ import { CrewDetailScreen } from '@/screens/crews/crew-detail-screen'
 
 export const Route = createFileRoute('/crews/$crewId')({
   component: function CrewDetailRoute() {
-    usePageTitle('Crew')
+    usePageTitle('多智能体')
     return <CrewDetailScreen />
   },
 })

@@ -14,13 +14,13 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { MemoryEntry as Entry } from '@/lib/memory-parser'
 import {
-  parseEntries,
-  buildMemoryContent,
   appendCorrection,
+  buildMemoryContent,
+  parseEntries,
   removeEntry,
 } from '@/lib/memory-parser'
-import type { MemoryEntry as Entry } from '@/lib/memory-parser'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -107,7 +107,7 @@ function EntryCard({
               padding: 0,
             }}
           >
-            {expanded ? 'Collapse' : 'Expand'}
+            {expanded ? '收起' : '展开'}
           </button>
         )}
         <button
@@ -121,9 +121,9 @@ function EntryCard({
             cursor: 'pointer',
             padding: 0,
           }}
-          title="Delete this entry"
+          title="删除此条目"
         >
-          Delete
+          删除
         </button>
       </div>
     </div>
@@ -228,7 +228,7 @@ export function PatternsCorrectionScreen() {
         setLoading(false)
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Failed to load')
+        setError(err instanceof Error ? err.message : '加载失败')
         setLoading(false)
       })
   }, [])
@@ -245,7 +245,7 @@ export function PatternsCorrectionScreen() {
         await saveMemory(content)
         setRawContent(content)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save')
+        setError(err instanceof Error ? err.message : '保存失败')
       } finally {
         setSaving(false)
       }
@@ -263,10 +263,10 @@ export function PatternsCorrectionScreen() {
       await saveMemory(newContent)
       setRawContent(newContent)
       setNewCorrection('')
-      setAddMsg('Correction added.')
+      setAddMsg('修正已添加。')
       setTimeout(() => setAddMsg(null), 3000)
     } catch (err) {
-      setAddMsg(err instanceof Error ? err.message : 'Failed to save')
+      setAddMsg(err instanceof Error ? err.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -289,13 +289,13 @@ export function PatternsCorrectionScreen() {
       {/* Header */}
       <div>
         <h1 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-          Patterns &amp; Corrections
+          模式与修正
         </h1>
         <p style={{ fontSize: '0.8rem', color: 'var(--theme-text-muted)' }}>
-          Learnings from{' '}
+          来自{' '}
           <code style={{ fontFamily: 'monospace' }}>~/.hermes/memories/MEMORY.md</code>{' '}
-          — parsed by{' '}
-          <code style={{ fontFamily: 'monospace' }}>§</code> delimiter
+          的学习总结 — 按{' '}
+          <code style={{ fontFamily: 'monospace' }}>§</code> 分隔符解析
         </p>
       </div>
 
@@ -327,14 +327,14 @@ export function PatternsCorrectionScreen() {
               cursor: 'pointer',
             }}
           >
-            Retry
+            重试
           </button>
         </div>
       )}
 
       {loading ? (
         <div style={{ color: 'var(--theme-text-muted)', fontSize: '0.85rem' }}>
-          Loading…
+          加载中…
         </div>
       ) : (
         <>
@@ -348,13 +348,13 @@ export function PatternsCorrectionScreen() {
             }}
           >
             <TabButton
-              label="Patterns"
+              label="模式"
               active={tab === 'patterns'}
               onClick={() => setTab('patterns')}
               count={patterns.length}
             />
             <TabButton
-              label="Corrections"
+              label="修正"
               active={tab === 'corrections'}
               onClick={() => setTab('corrections')}
               count={corrections.length}
@@ -363,7 +363,7 @@ export function PatternsCorrectionScreen() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search…"
+              placeholder="搜索…"
               style={{
                 marginLeft: 'auto',
                 background: 'var(--theme-card)',
@@ -390,7 +390,7 @@ export function PatternsCorrectionScreen() {
                 cursor: 'pointer',
               }}
             >
-              Refresh
+              刷新
             </button>
           </div>
 
@@ -416,12 +416,12 @@ export function PatternsCorrectionScreen() {
                   color: 'var(--theme-text-muted)',
                 }}
               >
-                Add correction
+                添加修正
               </div>
               <textarea
                 value={newCorrection}
                 onChange={(e) => setNewCorrection(e.target.value)}
-                placeholder="Describe what the agent was doing wrong and what the correct behavior is…"
+                placeholder="描述智能体做错了什么以及正确的行为是什么…"
                 rows={3}
                 style={{
                   background: 'var(--theme-bg)',
@@ -439,7 +439,7 @@ export function PatternsCorrectionScreen() {
                 <div
                   style={{
                     fontSize: '0.75rem',
-                    color: addMsg.startsWith('Failed') ? '#ef4444' : '#22c55e',
+                    color: addMsg.startsWith('保存失败') ? '#ef4444' : '#22c55e',
                   }}
                 >
                   {addMsg}
@@ -462,7 +462,7 @@ export function PatternsCorrectionScreen() {
                     opacity: saving || !newCorrection.trim() ? 0.5 : 1,
                   }}
                 >
-                  {saving ? 'Saving…' : 'Add Correction'}
+                  {saving ? '保存中…' : '添加修正'}
                 </button>
               </div>
             </div>
@@ -479,10 +479,10 @@ export function PatternsCorrectionScreen() {
               }}
             >
               {search
-                ? 'No entries match your search.'
+                ? '没有符合搜索条件的条目。'
                 : tab === 'corrections'
-                  ? 'No corrections recorded yet. Add one using the form above.'
-                  : 'No pattern entries found in MEMORY.md.'}
+                  ? '还没有修正记录，使用上方表单添加一条。'
+                  : '在 MEMORY.md 中未找到模式条目。'}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -504,7 +504,7 @@ export function PatternsCorrectionScreen() {
               marginTop: 'auto',
             }}
           >
-            {entries.length} total entries · {patterns.length} patterns · {corrections.length} corrections
+            {entries.length} 条 · {patterns.length} 条模式 · {corrections.length} 条修正
           </div>
         </>
       )}

@@ -5,6 +5,7 @@ import type { ActivityEvent } from './activity-store'
 import { getUnavailableReason } from '@/lib/feature-gates'
 import { useFeatureAvailable } from '@/hooks/use-feature-available'
 import { cn } from '@/lib/utils'
+import { EmojiIcon } from '@/components/emoji-icon'
 
 // ── Store ─────────────────────────────────────────────────────────────────────
 
@@ -29,11 +30,11 @@ const TABS: Array<{
   label: string
   feature?: 'memory' | 'skills'
 }> = [
-  { id: 'activity', label: 'Activity' },
-  { id: 'files', label: 'Files' },
-  { id: 'memory', label: 'Memory', feature: 'memory' },
-  { id: 'skills', label: 'Skills', feature: 'skills' },
-  { id: 'logs', label: 'Logs' },
+  { id: 'activity', label: '活动' },
+  { id: 'files', label: '文件' },
+  { id: 'memory', label: '记忆', feature: 'memory' },
+  { id: 'skills', label: '技能', feature: 'skills' },
+  { id: 'logs', label: '日志' },
 ]
 
 // ── Shared loading / error ────────────────────────────────────────────────────
@@ -86,7 +87,7 @@ function ActivityTab() {
   }, [events.length])
 
   if (events.length === 0) {
-    return <EmptyState text="No activity yet — start a conversation" />
+    return <EmptyState text="还没有活动记录，先开始一段对话吧" />
   }
 
   return (
@@ -140,14 +141,14 @@ function FilesTab() {
 
   if (files.length === 0) {
     return (
-      <EmptyState text="No files touched yet — activity will appear during chat" />
+      <EmptyState text="还没有涉及文件的操作，会在对话过程中显示" />
     )
   }
 
   return (
     <div className="space-y-1 p-3">
       <p className="mb-2 text-xs" style={{ color: 'var(--theme-muted)' }}>
-        Files touched in session ({files.length})
+        本会话涉及的文件（{files.length}）
       </p>
       {files.map((file: string, i: number) => (
         <div
@@ -196,7 +197,7 @@ function MemoryTab() {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err.message || 'Failed to load memory')
+          setError(err.message || '加载记忆失败')
           setLoading(false)
         }
       })
@@ -205,15 +206,15 @@ function MemoryTab() {
     }
   }, [])
 
-  if (loading) return <LoadingState text="Loading memory…" />
-  if (error) return <ErrorState text={`Memory: ${error}`} />
+  if (loading) return <LoadingState text="正在加载记忆…" />
+  if (error) return <ErrorState text={`记忆：${error}`} />
   if (!files || files.length === 0)
-    return <EmptyState text="No memory files available" />
+    return <EmptyState text="当前没有可用的记忆文件" />
 
   return (
     <div className="space-y-2 p-3 overflow-auto max-h-[calc(100vh-140px)]">
       <p className="mb-1 text-xs" style={{ color: 'var(--theme-muted)' }}>
-        {files.length} memory files available
+        共 {files.length} 个记忆文件
       </p>
       {files.map((file, index) => (
         <div
@@ -266,7 +267,7 @@ function SkillsTab() {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err.message || 'Failed to load skills')
+          setError(err.message || '加载技能失败')
           setLoading(false)
         }
       })
@@ -275,14 +276,14 @@ function SkillsTab() {
     }
   }, [])
 
-  if (loading) return <LoadingState text="Loading skills…" />
-  if (error) return <ErrorState text={`Skills: ${error}`} />
-  if (skills.length === 0) return <EmptyState text="No skills found" />
+  if (loading) return <LoadingState text="正在加载技能…" />
+  if (error) return <ErrorState text={`技能：${error}`} />
+  if (skills.length === 0) return <EmptyState text="未找到技能" />
 
   // Group by category
   const grouped: Record<string, Array<SkillItem>> = {}
   for (const skill of skills) {
-    const cat = skill.category || 'Uncategorized'
+    const cat = skill.category || '未分类'
     if (!grouped[cat]) grouped[cat] = []
     grouped[cat].push(skill)
   }
@@ -290,7 +291,7 @@ function SkillsTab() {
   return (
     <div className="space-y-3 p-3 overflow-auto max-h-[calc(100vh-140px)]">
       <p className="text-xs" style={{ color: 'var(--theme-muted)' }}>
-        {skills.length} skills loaded
+        已加载 {skills.length} 个技能
       </p>
       {Object.entries(grouped).map(([category, items]) => (
         <div key={category}>
@@ -317,7 +318,9 @@ function SkillsTab() {
               }}
             >
               <div className="flex items-center gap-2">
-                <span style={{ color: 'var(--theme-accent)' }}>⚡</span>
+                <span style={{ color: 'var(--theme-accent)' }}>
+                  <EmojiIcon emoji="⚡" size={16} />
+                </span>
                 <span>{skill.name}</span>
               </div>
               {expanded === skill.name && skill.description && (
@@ -350,7 +353,7 @@ function LogsTab() {
     return (
       <div className="p-3">
         <p className="text-xs" style={{ color: 'var(--theme-muted)' }}>
-          Raw event stream — waiting for activity…
+          原始事件流，正在等待活动…
         </p>
       </div>
     )
@@ -359,7 +362,7 @@ function LogsTab() {
   return (
     <div className="p-3">
       <p className="mb-2 text-xs" style={{ color: 'var(--theme-muted)' }}>
-        Raw events ({events.length})
+        原始事件（{events.length}）
       </p>
       <pre
         ref={scrollRef}
@@ -415,16 +418,16 @@ export function InspectorPanel() {
               className="text-sm font-semibold"
               style={{ color: 'var(--theme-text)' }}
             >
-              Inspector
+              检查器
             </span>
             <button
               type="button"
               onClick={() => useInspectorStore.getState().setOpen(false)}
               className="rounded p-1 text-xs hover:opacity-70 transition-opacity"
               style={{ color: 'var(--theme-muted)' }}
-              aria-label="Close inspector"
+              aria-label="关闭检查器"
             >
-              ✕
+              <EmojiIcon emoji="✕" size={14} />
             </button>
           </div>
 
@@ -474,7 +477,7 @@ export function InspectorPanel() {
                     <span>{tab.label}</span>
                     {!available ? (
                       <span className="ml-1 rounded-full border border-amber-300 bg-amber-100 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-700">
-                        Gate
+                        受限
                       </span>
                     ) : null}
                   </button>
@@ -507,7 +510,7 @@ export function InspectorToggleButton({ className }: { className?: string }) {
     <button
       type="button"
       onClick={toggle}
-      title={isOpen ? 'Close inspector' : 'Open inspector'}
+      title={isOpen ? '关闭检查器' : '打开检查器'}
       className={cn(
         'flex items-center justify-center rounded-lg px-2 py-1.5 text-xs transition-colors',
         isOpen ? 'opacity-100' : 'opacity-60 hover:opacity-90',
@@ -518,7 +521,7 @@ export function InspectorToggleButton({ className }: { className?: string }) {
         color: 'var(--theme-text)',
         border: '1px solid var(--theme-border)',
       }}
-      aria-label="Toggle inspector panel"
+      aria-label="切换检查器面板"
     >
       <span className="font-mono text-[11px]">{'{ }'}</span>
     </button>

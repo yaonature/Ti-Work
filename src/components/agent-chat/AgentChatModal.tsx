@@ -24,6 +24,11 @@ type HistoryPayload = {
   messages?: Array<ChatMessage>
 }
 
+function isExplicitDemoMode(): boolean {
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('demo') === '1'
+}
+
 function mapRole(value: unknown): 'user' | 'agent' {
   const role = typeof value === 'string' ? value.trim().toLowerCase() : ''
   if (role === 'user') return 'user'
@@ -67,7 +72,7 @@ function toChatMessages(messages: Array<ChatMessage>): Array<AgentChatMessage> {
 }
 
 function buildDemoReply(agentName: string, text: string): string {
-  return `${agentName} (demo): Received "${text}". Hermes is unavailable, so this is a simulated response.`
+  return `${agentName}（演示模式）：已收到“${text}”。当前为演示模式，因此返回的是模拟回复。`
 }
 
 export function AgentChatModal({
@@ -135,19 +140,8 @@ export function AgentChatModal({
         }
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : 'Unable to load chat history'
+          error instanceof Error ? error.message : '无法加载聊天记录'
         setErrorMessage(message)
-        if (messagesRef.current.length === 0) {
-          setIsDemoMode(true)
-          setMessages([
-            {
-              id: `demo-intro-${sessionKey}`,
-              role: 'agent',
-              text: 'Hermes is unavailable. Running in demo mode with simulated responses.',
-              timestamp: Date.now(),
-            },
-          ])
-        }
       } finally {
         setIsLoadingHistory(false)
       }
@@ -181,13 +175,25 @@ export function AgentChatModal({
   useEffect(
     function initializeModalState() {
       if (!open) return
+      const explicitDemo = isExplicitDemoMode()
       setMessages([])
-      setIsLoadingHistory(true)
+      setIsLoadingHistory(!explicitDemo)
       setIsSending(false)
       setIsTyping(false)
-      setIsDemoMode(false)
+      setIsDemoMode(explicitDemo)
       setErrorMessage(null)
       typingExpectedAgentCountRef.current = null
+      if (explicitDemo) {
+        setMessages([
+          {
+            id: `demo-intro-${sessionKey}`,
+            role: 'agent',
+            text: '当前已进入演示模式，后续消息会返回模拟结果。',
+            timestamp: Date.now(),
+          },
+        ])
+        return
+      }
       void loadHistoryRef.current()
     },
     [open, sessionKey],
@@ -281,7 +287,7 @@ export function AgentChatModal({
       await loadHistory()
     } catch (error) {
       const messageText =
-        error instanceof Error ? error.message : 'Unable to send message'
+        error instanceof Error ? error.message : '发送消息失败'
 
       setMessages(function markFailed(previous) {
         return previous.map(function mapMessage(entry) {
@@ -291,9 +297,9 @@ export function AgentChatModal({
       })
 
       setErrorMessage(messageText)
-      setIsDemoMode(true)
+      setIsSending(false)
+      setIsTyping(false)
       typingExpectedAgentCountRef.current = null
-      sendDemoReply(message)
       return
     }
 

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 
 type ConnectionStatus = {
   status: 'connected' | 'enhanced' | 'partial' | 'disconnected'
-  label: 'Connected' | 'Enhanced' | 'Partial' | 'Disconnected'
+  label: '已连接' | '增强模式' | '部分可用' | '未连接'
   detail: string
   health: boolean
   chatReady: boolean
@@ -22,8 +22,8 @@ async function fetchConnectionStatus(): Promise<ConnectionStatus> {
   if (!response.ok) {
     return {
       status: 'disconnected',
-      label: 'Disconnected',
-      detail: 'No compatible backend detected.',
+      label: '未连接',
+      detail: '未检测到可用的兼容后端。',
       health: false,
       chatReady: false,
       modelConfigured: false,
@@ -44,30 +44,30 @@ function statusToColors(
     return {
       dot: 'bg-yellow-400',
       pulse: 'bg-yellow-400/40',
-      label: 'Checking...',
+      label: '检查中...',
     }
   }
   switch (status) {
     case 'enhanced':
-      return { dot: 'bg-cyan-400', pulse: 'bg-cyan-400/40', label: 'Enhanced' }
+      return { dot: 'bg-cyan-400', pulse: 'bg-cyan-400/40', label: '增强模式' }
     case 'connected':
       return {
         dot: 'bg-emerald-400',
         pulse: 'bg-emerald-400/40',
-        label: 'Connected',
+        label: '已连接',
       }
     case 'partial':
       return {
         dot: 'bg-yellow-400',
         pulse: 'bg-yellow-400/40',
-        label: 'Partial',
+        label: '部分可用',
       }
     case 'disconnected':
     default:
       return {
         dot: 'bg-red-400',
         pulse: 'bg-red-400/40',
-        label: 'Disconnected',
+        label: '未连接',
       }
   }
 }
@@ -76,17 +76,17 @@ function buildTooltip(
   data: ConnectionStatus | undefined,
   label: string,
 ): string {
-  if (!data) return `Backend: ${label}`
-  const parts: Array<string> = [`Backend: ${label}`]
+  if (!data) return `后端：${label}`
+  const parts: Array<string> = [`后端：${label}`]
   if (data.detail) parts.push(data.detail)
   if (data.status === 'partial') {
-    if (!data.chatReady) parts.push('Missing /v1/chat/completions')
-    if (!data.modelConfigured) parts.push('No model selected')
+    if (!data.chatReady) parts.push('缺少 /v1/chat/completions 接口')
+    if (!data.modelConfigured) parts.push('尚未选择模型')
   }
   if (data.status === 'enhanced') {
-    parts.push('Hermes gateway enhancements detected')
+    parts.push('已检测到 Hermes 网关增强能力')
   }
-  if (data.activeModel) parts.push(`Model: ${data.activeModel}`)
+  if (data.activeModel) parts.push(`模型：${data.activeModel}`)
   return parts.join(' · ')
 }
 

@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { getTheme, setTheme } from '@/lib/theme'
+import { getMode, getTheme, setMode, setTheme, type ThemeMode } from '@/lib/theme'
 
-export type SettingsThemeMode = 'system' | 'dark'
+export type SettingsThemeMode = 'system' | 'dark' | 'light'
 export type AccentColor = 'orange' | 'purple' | 'blue' | 'green'
 
 export type StudioSettings = {
@@ -24,6 +24,10 @@ export type StudioSettings = {
   showSystemMetricsFooter: boolean
   /** Mobile chat nav mode: 'dock' = iMessage (no nav in chat), 'integrated' = chat input in nav pill, 'scroll-hide' = nav shows on scroll up */
   mobileChatNavMode: 'dock' | 'integrated' | 'scroll-hide'
+  /** 云同步开关（账号中心） */
+  cloudSyncEnabled: boolean
+  /** 遥测开关（账号中心） */
+  telemetryEnabled: boolean
 }
 
 type SettingsState = {
@@ -48,6 +52,8 @@ export const defaultStudioSettings: StudioSettings = {
   onlySuggestCheaper: false,
   showSystemMetricsFooter: false,
   mobileChatNavMode: 'dock',
+  cloudSyncEnabled: false,
+  telemetryEnabled: true,
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -88,16 +94,41 @@ export function useSettings() {
   }
 }
 
-export function resolveTheme(_theme?: SettingsThemeMode): 'dark' {
+export function resolveTheme(theme?: SettingsThemeMode): ThemeMode {
+  if (theme === 'light') return 'light'
+  if (theme === 'dark') return 'dark'
+  if (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function'
+  ) {
+    return window.matchMedia('(prefers-color-scheme: light)').matches
+      ? 'light'
+      : 'dark'
+  }
   return 'dark'
 }
 
-export function applyTheme(_theme?: SettingsThemeMode) {
+export function applyTheme(theme?: SettingsThemeMode) {
+  setMode(resolveTheme(theme))
   setTheme(getTheme())
-  document.documentElement.setAttribute('data-accent', 'orange')
+}
+
+/** Read the raw 3-way mode setting from localStorage (store never rehydrates). */
+export function getStoredThemeMode(): SettingsThemeMode {
+  try {
+    const raw = localStorage.getItem('hermes-settings')
+    if (!raw) return 'system'
+    const parsed = JSON.parse(raw) as {
+      state?: { settings?: { theme?: SettingsThemeMode } }
+    }
+    const t = parsed?.state?.settings?.theme
+    return t === 'light' || t === 'dark' ? t : 'system'
+  } catch {
+    return 'system'
+  }
 }
 
 export function initializeSettingsAppearance() {
+  setMode(getMode())
   setTheme(getTheme())
-  document.documentElement.setAttribute('data-accent', 'orange')
 }

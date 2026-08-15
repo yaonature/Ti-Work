@@ -47,7 +47,7 @@ export function AgentChatHeader({
           </span>
           {isDemoMode ? (
             <span className="inline-flex items-center rounded-full border border-accent-500/35 bg-accent-500/10 px-2 py-0.5 text-accent-300">
-              Demo Mode
+              演示模式
             </span>
           ) : null}
         </div>
@@ -57,7 +57,7 @@ export function AgentChatHeader({
         variant="ghost"
         className="rounded-full"
         onClick={onClose}
-        aria-label="Close agent chat"
+        aria-label="关闭智能体对话"
       >
         <HugeiconsIcon icon={Cancel01Icon} size={20} strokeWidth={1.5} />
       </Button>
