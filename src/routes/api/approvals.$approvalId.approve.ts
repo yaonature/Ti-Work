@@ -14,10 +14,10 @@ import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../server/auth-middleware'
 import { requireJsonContentType } from '../../server/rate-limit'
 import {
+  HERMES_API,
   ensureGatewayProbed,
   getGatewayCapabilities,
   sendChat,
-  HERMES_API,
 } from '../../server/hermes-api'
 
 export const Route = createFileRoute('/api/approvals/$approvalId/approve')({
@@ -34,7 +34,7 @@ export const Route = createFileRoute('/api/approvals/$approvalId/approve')({
         await ensureGatewayProbed()
 
         // Parse optional body for scope (once | session | always)
-        let scope: string = 'once'
+        let scope = 'once'
         try {
           const body = (await request.json().catch(() => ({}))) as Record<
             string,
@@ -94,7 +94,7 @@ export const Route = createFileRoute('/api/approvals/$approvalId/approve')({
             {
               ok: false,
               error:
-                err instanceof Error ? err.message : 'Failed to send approval',
+                err instanceof Error ? err.message : '发送审批失败',
             },
             { status: 500 },
           )

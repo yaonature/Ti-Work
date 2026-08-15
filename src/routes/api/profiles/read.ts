@@ -20,7 +20,7 @@ export const Route = createFileRoute('/api/profiles/read')({
               error:
                 error instanceof Error
                   ? error.message
-                  : 'Failed to read profile',
+                  : '读取档案失败',
             },
             { status: 500 },
           )

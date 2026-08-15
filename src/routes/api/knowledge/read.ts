@@ -21,9 +21,9 @@ export const Route = createFileRoute('/api/knowledge/read')({
           const message =
             error instanceof Error
               ? error.message
-              : 'Failed to read knowledge page'
+              : '读取知识库页面失败'
           const status =
-            /not allowed|outside knowledge root|required|traversal/i.test(
+            /不允许|超出知识库根目录|必填|穿越/i.test(
               message,
             )
               ? 400

@@ -22,7 +22,7 @@ export const Route = createFileRoute('/api/crews/$crewId/usage')({
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         if (!getCrew(params.crewId)) {
-          return json({ ok: false, error: 'Crew not found' }, { status: 404 })
+          return json({ ok: false, error: '未找到该多智能体' }, { status: 404 })
         }
         return json({ ok: true, usage: getCrewUsage(params.crewId) })
       },
@@ -35,7 +35,7 @@ export const Route = createFileRoute('/api/crews/$crewId/usage')({
         if (csrfCheck) return csrfCheck
 
         if (!getCrew(params.crewId)) {
-          return json({ ok: false, error: 'Crew not found' }, { status: 404 })
+          return json({ ok: false, error: '未找到该多智能体' }, { status: 404 })
         }
 
         const body = (await request.json().catch(() => ({}))) as Record<
@@ -47,7 +47,7 @@ export const Route = createFileRoute('/api/crews/$crewId/usage')({
           typeof body.sessionKey === 'string' ? body.sessionKey : ''
         if (!sessionKey) {
           return json(
-            { ok: false, error: 'sessionKey is required' },
+            { ok: false, error: 'sessionKey 必填' },
             { status: 400 },
           )
         }

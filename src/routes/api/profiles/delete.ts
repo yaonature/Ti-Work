@@ -23,7 +23,7 @@ export const Route = createFileRoute('/api/profiles/delete')({
               error:
                 error instanceof Error
                   ? error.message
-                  : 'Failed to delete profile',
+                  : '删除档案失败',
             },
             { status: 500 },
           )

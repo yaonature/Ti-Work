@@ -12,23 +12,23 @@ function validateMemoryWritePath(inputPath: unknown): {
   fullPath: string
 } {
   if (typeof inputPath !== 'string') {
-    throw new Error('Path is required')
+    throw new Error('路径必填')
   }
 
   const relativePath = inputPath.replace(/\\/g, '/').trim()
-  if (!relativePath) throw new Error('Path is required')
+  if (!relativePath) throw new Error('路径必填')
   if (path.isAbsolute(relativePath))
-    throw new Error('Absolute paths are not allowed')
+    throw new Error('不允许使用绝对路径')
   if (relativePath.includes('..'))
-    throw new Error('Path traversal is not allowed')
+    throw new Error('不允许路径穿越')
   if (!relativePath.toLowerCase().endsWith('.md'))
-    throw new Error('Only .md files are allowed')
+    throw new Error('仅允许 .md 文件')
 
   const workspaceRoot = getMemoryWorkspaceRoot()
   const fullPath = path.resolve(workspaceRoot, relativePath)
   const relativeFromRoot = path.relative(workspaceRoot, fullPath)
   if (relativeFromRoot.startsWith('..') || path.isAbsolute(relativeFromRoot)) {
-    throw new Error('Resolved path is outside workspace')
+    throw new Error('解析后的路径超出工作区')
   }
 
   return { relativePath, fullPath }
@@ -59,9 +59,9 @@ export const Route = createFileRoute('/api/memory/write')({
           const message =
             error instanceof Error
               ? error.message
-              : 'Failed to write memory file'
+              : '写入记忆文件失败'
           const status =
-            /required|absolute|traversal|outside workspace|\.md/i.test(message)
+            /必填|绝对路径|路径穿越|超出工作区|\.md/i.test(message)
               ? 400
               : 500
           return json({ error: message }, { status })

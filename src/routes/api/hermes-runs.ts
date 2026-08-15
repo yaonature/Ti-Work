@@ -23,7 +23,7 @@ export const Route = createFileRoute('/api/hermes-runs')({
         await ensureGatewayProbed()
         if (!getCapabilities().jobs) {
           return new Response(
-            JSON.stringify({ error: 'Runs API not available — gateway not connected' }),
+            JSON.stringify({ error: 'Runs API 不可用——网关未连接' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
           )
         }

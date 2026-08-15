@@ -8,7 +8,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { isAuthenticated } from '../../../server/auth-middleware'
+import { requireRole } from '../../../server/auth-middleware'
 
 const SETTINGS_PATH = path.join(
   os.homedir(),
@@ -44,9 +44,8 @@ export const Route = createFileRoute('/api/skills/settings')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!isAuthenticated(request)) {
-          return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-        }
+        const roleGuard = requireRole(request, 'admin')
+        if (roleGuard) return roleGuard
         const stored = readSkillsSettings()
         // Prefer env var, fall back to stored file value
         const activeKey = process.env.SKILLSMP_API_KEY || stored.skillsmpApiKey || ''
@@ -60,9 +59,8 @@ export const Route = createFileRoute('/api/skills/settings')({
       },
 
       PATCH: async ({ request }) => {
-        if (!isAuthenticated(request)) {
-          return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-        }
+        const roleGuard = requireRole(request, 'admin')
+        if (roleGuard) return roleGuard
         try {
           const body = (await request.json()) as { skillsmpApiKey?: string }
           const stored = readSkillsSettings()
@@ -90,7 +88,7 @@ export const Route = createFileRoute('/api/skills/settings')({
             {
               ok: false,
               error:
-                error instanceof Error ? error.message : 'Failed to save settings',
+                error instanceof Error ? error.message : '保存设置失败',
             },
             { status: 500 },
           )

@@ -23,7 +23,7 @@ export const Route = createFileRoute('/api/profiles/activate')({
               error:
                 error instanceof Error
                   ? error.message
-                  : 'Failed to activate profile',
+                  : '激活档案失败',
             },
             { status: 500 },
           )

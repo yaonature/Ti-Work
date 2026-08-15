@@ -22,7 +22,7 @@ export const Route = createFileRoute('/api/knowledge/search')({
               error:
                 error instanceof Error
                   ? error.message
-                  : 'Failed to search knowledge pages',
+                  : '搜索知识库页面失败',
             },
             { status: 500 },
           )

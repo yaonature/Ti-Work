@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { resolveSessionKey } from '../../server/session-utils'
-import { isAuthenticated } from '../../server/auth-middleware'
+import {
+  getEffectiveSessionOwner,
+  isAuthenticated,
+} from '../../server/auth-middleware'
 import { requireJsonContentType } from '../../server/rate-limit'
 import { publishChatEvent } from '../../server/chat-event-bus'
 import {
@@ -12,11 +15,14 @@ import { getChatMode } from '../../server/gateway-capabilities'
 import {
   openaiChat
 } from '../../server/openai-compat-api'
+import { resolveDirectConnectTarget } from '../../server/direct-connect'
 import {
   SESSIONS_API_UNAVAILABLE_MESSAGE,
   createSession,
   ensureGatewayProbed,
   getGatewayCapabilities,
+  getGatewayOfflineMessage,
+  isGatewayReachable,
   streamChat,
 } from '../../server/hermes-api'
 import {
@@ -300,7 +306,7 @@ export const Route = createFileRoute('/api/send-stream')({
         const history = normalizePortableHistory(body.history)
         if (!message.trim() && (!attachments || attachments.length === 0)) {
           return new Response(
-            JSON.stringify({ ok: false, error: 'message required' }),
+            JSON.stringify({ ok: false, error: '消息内容必填' }),
             {
               status: 400,
               headers: { 'Content-Type': 'application/json' },
@@ -323,7 +329,7 @@ export const Route = createFileRoute('/api/send-stream')({
           const errorMsg = normalizeHermesErrorMessage(err)
           if (errorMsg === 'session not found') {
             return new Response(
-              JSON.stringify({ ok: false, error: 'session not found' }),
+              JSON.stringify({ ok: false, error: '会话不存在' }),
               {
                 status: 404,
                 headers: { 'Content-Type': 'application/json' },
@@ -337,7 +343,19 @@ export const Route = createFileRoute('/api/send-stream')({
         }
 
         const chatMode = getChatMode()
-        if (chatMode === 'portable' && sessionKey === 'new') {
+        // 直连降级：仅网关离线（chatMode=disconnected）且用户已配置某 OpenAI
+        // 兼容服务商 Key 时，portable 分支改走直连端点，避免"有模型发不出"。
+        // 网关在线时一律优先走网关（portable / enhanced），不启用直连。
+        const directTarget =
+          chatMode === 'disconnected'
+            ? resolveDirectConnectTarget(
+                typeof body.model === 'string' ? body.model : undefined,
+              )
+            : null
+        if (
+          (chatMode === 'portable' || directTarget !== null) &&
+          sessionKey === 'new'
+        ) {
           sessionKey = crypto.randomUUID()
           resolvedFriendlyId = sessionKey
         }
@@ -380,7 +398,7 @@ export const Route = createFileRoute('/api/send-stream')({
             }
 
             try {
-              if (chatMode === 'portable') {
+              if (chatMode === 'portable' || directTarget !== null) {
                 const runId = crypto.randomUUID()
                 const portableSessionKey = sessionKey
                 const portableFriendlyId =
@@ -389,6 +407,7 @@ export const Route = createFileRoute('/api/send-stream')({
                   rawSessionKey ||
                   portableSessionKey
                 let accumulated = ''
+                const usingDirectConnect = directTarget !== null
 
                 activeRunId = runId
                 registerActiveSendRun(runId)
@@ -403,10 +422,17 @@ export const Route = createFileRoute('/api/send-stream')({
                   runId,
                   sessionKey: portableSessionKey,
                   friendlyId: portableFriendlyId,
+                  ...(usingDirectConnect
+                    ? { transport: 'direct', provider: directTarget.providerId }
+                    : {}),
                 })
 
                 // Persist user message to local store (portable mode)
-                ensureLocalSession(portableSessionKey)
+                ensureLocalSession(
+                  portableSessionKey,
+                  undefined,
+                  getEffectiveSessionOwner(request),
+                )
                 appendLocalMessage(portableSessionKey, {
                   id: randomUUID(),
                   role: 'user',
@@ -427,8 +453,11 @@ export const Route = createFileRoute('/api/send-stream')({
                     },
                   ]
                   const stream = await openaiChat(portableMessages, {
-                    model:
-                      typeof body.model === 'string' ? body.model : undefined,
+                    model: usingDirectConnect
+                      ? directTarget.modelId
+                      : typeof body.model === 'string'
+                        ? body.model
+                        : undefined,
                     temperature:
                       typeof body.temperature === 'number'
                         ? body.temperature
@@ -436,6 +465,12 @@ export const Route = createFileRoute('/api/send-stream')({
                     signal: abortController.signal,
                     stream: true,
                     sessionId: portableSessionKey,
+                    baseUrl: usingDirectConnect
+                      ? directTarget.baseUrl
+                      : undefined,
+                    apiKey: usingDirectConnect
+                      ? directTarget.apiKey
+                      : undefined,
                   })
 
                   let thinking = ''
@@ -472,6 +507,9 @@ export const Route = createFileRoute('/api/send-stream')({
                     state: 'complete',
                     sessionKey: portableSessionKey,
                     runId,
+                    ...(usingDirectConnect
+                      ? { transport: 'direct', provider: directTarget.providerId }
+                      : {}),
                     message: {
                       role: 'assistant',
                       content: [
@@ -492,6 +530,10 @@ export const Route = createFileRoute('/api/send-stream')({
                   }
                 }
                 return
+              }
+
+              if (!isGatewayReachable()) {
+                throw new Error(getGatewayOfflineMessage())
               }
 
               if (!getGatewayCapabilities().sessions) {
@@ -734,7 +776,7 @@ export const Route = createFileRoute('/api/send-stream')({
                         toolCallId: readString(data.tool_call_id) || undefined,
                         result:
                           readString(data.message) ||
-                          `Updated ${readString(data.target) || 'memory'}`,
+                          `已更新 ${readString(data.target) || '记忆'}`,
                         sessionKey: sessionKeyFromEvent,
                         runId,
                       }
@@ -858,7 +900,7 @@ export const Route = createFileRoute('/api/send-stream')({
               // Set a timeout to close the stream if no completion event
               setTimeout(() => {
                 if (!streamClosed) {
-                  sendEvent('error', { message: 'Stream timeout' })
+                  sendEvent('error', { message: '流式响应超时' })
                   closeStream()
                 }
               }, SEND_STREAM_RUN_TIMEOUT_MS)

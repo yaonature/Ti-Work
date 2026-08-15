@@ -4,12 +4,12 @@
  * Returns the systemd user service status for hermes-studio.
  * Works on Linux with systemd; returns `available: false` on other platforms.
  */
-import { createFileRoute } from '@tanstack/react-router'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { createFileRoute } from '@tanstack/react-router'
 import { isAuthenticated } from '../../server/auth-middleware'
 
 const execFileAsync = promisify(execFile)
@@ -32,7 +32,7 @@ export interface SystemdStatusResponse {
   output: string
 }
 
-async function runSystemctl(...args: string[]): Promise<string> {
+async function runSystemctl(...args: Array<string>): Promise<string> {
   try {
     const { stdout } = await execFileAsync('systemctl', [
       '--user',

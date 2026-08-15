@@ -4,10 +4,12 @@ import os from 'node:os'
 import { json } from '@tanstack/react-start'
 import { createFileRoute } from '@tanstack/react-router'
 import { isAuthenticated } from '../../server/auth-middleware'
+import { getEnvConfiguredModels, getHermesHome } from '../../server/env-models'
 import {
   ensureGatewayProbed,
   getGatewayCapabilities,
 } from '../../server/hermes-api'
+import { getHermesApiToken } from '../../server/gateway-capabilities'
 
 const HERMES_API_URL = process.env.HERMES_API_URL || 'http://127.0.0.1:8642'
 
@@ -29,10 +31,15 @@ const AUTH_STORE_MODELS: Record<string, Array<ModelEntry>> = {
   xai: [{ id: 'grok-3', name: 'Grok 3', provider: 'xai' }],
 }
 
+/**
+ * 兜底模型：读取 ~/.hermes/.env 中已配置 Key 的 API Key 型服务商（DeepSeek/通义千问等）。
+ * 网关不可达或 /v1/models 未列出时，模型选择器仍能看到可用模型。
+ */
+
 function getAuthStoreModels(): Array<ModelEntry> {
   const extra: Array<ModelEntry> = []
   for (const storePath of [
-    path.join(os.homedir(), '.hermes', 'auth-profiles.json'),
+    path.join(getHermesHome(), 'auth-profiles.json'),
     path.join(
       os.homedir(),
       '.openclaw',
@@ -68,6 +75,50 @@ type ModelEntry = {
   id?: string
   name?: string
   [key: string]: unknown
+}
+
+function buildConfiguredProviders(models: Array<ModelEntry>): Array<string> {
+  return Array.from(
+    new Set(
+      models
+        .map((model) =>
+          typeof model.provider === 'string' ? model.provider : '',
+        )
+        .filter(Boolean),
+    ),
+  )
+}
+
+function buildFallbackModelsResponse(
+  envModels: Array<ModelEntry>,
+  authModels: Array<ModelEntry> = [],
+  source: 'configured-providers' | 'unavailable' = 'configured-providers',
+): {
+  ok: true
+  object: 'list'
+  data: Array<ModelEntry>
+  models: Array<ModelEntry>
+  configuredProviders: Array<string>
+  source: 'configured-providers' | 'unavailable'
+  message?: string
+} {
+  const models = [...envModels]
+  const existingIds = new Set(models.map((model) => model.id))
+  for (const model of authModels) {
+    if (!existingIds.has(model.id)) models.push(model)
+  }
+  const configuredProviders = buildConfiguredProviders(models)
+  return {
+    ok: true,
+    object: 'list',
+    data: models,
+    models,
+    configuredProviders,
+    source: models.length > 0 ? source : 'unavailable',
+    ...(models.length === 0
+      ? { message: '无法获取模型列表：网关不可达，且未检测到已配置的模型服务商。' }
+      : {}),
+  }
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -110,7 +161,10 @@ function normalizeHermesModel(entry: unknown): ModelEntry | null {
 }
 
 async function fetchHermesModels(): Promise<Array<ModelEntry>> {
-  const response = await fetch(`${HERMES_API_URL}/v1/models`)
+  const token = getHermesApiToken()
+  const response = await fetch(`${HERMES_API_URL}/v1/models`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  })
   if (!response.ok)
     throw new Error(`Hermes models request failed (${response.status})`)
   const payload = asRecord(await response.json())
@@ -132,36 +186,22 @@ export const Route = createFileRoute('/api/models')({
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         await ensureGatewayProbed()
+        // 兜底：env 中已配置 Key 的服务商模型（网关离线/未列出时仍可用）
+        const envModels = getEnvConfiguredModels()
+        const authModels = getAuthStoreModels()
         if (!getGatewayCapabilities().models) {
-          return json({
-            ok: true,
-            object: 'list',
-            data: [],
-            models: [],
-            configuredProviders: [],
-            source: 'unavailable',
-            message: 'Gateway does not support /v1/models',
-          })
+          return json(buildFallbackModelsResponse(envModels, authModels))
         }
         try {
           const models = await fetchHermesModels()
           // Add models from auth store providers (Anthropic, OpenAI, etc.)
-          const authModels = getAuthStoreModels()
           const existingIds = new Set(models.map((m) => m.id))
-          for (const m of authModels) {
+          for (const m of [...authModels, ...envModels]) {
             if (!existingIds.has(m.id)) {
               models.push(m)
             }
           }
-          const configuredProviders = Array.from(
-            new Set(
-              models
-                .map((model) =>
-                  typeof model.provider === 'string' ? model.provider : '',
-                )
-                .filter(Boolean),
-            ),
-          )
+          const configuredProviders = buildConfiguredProviders(models)
           return json({
             ok: true,
             object: 'list',
@@ -171,11 +211,8 @@ export const Route = createFileRoute('/api/models')({
           })
         } catch (err) {
           return json(
-            {
-              ok: false,
-              error: err instanceof Error ? err.message : String(err),
-            },
-            { status: 503 },
+            buildFallbackModelsResponse(envModels, authModels),
+            { status: 200 },
           )
         }
       },

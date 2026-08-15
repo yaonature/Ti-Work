@@ -28,7 +28,7 @@ export const Route = createFileRoute('/api/events/replay')({
 
         if (!sessionKey) {
           return json(
-            { ok: false, error: 'sessionKey is required' },
+            { ok: false, error: 'sessionKey 必填' },
             { status: 400 },
           )
         }

@@ -5,6 +5,8 @@ import {
   SESSIONS_API_UNAVAILABLE_MESSAGE,
   ensureGatewayProbed,
   getGatewayCapabilities,
+  getGatewayOfflineMessage,
+  isGatewayReachable,
 } from '../../server/hermes-api'
 import { requireJsonContentType } from '../../server/rate-limit'
 
@@ -18,6 +20,12 @@ export const Route = createFileRoute('/api/send')({
         const csrfCheck = requireJsonContentType(request)
         if (csrfCheck) return csrfCheck
         await ensureGatewayProbed()
+        if (!isGatewayReachable()) {
+          return json(
+            { ok: false, error: getGatewayOfflineMessage() },
+            { status: 503 },
+          )
+        }
         if (!getGatewayCapabilities().sessions) {
           return json(
             { ok: false, error: SESSIONS_API_UNAVAILABLE_MESSAGE },
@@ -27,7 +35,7 @@ export const Route = createFileRoute('/api/send')({
         return json(
           {
             ok: false,
-            error: 'Legacy send is not available in Hermes Studio.',
+            error: '旧版 send 接口在 Hermes Studio 中不可用。',
           },
           { status: 501 },
         )

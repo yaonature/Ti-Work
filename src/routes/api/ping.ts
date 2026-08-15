@@ -20,7 +20,7 @@ export const Route = createFileRoute('/api/ping')({
           return Response.json(
             {
               ok: false,
-              error: 'Authentication required',
+              error: '需要认证',
               status: 401,
               hermesUrl: HERMES_API,
             } satisfies PingResponse,
@@ -33,7 +33,7 @@ export const Route = createFileRoute('/api/ping')({
           return Response.json(
             {
               ok: false,
-              error: 'Hermes unavailable',
+              error: 'Hermes 不可用',
               status: 503,
               hermesUrl: HERMES_API,
             } satisfies PingResponse,

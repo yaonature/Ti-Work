@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../../server/auth-middleware'
-import { BEARER_TOKEN, HERMES_API } from '../../../server/gateway-capabilities'
+import { getHermesApiToken, HERMES_API } from '../../../server/gateway-capabilities'
 import { readSkillsSettings } from './settings'
 
 export type HubSkillSource = 'skillsmp' | 'installed-fallback'
@@ -30,7 +30,7 @@ function getSkillsmpKey(): string {
 
 function skillsmpHeaders(): HeadersInit {
   const key = getSkillsmpKey()
-  if (!key) throw new Error('SKILLSMP_API_KEY not configured. Add your key in Settings → Integrations.')
+  if (!key) throw new Error('未配置 SKILLSMP_API_KEY，请在 设置 → 集成 中添加你的密钥')
   return {
     Authorization: `Bearer ${key}`,
     'Content-Type': 'application/json',
@@ -38,7 +38,8 @@ function skillsmpHeaders(): HeadersInit {
 }
 
 function hermesAuthHeaders(): Record<string, string> {
-  return BEARER_TOKEN ? { Authorization: `Bearer ${BEARER_TOKEN}` } : {}
+  const token = getHermesApiToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 function asRecord(v: unknown): Record<string, unknown> {
@@ -92,7 +93,7 @@ async function searchSkillsmp(
   query: string,
   limit: number,
   installedIds: Set<string>,
-): Promise<HubSkill[]> {
+): Promise<Array<HubSkill>> {
   const params = new URLSearchParams({
     q: query,
     limit: String(limit),
@@ -112,7 +113,7 @@ async function searchSkillsmp(
 
   const body = asRecord(await res.json())
   const data = asRecord(body.data)
-  const skills = Array.isArray(data.skills) ? (data.skills as unknown[]) : []
+  const skills = Array.isArray(data.skills) ? (data.skills as Array<unknown>) : []
 
   return skills
     .map((s) => asRecord(s))
@@ -131,9 +132,9 @@ async function fetchInstalledIds(): Promise<Set<string>> {
     if (!res.ok) return new Set()
     const data = asRecord(await res.json())
     const items = Array.isArray(data.skills)
-      ? (data.skills as unknown[])
+      ? (data.skills as Array<unknown>)
       : Array.isArray(data)
-        ? (data as unknown[])
+        ? (data as Array<unknown>)
         : []
     return new Set(
       items
@@ -191,7 +192,7 @@ export const Route = createFileRoute('/api/skills/hub-search')({
             {
               ok: false,
               error:
-                error instanceof Error ? error.message : 'Search failed',
+                error instanceof Error ? error.message : '搜索失败',
               results: [],
               source: 'error',
             },

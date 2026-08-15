@@ -4,14 +4,14 @@
  * Runs a systemctl user-service action for hermes-studio.
  * Body: { action: 'install' | 'uninstall' | 'start' | 'stop' | 'enable' | 'disable' }
  */
-import { createFileRoute } from '@tanstack/react-router'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { readFile, writeFile, mkdir, unlink } from 'node:fs/promises'
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join, dirname } from 'node:path'
-import { isAuthenticated } from '../../server/auth-middleware'
+import { dirname, join } from 'node:path'
+import { createFileRoute } from '@tanstack/react-router'
+import { requireRole } from '../../server/auth-middleware'
 
 const execFileAsync = promisify(execFile)
 
@@ -51,7 +51,7 @@ const ALLOWED_ACTIONS: Set<SystemdAction> = new Set([
   'disable',
 ])
 
-async function runSystemctl(...args: string[]): Promise<string> {
+async function runSystemctl(...args: Array<string>): Promise<string> {
   try {
     const { stdout } = await execFileAsync('systemctl', [
       '--user',
@@ -69,13 +69,12 @@ export const Route = createFileRoute('/api/systemd-control')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!isAuthenticated(request)) {
-          return Response.json({ ok: false }, { status: 401 })
-        }
+        const roleGuard = requireRole(request, 'admin')
+        if (roleGuard) return roleGuard
 
         if (process.platform !== 'linux') {
           return Response.json(
-            { ok: false, error: 'systemd not available on this platform' },
+            { ok: false, error: '当前平台不支持 systemd' },
             { status: 400 },
           )
         }
@@ -85,7 +84,7 @@ export const Route = createFileRoute('/api/systemd-control')({
 
         if (!action || !ALLOWED_ACTIONS.has(action)) {
           return Response.json(
-            { ok: false, error: 'Invalid action' },
+            { ok: false, error: '无效的操作' },
             { status: 400 },
           )
         }

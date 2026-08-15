@@ -21,8 +21,8 @@ export const Route = createFileRoute('/api/memory/read')({
           const message =
             error instanceof Error
               ? error.message
-              : 'Failed to read memory file'
-          const status = /not allowed|outside workspace|required/i.test(message)
+              : '读取记忆文件失败'
+          const status = /不允许|超出工作区|必填/i.test(message)
             ? 400
             : /ENOENT/.test(message)
               ? 404

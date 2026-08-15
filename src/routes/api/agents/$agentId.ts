@@ -8,9 +8,9 @@ import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../../server/auth-middleware'
 import { requireJsonContentType } from '../../../server/rate-limit'
 import {
+  deleteAgent,
   getAgent,
   updateAgent,
-  deleteAgent,
 } from '../../../server/agent-definitions-store'
 
 export const Route = createFileRoute('/api/agents/$agentId')({
@@ -35,7 +35,7 @@ export const Route = createFileRoute('/api/agents/$agentId')({
         const existing = getAgent(params.agentId)
         if (!existing) return json({ ok: false, error: 'Not found' }, { status: 404 })
         if (existing.isBuiltIn) {
-          return json({ ok: false, error: 'Built-in agents cannot be modified' }, { status: 403 })
+          return json({ ok: false, error: '内置智能体不可修改' }, { status: 403 })
         }
 
         const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
@@ -57,10 +57,10 @@ export const Route = createFileRoute('/api/agents/$agentId')({
           updates.systemPrompt = body.systemPrompt.trim()
         }
         if (body.model === null || (typeof body.model === 'string' && body.model.trim())) {
-          updates.model = body.model === null ? null : (body.model as string).trim()
+          updates.model = body.model === null ? null : (body.model).trim()
         }
         if (Array.isArray(body.tags)) {
-          updates.tags = (body.tags as unknown[])
+          updates.tags = (body.tags as Array<unknown>)
             .filter((t): t is string => typeof t === 'string')
             .slice(0, 10)
         }
@@ -78,7 +78,7 @@ export const Route = createFileRoute('/api/agents/$agentId')({
         const existing = getAgent(params.agentId)
         if (!existing) return json({ ok: false, error: 'Not found' }, { status: 404 })
         if (existing.isBuiltIn) {
-          return json({ ok: false, error: 'Built-in agents cannot be deleted' }, { status: 403 })
+          return json({ ok: false, error: '内置智能体不可删除' }, { status: 403 })
         }
 
         const ok = deleteAgent(params.agentId)

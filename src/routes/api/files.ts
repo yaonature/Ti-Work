@@ -60,7 +60,7 @@ function ensureWorkspacePathFor(input: string, root: string) {
     ? path.resolve(raw)
     : path.resolve(root, raw)
   if (!resolved.startsWith(root)) {
-    throw new Error('Path is outside workspace')
+    throw new Error('路径超出工作区')
   }
   return resolved
 }
@@ -350,13 +350,13 @@ export const Route = createFileRoute('/api/files')({
             const form = await request.formData()
             const action = String(form.get('action') || 'upload')
             if (action !== 'upload') {
-              return json({ error: 'Invalid upload request' }, { status: 400 })
+              return json({ error: '无效的上传请求' }, { status: 400 })
             }
             const file = form.get('file')
             const targetPath = String(form.get('path') || '')
             const uploadProfile = String(form.get('profile') || '')
             if (!(file instanceof File)) {
-              return json({ error: 'Missing file' }, { status: 400 })
+              return json({ error: '缺少文件' }, { status: 400 })
             }
             const uploadRoot = getEffectiveRoot(uploadProfile || undefined)
             const resolvedTarget = ensureWorkspacePathFor(targetPath, uploadRoot)

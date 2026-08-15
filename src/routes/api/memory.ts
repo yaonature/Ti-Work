@@ -21,7 +21,7 @@ export const Route = createFileRoute('/api/memory')({
           return json(
             {
               ok: false,
-              error: `Gateway does not support /api/memory on ${HERMES_API}`,
+              error: `网关不支持 ${HERMES_API} 上的 /api/memory`,
             },
             { status: 503 },
           )

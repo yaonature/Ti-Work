@@ -9,10 +9,10 @@ import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../../server/auth-middleware'
 import { requireJsonContentType } from '../../../server/rate-limit'
 import {
+  deleteCrew,
   getCrew,
   updateCrew,
   updateMemberStatus,
-  deleteCrew,
 } from '../../../server/crew-store'
 import { deleteWorkflow } from '../../../server/workflow-store'
 import { deleteCrewUsage } from '../../../server/cost-store'
@@ -26,7 +26,7 @@ export const Route = createFileRoute('/api/crews/$crewId')({
         }
         const crew = getCrew(params.crewId)
         if (!crew) {
-          return json({ ok: false, error: 'Crew not found' }, { status: 404 })
+          return json({ ok: false, error: '未找到该多智能体' }, { status: 404 })
         }
         return json({ ok: true, crew })
       },
@@ -75,7 +75,7 @@ export const Route = createFileRoute('/api/crews/$crewId')({
 
         const crew = updateCrew(params.crewId, updates)
         if (!crew) {
-          return json({ ok: false, error: 'Crew not found' }, { status: 404 })
+          return json({ ok: false, error: '未找到该多智能体' }, { status: 404 })
         }
         return json({ ok: true, crew })
       },
@@ -86,7 +86,7 @@ export const Route = createFileRoute('/api/crews/$crewId')({
         }
         const deleted = deleteCrew(params.crewId)
         if (!deleted) {
-          return json({ ok: false, error: 'Crew not found' }, { status: 404 })
+          return json({ ok: false, error: '未找到该多智能体' }, { status: 404 })
         }
         deleteWorkflow(params.crewId)
         deleteCrewUsage(params.crewId)

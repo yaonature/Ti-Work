@@ -8,7 +8,7 @@ import { requireJsonContentType } from '../../../server/rate-limit'
 import { moveTask } from '../../../server/task-store'
 import type { TaskColumn } from '../../../types/task'
 
-const VALID_COLUMNS: TaskColumn[] = ['backlog', 'todo', 'in_progress', 'review', 'done']
+const VALID_COLUMNS: Array<TaskColumn> = ['backlog', 'todo', 'in_progress', 'review', 'done']
 
 export const Route = createFileRoute('/api/tasks/$taskId/move')({
   server: {
@@ -25,14 +25,14 @@ export const Route = createFileRoute('/api/tasks/$taskId/move')({
         const column = typeof body.column === 'string' ? body.column : ''
         if (!VALID_COLUMNS.includes(column as TaskColumn)) {
           return json(
-            { ok: false, error: `column must be one of: ${VALID_COLUMNS.join(', ')}` },
+            { ok: false, error: `column 必须是以下值之一：${VALID_COLUMNS.join(', ')}` },
             { status: 400 },
           )
         }
 
         const task = moveTask(params.taskId, column as TaskColumn)
         if (!task) {
-          return json({ ok: false, error: 'Task not found' }, { status: 404 })
+          return json({ ok: false, error: '未找到该任务' }, { status: 404 })
         }
         return json({ ok: true, task })
       },

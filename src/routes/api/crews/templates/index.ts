@@ -7,12 +7,12 @@ import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../../../server/auth-middleware'
 import { requireJsonContentType } from '../../../../server/rate-limit'
 import {
-  listTemplates,
   createUserTemplate,
+  listTemplates,
 } from '../../../../server/template-store'
 import type { CrewTemplateCategory } from '../../../../types/template'
 
-const VALID_CATEGORIES: CrewTemplateCategory[] = [
+const VALID_CATEGORIES: Array<CrewTemplateCategory> = [
   'research',
   'engineering',
   'creative',
@@ -47,7 +47,7 @@ export const Route = createFileRoute('/api/crews/templates/')({
           typeof body.name === 'string' ? body.name.trim() : ''
         if (!name) {
           return json(
-            { ok: false, error: 'name is required' },
+            { ok: false, error: '名称必填' },
             { status: 400 },
           )
         }
@@ -55,20 +55,20 @@ export const Route = createFileRoute('/api/crews/templates/')({
         const category = body.category as string
         if (!VALID_CATEGORIES.includes(category as CrewTemplateCategory)) {
           return json(
-            { ok: false, error: 'Invalid category' },
+            { ok: false, error: '无效的分类' },
             { status: 400 },
           )
         }
 
         if (!Array.isArray(body.defaultMembers) || body.defaultMembers.length === 0) {
           return json(
-            { ok: false, error: 'defaultMembers must be a non-empty array' },
+            { ok: false, error: 'defaultMembers 必须是非空数组' },
             { status: 400 },
           )
         }
 
         const defaultMembers: Array<{ persona: string; role: typeof VALID_ROLES[number] }> = []
-        for (const m of body.defaultMembers as unknown[]) {
+        for (const m of body.defaultMembers as Array<unknown>) {
           if (
             typeof m !== 'object' ||
             m === null ||
@@ -76,7 +76,7 @@ export const Route = createFileRoute('/api/crews/templates/')({
             !VALID_ROLES.includes((m as Record<string, unknown>).role as typeof VALID_ROLES[number])
           ) {
             return json(
-              { ok: false, error: 'Each member must have persona (string) and valid role' },
+              { ok: false, error: '每个成员必须包含 persona（字符串）和有效的角色' },
               { status: 400 },
             )
           }
@@ -94,7 +94,7 @@ export const Route = createFileRoute('/api/crews/templates/')({
           defaultGoal: typeof body.defaultGoal === 'string' ? body.defaultGoal.trim() : '',
           defaultMembers,
           tags: Array.isArray(body.tags)
-            ? (body.tags as unknown[]).filter((t): t is string => typeof t === 'string')
+            ? (body.tags as Array<unknown>).filter((t): t is string => typeof t === 'string')
             : [],
         })
 

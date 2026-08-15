@@ -7,10 +7,8 @@ import path from 'node:path'
 import os from 'node:os'
 import { createFileRoute } from '@tanstack/react-router'
 import YAML from 'yaml'
-import { isAuthenticated } from '../../server/auth-middleware'
+import { requireAuth, requireRole } from '../../server/auth-middleware'
 import { ensureGatewayProbed } from '../../server/gateway-capabilities'
-
-type AuthResult = Response | true
 
 const HERMES_HOME = path.join(os.homedir(), '.hermes')
 const CONFIG_PATH = path.join(HERMES_HOME, 'config.yaml')
@@ -18,6 +16,13 @@ const ENV_PATH = path.join(HERMES_HOME, '.env')
 
 // Known Hermes providers
 const PROVIDERS = [
+  { id: 'deepseek', name: 'DeepSeek', authType: 'api_key', envKeys: ['DEEPSEEK_API_KEY'] },
+  {
+    id: 'dashscope',
+    name: '通义千问 Qwen (阿里云百炼)',
+    authType: 'api_key',
+    envKeys: ['DASHSCOPE_API_KEY'],
+  },
   { id: 'nous', name: 'Nous Portal', authType: 'oauth', envKeys: [] },
   { id: 'openai-codex', name: 'OpenAI Codex', authType: 'oauth', envKeys: [] },
   {
@@ -159,8 +164,8 @@ export const Route = createFileRoute('/api/hermes-config')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const authResult = isAuthenticated(request) as AuthResult
-        if (authResult !== true) return authResult
+        const authGuard = requireAuth(request)
+        if (authGuard) return authGuard
         await ensureGatewayProbed()
         const config = readConfig()
         const env = readEnv()
@@ -217,8 +222,8 @@ export const Route = createFileRoute('/api/hermes-config')({
       },
 
       PATCH: async ({ request }) => {
-        const authResult = isAuthenticated(request) as AuthResult
-        if (authResult !== true) return authResult
+        const roleGuard = requireRole(request, 'admin')
+        if (roleGuard) return roleGuard
         await ensureGatewayProbed()
         const body = (await request.json()) as Record<string, unknown>
 
@@ -277,7 +282,7 @@ export const Route = createFileRoute('/api/hermes-config')({
 
         return Response.json({
           ok: true,
-          message: 'Config updated. Restart Hermes to apply changes.',
+          message: '配置已更新，重启 Hermes 后生效。',
         })
       },
     },

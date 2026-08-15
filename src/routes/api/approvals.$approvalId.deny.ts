@@ -10,10 +10,10 @@ import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../server/auth-middleware'
 import { requireJsonContentType } from '../../server/rate-limit'
 import {
+  HERMES_API,
   ensureGatewayProbed,
   getGatewayCapabilities,
   sendChat,
-  HERMES_API,
 } from '../../server/hermes-api'
 
 export const Route = createFileRoute('/api/approvals/$approvalId/deny')({
@@ -62,7 +62,7 @@ export const Route = createFileRoute('/api/approvals/$approvalId/deny')({
             {
               ok: false,
               error:
-                err instanceof Error ? err.message : 'Failed to send denial',
+                err instanceof Error ? err.message : '发送拒绝失败',
             },
             { status: 500 },
           )

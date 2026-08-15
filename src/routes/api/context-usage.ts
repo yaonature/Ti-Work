@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '@/server/auth-middleware'
-import { BEARER_TOKEN, HERMES_API } from '@/server/gateway-capabilities'
+import { getHermesApiToken, HERMES_API } from '@/server/gateway-capabilities'
 
 const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
   'claude-opus-4-6': 200_000,
@@ -38,7 +38,8 @@ function getContextWindow(model: string): number {
 }
 
 function authHeaders(): Record<string, string> {
-  return BEARER_TOKEN ? { Authorization: `Bearer ${BEARER_TOKEN}` } : {}
+  const token = getHermesApiToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 const CHARS_PER_TOKEN = 3.5
@@ -91,9 +92,15 @@ export const Route = createFileRoute('/api/context-usage')({
               if (listRes.ok) {
                 const listData = (await listRes.json()) as {
                   items?: Array<Record<string, unknown>>
+                  data?: Array<Record<string, unknown>>
                 }
-                if (listData.items && listData.items.length > 0) {
-                  sessionData = listData.items[0]
+                const sessions = Array.isArray(listData.data)
+                  ? listData.data
+                  : Array.isArray(listData.items)
+                    ? listData.items
+                    : []
+                if (sessions.length > 0) {
+                  sessionData = sessions[0]
                 }
               }
             } catch {
@@ -163,8 +170,17 @@ export const Route = createFileRoute('/api/context-usage')({
                       tool_calls?: unknown
                       reasoning?: string
                     }>
+                    data?: Array<{
+                      content?: string
+                      tool_calls?: unknown
+                      reasoning?: string
+                    }>
                   }
-                  const messages = msgData.items || []
+                  const messages = Array.isArray(msgData.data)
+                    ? msgData.data
+                    : Array.isArray(msgData.items)
+                      ? msgData.items
+                      : []
                   let totalChars = 0
                   for (const msg of messages) {
                     totalChars += (msg.content || '').length

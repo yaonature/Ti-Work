@@ -156,7 +156,7 @@ function parseFrontmatter(content: string): { meta: Record<string, unknown>; bod
     if (line.match(/^\s+tags:\s*$/)) { insideTags = true; meta.tags = []; continue }
     if (insideTags && line.match(/^\s+-\s+(.+)/)) {
       const tag = line.match(/^\s+-\s+(.+)/)![1].trim()
-      ;(meta.tags as string[]).push(tag)
+      ;(meta.tags as Array<string>).push(tag)
     }
   }
   return { meta, body: match[2].trim() }
@@ -218,7 +218,7 @@ function readLocalSkills(): Array<SkillSummary> {
         const { meta, body } = parseFrontmatter(raw)
         const id = `${categoryDir}/${skillDir}`
         const name = typeof meta.name === 'string' ? meta.name : skillDir
-        const tags = Array.isArray(meta.tags) ? (meta.tags as string[]) : []
+        const tags = Array.isArray(meta.tags) ? (meta.tags as Array<string>) : []
         skills.push({
           id,
           slug: skillDir,
@@ -491,7 +491,7 @@ export const Route = createFileRoute('/api/skills')({
           const skillId = (body.skillId || '').trim()
 
           if (!skillId) {
-            return json({ ok: false, error: 'skillId required' }, { status: 400 })
+            return json({ ok: false, error: 'skillId 必填' }, { status: 400 })
           }
 
           if (action === 'toggle') {
@@ -509,7 +509,7 @@ export const Route = createFileRoute('/api/skills')({
           }
 
           return json(
-            { ok: false, error: `Unknown action: ${action}` },
+            { ok: false, error: `未知操作：${action}` },
             { status: 400 },
           )
         } catch (err) {

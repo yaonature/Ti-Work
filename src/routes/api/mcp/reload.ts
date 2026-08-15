@@ -1,11 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { isAuthenticated } from '../../../server/auth-middleware'
-import { BEARER_TOKEN, HERMES_API } from '../../../server/gateway-capabilities'
-
-type AuthResult = Response | true
+import { requireAuth } from '../../../server/auth-middleware'
+import { getHermesApiToken, HERMES_API } from '../../../server/gateway-capabilities'
 
 function authHeaders(): Record<string, string> {
-  return BEARER_TOKEN ? { Authorization: `Bearer ${BEARER_TOKEN}` } : {}
+  const token = getHermesApiToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 const RELOAD_PATHS = ['/api/reload-mcp', '/api/mcp/reload']
@@ -14,8 +13,8 @@ export const Route = createFileRoute('/api/mcp/reload')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const authResult = isAuthenticated(request) as AuthResult
-        if (authResult !== true) return authResult
+        const authGuard = requireAuth(request)
+        if (authGuard) return authGuard
 
         for (const path of RELOAD_PATHS) {
           try {
@@ -27,7 +26,7 @@ export const Route = createFileRoute('/api/mcp/reload')({
             if (response.ok) {
               return Response.json({
                 ok: true,
-                message: 'MCP server reload requested.',
+                message: '已请求重载 MCP 服务器。',
               })
             }
           } catch {
@@ -37,7 +36,7 @@ export const Route = createFileRoute('/api/mcp/reload')({
 
         return Response.json({
           ok: false,
-          message: 'Use /reload-mcp in chat to reload MCP servers.',
+          message: '请在聊天中使用 /reload-mcp 重载 MCP 服务器。',
         })
       },
     },

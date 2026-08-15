@@ -19,7 +19,7 @@ export const Route = createFileRoute('/api/knowledge/graph')({
               error:
                 error instanceof Error
                   ? error.message
-                  : 'Failed to build knowledge graph',
+                  : '构建知识库图谱失败',
             },
             { status: 500 },
           )

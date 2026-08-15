@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { isAuthenticated } from '../../server/auth-middleware'
+import {
+  getEffectiveSessionOwner,
+  isAuthenticated,
+} from '../../server/auth-middleware'
 import { requireJsonContentType } from '../../server/rate-limit'
 import {
-  SESSIONS_API_UNAVAILABLE_MESSAGE,
   createSession,
   deleteSession,
   ensureGatewayProbed,
@@ -13,7 +15,9 @@ import {
   toSessionSummary,
   updateSession,
 } from '../../server/hermes-api'
+import type { HermesSession } from '../../server/hermes-api'
 import {
+  canAccessLocalSession,
   deleteLocalSession,
   ensureLocalSession,
   listLocalSessions,
@@ -32,7 +36,8 @@ export const Route = createFileRoute('/api/sessions')({
         }
         await ensureGatewayProbed()
         if (!getGatewayCapabilities().sessions) {
-          const localSessions = listLocalSessions()
+          const ownerId = getEffectiveSessionOwner(request)
+          const localSessions = listLocalSessions(ownerId)
           return json({
             ok: true,
             sessions: localSessions.map(toLocalSessionSummary),
@@ -41,9 +46,11 @@ export const Route = createFileRoute('/api/sessions')({
         }
 
         try {
-          const response = await listSessions(50, 0)
+          const raw = (await listSessions(50, 0)) as unknown
           // Handle OpenAI-format response: { object: "list", data: [...] }
-          const sessionList = Array.isArray(response) ? response : (response?.data ?? [])
+          const sessionList = Array.isArray(raw)
+            ? (raw as Array<HermesSession>)
+            : ((raw as { data?: Array<HermesSession> })?.data ?? [])
           return json({ ok: true, sessions: sessionList.map(toSessionSummary), source: 'gateway' })
         } catch (err) {
           return json(
@@ -72,7 +79,8 @@ export const Route = createFileRoute('/api/sessions')({
           const model =
             typeof body2.model === 'string' ? body2.model.trim() : undefined
           const friendlyId = requestedId || randomUUID()
-          const session = ensureLocalSession(friendlyId, model)
+          const ownerId = getEffectiveSessionOwner(request)
+          const session = ensureLocalSession(friendlyId, model, ownerId)
           return json({
             ok: true,
             sessionKey: session.id,
@@ -141,7 +149,14 @@ export const Route = createFileRoute('/api/sessions')({
           const sessionKey = rawSessionKey || rawFriendlyId
           const label =
             typeof body.label === 'string' ? body.label.trim() : undefined
+          const ownerId = getEffectiveSessionOwner(request)
           if (sessionKey && label) {
+            if (!canAccessLocalSession(sessionKey, ownerId)) {
+              return json(
+                { ok: false, error: 'Forbidden' },
+                { status: 403 },
+              )
+            }
             updateLocalSessionTitle(sessionKey, label)
           }
           return json({
@@ -168,7 +183,7 @@ export const Route = createFileRoute('/api/sessions')({
 
           if (!sessionKey) {
             return json(
-              { ok: false, error: 'sessionKey required' },
+              { ok: false, error: 'sessionKey 必填' },
               { status: 400 },
             )
           }
@@ -202,7 +217,15 @@ export const Route = createFileRoute('/api/sessions')({
           const rawSessionKey = url.searchParams.get('sessionKey') ?? ''
           const rawFriendlyId = url.searchParams.get('friendlyId') ?? ''
           const sessionKey = rawSessionKey.trim() || rawFriendlyId.trim()
-          if (sessionKey) deleteLocalSession(sessionKey)
+          if (sessionKey) {
+            if (!canAccessLocalSession(sessionKey, getEffectiveSessionOwner(request))) {
+              return json(
+                { ok: false, error: 'Forbidden' },
+                { status: 403 },
+              )
+            }
+            deleteLocalSession(sessionKey)
+          }
           return json({
             ok: true,
             sessionKey,
@@ -218,7 +241,7 @@ export const Route = createFileRoute('/api/sessions')({
 
           if (!sessionKey) {
             return json(
-              { ok: false, error: 'sessionKey required' },
+              { ok: false, error: 'sessionKey 必填' },
               { status: 400 },
             )
           }

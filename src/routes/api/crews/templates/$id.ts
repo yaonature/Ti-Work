@@ -4,7 +4,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../../../server/auth-middleware'
-import { getTemplate, deleteUserTemplate } from '../../../../server/template-store'
+import { deleteUserTemplate, getTemplate } from '../../../../server/template-store'
 
 export const Route = createFileRoute('/api/crews/templates/$id')({
   server: {
@@ -15,11 +15,11 @@ export const Route = createFileRoute('/api/crews/templates/$id')({
         }
         const template = getTemplate(params.id)
         if (!template) {
-          return json({ ok: false, error: 'Template not found' }, { status: 404 })
+          return json({ ok: false, error: '未找到该模板' }, { status: 404 })
         }
         if (template.isBuiltIn) {
           return json(
-            { ok: false, error: 'Cannot delete built-in template' },
+            { ok: false, error: '内置模板不可删除' },
             { status: 403 },
           )
         }

@@ -9,16 +9,16 @@ import { isAuthenticated } from '../../../server/auth-middleware'
 import { requireJsonContentType } from '../../../server/rate-limit'
 import { getCrew } from '../../../server/crew-store'
 import {
+  deleteWorkflow,
   getWorkflow,
   upsertWorkflow,
-  deleteWorkflow,
 } from '../../../server/workflow-store'
-import type { WorkflowTask, WorkflowEdge } from '../../../types/workflow'
+import type { WorkflowEdge, WorkflowTask } from '../../../types/workflow'
 
 // ─── Cycle detection (DFS) ──────────────────────────────────────────────────
 
-function hasCycle(taskIds: string[], edges: WorkflowEdge[]): boolean {
-  const adj = new Map<string, string[]>()
+function hasCycle(taskIds: Array<string>, edges: Array<WorkflowEdge>): boolean {
+  const adj = new Map<string, Array<string>>()
   for (const id of taskIds) adj.set(id, [])
   for (const e of edges) {
     const list = adj.get(e.from)
@@ -54,7 +54,7 @@ export const Route = createFileRoute('/api/crews/$crewId/workflow')({
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         if (!getCrew(params.crewId)) {
-          return json({ ok: false, error: 'Crew not found' }, { status: 404 })
+          return json({ ok: false, error: '未找到该多智能体' }, { status: 404 })
         }
         return json({ ok: true, workflow: getWorkflow(params.crewId) })
       },
@@ -67,7 +67,7 @@ export const Route = createFileRoute('/api/crews/$crewId/workflow')({
         if (csrfCheck) return csrfCheck
 
         if (!getCrew(params.crewId)) {
-          return json({ ok: false, error: 'Crew not found' }, { status: 404 })
+          return json({ ok: false, error: '未找到该多智能体' }, { status: 404 })
         }
 
         const body = (await request.json().catch(() => ({}))) as Record<
@@ -77,20 +77,20 @@ export const Route = createFileRoute('/api/crews/$crewId/workflow')({
 
         if (!Array.isArray(body.tasks) || !Array.isArray(body.edges)) {
           return json(
-            { ok: false, error: 'tasks and edges must be arrays' },
+            { ok: false, error: 'tasks 和 edges 必须是数组' },
             { status: 400 },
           )
         }
 
-        const tasks = body.tasks as WorkflowTask[]
-        const edges = body.edges as WorkflowEdge[]
+        const tasks = body.tasks as Array<WorkflowTask>
+        const edges = body.edges as Array<WorkflowEdge>
 
         // Validate edge references
         const taskIds = new Set(tasks.map((t) => t.id))
         for (const e of edges) {
           if (!taskIds.has(e.from) || !taskIds.has(e.to)) {
             return json(
-              { ok: false, error: 'Edge references unknown task id' },
+              { ok: false, error: '边引用了未知的任务 ID' },
               { status: 400 },
             )
           }
@@ -99,7 +99,7 @@ export const Route = createFileRoute('/api/crews/$crewId/workflow')({
         // Cycle detection
         if (hasCycle(Array.from(taskIds), edges)) {
           return json(
-            { ok: false, error: 'Workflow contains a cycle' },
+            { ok: false, error: '工作流存在循环依赖' },
             { status: 400 },
           )
         }

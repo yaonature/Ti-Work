@@ -28,7 +28,7 @@ export const Route = createFileRoute('/api/profiles/rename')({
               error:
                 error instanceof Error
                   ? error.message
-                  : 'Failed to rename profile',
+                  : '重命名档案失败',
             },
             { status: 500 },
           )

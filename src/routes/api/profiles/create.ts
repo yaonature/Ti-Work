@@ -34,7 +34,7 @@ export const Route = createFileRoute('/api/profiles/create')({
               error:
                 error instanceof Error
                   ? error.message
-                  : 'Failed to create profile',
+                  : '创建档案失败',
             },
             { status: 500 },
           )

@@ -24,7 +24,7 @@ export const Route = createFileRoute('/api/profiles/list')({
               error:
                 error instanceof Error
                   ? error.message
-                  : 'Failed to list profiles',
+                  : '列出档案失败',
               profiles: [],
             },
             { status: 500 },

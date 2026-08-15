@@ -12,7 +12,7 @@ import {
   ensureGatewayProbed,
   getChatMode,
 } from '../../server/gateway-capabilities'
-import { isAuthenticated } from '../../server/auth-middleware'
+import { requireAuth } from '../../server/auth-middleware'
 
 const CONFIG_PATH = path.join(os.homedir(), '.hermes', 'config.yaml')
 
@@ -34,7 +34,7 @@ function readActiveModel(): string {
 
 type ConnectionStatus = {
   status: 'connected' | 'enhanced' | 'partial' | 'disconnected'
-  label: 'Connected' | 'Enhanced' | 'Partial' | 'Disconnected'
+  label: '已连接' | '增强模式' | '部分可用' | '未连接'
   detail: string
   health: boolean
   chatReady: boolean
@@ -49,8 +49,8 @@ export const Route = createFileRoute('/api/connection-status')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const authResult = isAuthenticated(request)
-        if (authResult !== true) return authResult as unknown as Response
+        const authGuard = requireAuth(request)
+        if (authGuard) return authGuard
 
         const caps = await ensureGatewayProbed()
         const activeModel = readActiveModel()
@@ -70,29 +70,28 @@ export const Route = createFileRoute('/api/connection-status')({
 
         if (!caps.health && !chatReady) {
           status = 'disconnected'
-          label = 'Disconnected'
-          detail = 'No compatible backend detected.'
+          label = '未连接'
+          detail = '未检测到可用的兼容后端。'
         } else if (enhancedReady) {
           status = 'enhanced'
-          label = 'Enhanced'
+          label = '增强模式'
           detail = modelConfigured
-            ? 'Core chat works and Hermes gateway APIs are available.'
-            : 'Hermes gateway APIs are available. Choose a model to start chatting.'
+            ? '核心会话可用，Hermes 网关 API 已就绪。'
+            : 'Hermes 网关 API 已就绪。选择模型即可开始会话。'
         } else if (chatReady && modelConfigured) {
           status = 'connected'
-          label = 'Connected'
-          detail = 'Core chat is ready on this backend.'
+          label = '已连接'
+          detail = '此后端核心会话已就绪。'
         } else {
           status = 'partial'
-          label = 'Partial'
+          label = '部分可用'
           if (!chatReady) {
-            detail = 'Backend reachable, but chat API is not ready yet.'
+            detail = '后端可达，但会话 API 尚未就绪。'
           } else if (!modelConfigured) {
-            detail =
-              'Backend connected. Choose a provider and model to test chat.'
+            detail = '后端已连接。请选择服务提供方和模型以测试会话。'
           } else {
             detail =
-              'Core chat works. Enhanced Hermes gateway APIs are optional and unlock automatically when available.'
+              '核心会话可用。增强的 Hermes 网关 API 为可选能力，可用时将自动解锁。'
           }
         }
 

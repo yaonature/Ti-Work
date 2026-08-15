@@ -5,11 +5,11 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 import { createFileRoute } from '@tanstack/react-router'
-import { isAuthenticated } from '../../server/auth-middleware'
+import { requireRole } from '../../server/auth-middleware'
 import { requireJsonContentType } from '../../server/rate-limit'
 import {
+  getHermesApiToken,
   HERMES_API,
-  BEARER_TOKEN,
   ensureGatewayProbed,
 } from '../../server/gateway-capabilities'
 
@@ -123,7 +123,8 @@ function buildOrchestratorPrompt(
 }
 
 function authHeaders(): Record<string, string> {
-  return BEARER_TOKEN ? { Authorization: `Bearer ${BEARER_TOKEN}` } : {}
+  const token = getHermesApiToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 function nowPlusSecondsIso(seconds: number): string {
@@ -166,12 +167,8 @@ export const Route = createFileRoute('/api/conductor-spawn')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!isAuthenticated(request)) {
-          return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' },
-          })
-        }
+        const roleGuard = requireRole(request, 'admin')
+        if (roleGuard) return roleGuard
         const csrfCheck = requireJsonContentType(request)
         if (csrfCheck) return csrfCheck
 
@@ -188,7 +185,7 @@ export const Route = createFileRoute('/api/conductor-spawn')({
 
           if (!goal) {
             return new Response(
-              JSON.stringify({ ok: false, error: 'goal required' }),
+              JSON.stringify({ ok: false, error: '目标必填' }),
               { status: 400, headers: { 'Content-Type': 'application/json' } },
             )
           }

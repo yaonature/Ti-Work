@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { z } from 'zod'
+import { requireAuth } from '../../server/auth-middleware'
 
 const BodySchema = z.object({
   provider: z.string(),
@@ -10,16 +11,19 @@ export const Route = createFileRoute('/api/oauth/device-code')({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const authGuard = requireAuth(request)
+        if (authGuard) return authGuard
+
         let body: unknown
         try {
           body = await request.json()
         } catch {
-          return json({ error: 'Invalid JSON' }, { status: 400 })
+          return json({ error: '无效的 JSON' }, { status: 400 })
         }
 
         const parsed = BodySchema.safeParse(body)
         if (!parsed.success) {
-          return json({ error: 'Missing provider' }, { status: 400 })
+          return json({ error: '缺少 provider 参数' }, { status: 400 })
         }
 
         const { provider } = parsed.data
@@ -39,7 +43,7 @@ export const Route = createFileRoute('/api/oauth/device-code')({
             const data = await res.json()
             if (!res.ok) {
               return json(
-                { error: data.error || 'Device code request failed' },
+                { error: data.error || '设备码请求失败' },
                 { status: res.status },
               )
             }
@@ -54,7 +58,7 @@ export const Route = createFileRoute('/api/oauth/device-code')({
 
         return json(
           {
-            error: `OAuth device flow not supported for provider: ${provider}`,
+            error: `该 provider 不支持 OAuth 设备流：${provider}`,
           },
           { status: 400 },
         )

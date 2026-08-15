@@ -3,17 +3,15 @@ import path from 'node:path'
 import os from 'node:os'
 import { createFileRoute } from '@tanstack/react-router'
 import YAML from 'yaml'
-import { isAuthenticated } from '../../../server/auth-middleware'
+import { requireAuth, requireRole } from '../../../server/auth-middleware'
 import { requireJsonContentType } from '../../../server/rate-limit'
 import {
-  BEARER_TOKEN,
+  getHermesApiToken,
   HERMES_API,
   ensureGatewayProbed,
   getCapabilities,
 } from '../../../server/gateway-capabilities'
 import { createCapabilityUnavailablePayload } from '@/lib/feature-gates'
-
-type AuthResult = Response | true
 
 // ─── Local config file I/O (mirrors hermes-config.ts) ────────────────────────
 
@@ -72,7 +70,8 @@ type McpServerRecord = {
 }
 
 function authHeaders(): Record<string, string> {
-  return BEARER_TOKEN ? { Authorization: `Bearer ${BEARER_TOKEN}` } : {}
+  const token = getHermesApiToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 function toStringRecord(value: unknown): Record<string, string> | undefined {
@@ -143,15 +142,15 @@ export const Route = createFileRoute('/api/mcp/servers')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const authResult = isAuthenticated(request) as AuthResult
-        if (authResult !== true) return authResult
+        const authGuard = requireAuth(request)
+        if (authGuard) return authGuard
 
         await ensureGatewayProbed()
         if (!getCapabilities().config) {
           return Response.json({
             ...createCapabilityUnavailablePayload('config', {
               message:
-                'Gateway config API unavailable. You can still draft MCP config snippets locally.',
+                '网关配置 API 不可用，仍可在本地起草 MCP 配置片段。',
             }),
             servers: [],
           })
@@ -166,7 +165,7 @@ export const Route = createFileRoute('/api/mcp/servers')({
             return Response.json({
               servers: [],
               ok: false,
-              message: `Failed to load MCP servers from gateway config (${response.status}).`,
+              message: `从网关配置加载 MCP 服务器失败（${response.status}）。`,
             })
           }
 
@@ -176,14 +175,14 @@ export const Route = createFileRoute('/api/mcp/servers')({
           return Response.json({
             servers: [],
             ok: false,
-            message: 'Could not reach Hermes gateway config endpoint.',
+            message: '无法访问 Hermes 网关配置端点。',
           })
         }
       },
 
       PUT: async ({ request }) => {
-        const authResult = isAuthenticated(request) as AuthResult
-        if (authResult !== true) return authResult
+        const roleGuard = requireRole(request, 'admin')
+        if (roleGuard) return roleGuard
         const csrfCheck = requireJsonContentType(request)
         if (csrfCheck) return csrfCheck
 
@@ -193,13 +192,13 @@ export const Route = createFileRoute('/api/mcp/servers')({
 
         if (!Array.isArray(body.servers)) {
           return Response.json(
-            { ok: false, error: 'servers must be an array' },
+            { ok: false, error: 'servers 必须是数组' },
             { status: 400 },
           )
         }
 
         const servers: Array<McpServerRecord> = []
-        for (const item of body.servers as unknown[]) {
+        for (const item of body.servers as Array<unknown>) {
           if (!item || typeof item !== 'object' || Array.isArray(item)) continue
           const s = item as Record<string, unknown>
           if (typeof s.name !== 'string' || !s.name.trim()) continue
@@ -216,7 +215,7 @@ export const Route = createFileRoute('/api/mcp/servers')({
                 : undefined,
             args:
               transport === 'stdio' && Array.isArray(s.args)
-                ? (s.args as unknown[]).map(String)
+                ? (s.args as Array<unknown>).map(String)
                 : undefined,
             env:
               transport === 'stdio'
@@ -248,14 +247,14 @@ export const Route = createFileRoute('/api/mcp/servers')({
           return Response.json({
             ok: true,
             message:
-              'MCP servers saved to config.yaml. Reload Hermes to apply changes.',
+              'MCP 服务器已保存到 config.yaml，重启 Hermes 后生效。',
             servers,
           })
         } catch (err) {
           return Response.json(
             {
               ok: false,
-              error: `Failed to write config: ${err instanceof Error ? err.message : String(err)}`,
+              error: `写入配置失败：${err instanceof Error ? err.message : String(err)}`,
             },
             { status: 500 },
           )

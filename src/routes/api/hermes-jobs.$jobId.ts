@@ -23,7 +23,7 @@ export const Route = createFileRoute('/api/hermes-jobs/$jobId')({
         if (!getCapabilities().jobs) {
           return new Response(
             JSON.stringify({
-              error: `Gateway does not support /api/jobs. ${HERMES_UPGRADE_INSTRUCTIONS}`,
+              error: `网关不支持 /api/jobs。${HERMES_UPGRADE_INSTRUCTIONS}`,
             }),
             { status: 404, headers: { 'Content-Type': 'application/json' } },
           )
@@ -50,7 +50,7 @@ export const Route = createFileRoute('/api/hermes-jobs/$jobId')({
         if (!getCapabilities().jobs) {
           return new Response(
             JSON.stringify({
-              error: `Gateway does not support /api/jobs. ${HERMES_UPGRADE_INSTRUCTIONS}`,
+              error: `网关不支持 /api/jobs。${HERMES_UPGRADE_INSTRUCTIONS}`,
             }),
             { status: 404, headers: { 'Content-Type': 'application/json' } },
           )
@@ -81,7 +81,7 @@ export const Route = createFileRoute('/api/hermes-jobs/$jobId')({
         if (!getCapabilities().jobs) {
           return new Response(
             JSON.stringify({
-              error: `Gateway does not support /api/jobs. ${HERMES_UPGRADE_INSTRUCTIONS}`,
+              error: `网关不支持 /api/jobs。${HERMES_UPGRADE_INSTRUCTIONS}`,
             }),
             { status: 404, headers: { 'Content-Type': 'application/json' } },
           )
@@ -107,7 +107,7 @@ export const Route = createFileRoute('/api/hermes-jobs/$jobId')({
         if (!getCapabilities().jobs) {
           return new Response(
             JSON.stringify({
-              error: `Gateway does not support /api/jobs. ${HERMES_UPGRADE_INSTRUCTIONS}`,
+              error: `网关不支持 /api/jobs。${HERMES_UPGRADE_INSTRUCTIONS}`,
             }),
             { status: 404, headers: { 'Content-Type': 'application/json' } },
           )

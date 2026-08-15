@@ -5,6 +5,8 @@ import {
   SESSIONS_API_UNAVAILABLE_MESSAGE,
   ensureGatewayProbed,
   getGatewayCapabilities,
+  getGatewayOfflineMessage,
+  isGatewayReachable,
   getSession,
   toSessionSummary,
 } from '../../../server/hermes-api'
@@ -17,6 +19,12 @@ export const Route = createFileRoute('/api/sessions/$sessionKey/status')({
           return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
         }
         await ensureGatewayProbed()
+        if (!isGatewayReachable()) {
+          return json(
+            { ok: false, error: getGatewayOfflineMessage() },
+            { status: 503 },
+          )
+        }
         if (!getGatewayCapabilities().sessions) {
           return json(
             { ok: false, error: SESSIONS_API_UNAVAILABLE_MESSAGE },
@@ -28,7 +36,7 @@ export const Route = createFileRoute('/api/sessions/$sessionKey/status')({
 
         if (!sessionKey || sessionKey.trim().length === 0) {
           return json(
-            { ok: false, error: 'sessionKey required' },
+            { ok: false, error: 'sessionKey 必填' },
             { status: 400 },
           )
         }

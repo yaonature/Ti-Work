@@ -29,7 +29,7 @@ export const Route = createFileRoute('/api/knowledge/list')({
               error:
                 error instanceof Error
                   ? error.message
-                  : 'Failed to list knowledge pages',
+                  : '列出知识库页面失败',
             },
             { status: 500 },
           )

@@ -22,7 +22,7 @@ export const Route = createFileRoute('/api/memory/search')({
               error:
                 error instanceof Error
                   ? error.message
-                  : 'Failed to search memory files',
+                  : '搜索记忆文件失败',
             },
             { status: 500 },
           )

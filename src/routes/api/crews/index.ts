@@ -5,7 +5,10 @@
 import { randomUUID } from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { isAuthenticated } from '../../../server/auth-middleware'
+import {
+  getEffectiveSessionOwner,
+  isAuthenticated,
+} from '../../../server/auth-middleware'
 import { requireJsonContentType } from '../../../server/rate-limit'
 import { AGENT_PERSONAS } from '../../../lib/agent-personas'
 import { listAgents } from '../../../server/agent-definitions-store'
@@ -14,14 +17,14 @@ import {
   listCrews,
 } from '../../../server/crew-store'
 import {
-  ensureGatewayProbed,
-  getGatewayCapabilities,
+  createSession,
+  ensureGatewayProbed, getGatewayCapabilities 
 } from '../../../server/hermes-api'
 import {
   ensureLocalSession,
   toLocalSessionSummary,
 } from '../../../server/local-session-store'
-import { createSession } from '../../../server/hermes-api'
+
 
 /**
  * Mint a session for a crew member.
@@ -30,6 +33,7 @@ import { createSession } from '../../../server/hermes-api'
 async function mintSession(
   persona: string,
   model: string | null,
+  ownerId?: string,
 ): Promise<string> {
   const friendlyId = `crew-${persona}-${randomUUID().slice(0, 8)}`
 
@@ -48,7 +52,7 @@ async function mintSession(
   }
 
   // Local fallback
-  const local = ensureLocalSession(friendlyId, model ?? undefined)
+  const local = ensureLocalSession(friendlyId, model ?? undefined, ownerId)
   void toLocalSessionSummary(local)
   return local.id
 }
@@ -81,25 +85,26 @@ export const Route = createFileRoute('/api/crews/')({
           typeof body.goal === 'string' ? body.goal.trim() : ''
 
         if (!name) {
-          return json({ ok: false, error: 'name is required' }, { status: 400 })
+          return json({ ok: false, error: '名称必填' }, { status: 400 })
         }
 
         const rawMembers = Array.isArray(body.members) ? body.members : []
         if (rawMembers.length === 0) {
           return json(
-            { ok: false, error: 'at least one member is required' },
+            { ok: false, error: '至少需要一个成员' },
             { status: 400 },
           )
         }
         if (rawMembers.length > 8) {
           return json(
-            { ok: false, error: 'maximum 8 members per crew' },
+            { ok: false, error: '每个多智能体最多 8 个成员' },
             { status: 400 },
           )
         }
 
         // Load all agents (built-ins + custom) for lookup
         const allAgents = listAgents()
+        const ownerId = getEffectiveSessionOwner(request)
 
         // Build members, minting sessions in parallel
         const members = await Promise.all(
@@ -123,7 +128,7 @@ export const Route = createFileRoute('/api/crews/')({
             const role =
               typeof m.role === 'string' ? m.role : 'executor'
 
-            const sessionKey = await mintSession(displayName.toLowerCase(), model)
+            const sessionKey = await mintSession(displayName.toLowerCase(), model, ownerId)
             const profileName =
               typeof m.profileName === 'string' && m.profileName
                 ? m.profileName

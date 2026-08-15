@@ -17,7 +17,7 @@ export const Route = createFileRoute('/api/skills/uninstall')({
           const skillId = (body.skillId || '').trim()
           if (!skillId)
             return json(
-              { ok: false, error: 'skillId required' },
+              { ok: false, error: 'skillId 必填' },
               { status: 400 },
             )
 
@@ -27,7 +27,7 @@ export const Route = createFileRoute('/api/skills/uninstall')({
           // Path traversal guard — resolved path must be within skills dir
           if (!skillPath.startsWith(skillsBase + path.sep)) {
             return json(
-              { ok: false, error: 'Invalid skillId' },
+              { ok: false, error: '无效的 skillId' },
               { status: 400 },
             )
           }
@@ -36,7 +36,7 @@ export const Route = createFileRoute('/api/skills/uninstall')({
             return json(
               {
                 ok: false,
-                error: 'Installed skill not found under ~/.hermes/skills',
+                error: '未在 ~/.hermes/skills 下找到已安装的技能',
               },
               { status: 404 },
             )

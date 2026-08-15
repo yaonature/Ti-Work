@@ -34,7 +34,7 @@ export const Route = createFileRoute('/api/crews/$crewId/dispatch')({
 
         const crew = getCrew(params.crewId)
         if (!crew) {
-          return json({ ok: false, error: 'Crew not found' }, { status: 404 })
+          return json({ ok: false, error: '未找到该多智能体' }, { status: 404 })
         }
 
         const body = (await request.json().catch(() => ({}))) as Record<
@@ -44,7 +44,7 @@ export const Route = createFileRoute('/api/crews/$crewId/dispatch')({
 
         const task = typeof body.task === 'string' ? body.task.trim() : ''
         if (!task) {
-          return json({ ok: false, error: 'task is required' }, { status: 400 })
+          return json({ ok: false, error: '任务描述必填' }, { status: 400 })
         }
 
         // Determine which members to target
@@ -56,7 +56,7 @@ export const Route = createFileRoute('/api/crews/$crewId/dispatch')({
 
         if (targets.length === 0) {
           return json(
-            { ok: false, error: 'no matching members found' },
+            { ok: false, error: '未找到匹配的成员' },
             { status: 400 },
           )
         }
@@ -72,7 +72,7 @@ export const Route = createFileRoute('/api/crews/$crewId/dispatch')({
         // Fire-and-forget — POST to send-stream for each target.
         // We don't await these because send-stream is a long-running SSE response.
         // The frontend subscribes to /api/chat-events and watches for run events.
-        const dispatched: string[] = []
+        const dispatched: Array<string> = []
         for (const member of targets) {
           dispatched.push(member.sessionKey)
           // Non-streaming fire-and-forget to kick off the agent run

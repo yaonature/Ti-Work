@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { requireAuth } from '../../server/auth-middleware'
 import {
   ensureBusStarted,
   subscribeToChatEvents,
@@ -7,7 +8,9 @@ import {
 export const Route = createFileRoute('/api/events')({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        const authGuard = requireAuth(request)
+        if (authGuard) return authGuard
         await ensureBusStarted()
 
         const encoder = new TextEncoder()

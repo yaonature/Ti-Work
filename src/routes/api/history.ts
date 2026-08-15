@@ -8,12 +8,16 @@ import {
   toChatMessage,
 } from '../../server/hermes-api'
 import {
+  canAccessLocalSession,
   getLocalMessages,
   listLocalSessions,
   toLocalChatMessage,
 } from '../../server/local-session-store'
 import { resolveSessionKey } from '../../server/session-utils'
-import { isAuthenticated } from '@/server/auth-middleware'
+import {
+  getEffectiveSessionOwner,
+  isAuthenticated,
+} from '@/server/auth-middleware'
 
 export const Route = createFileRoute('/api/history')({
   server: {
@@ -24,17 +28,21 @@ export const Route = createFileRoute('/api/history')({
         }
         await ensureGatewayProbed()
         if (!getGatewayCapabilities().sessions) {
+          const ownerId = getEffectiveSessionOwner(request)
           const url2 = new URL(request.url)
           const rawKey = url2.searchParams.get('sessionKey')?.trim()
           const fid = url2.searchParams.get('friendlyId')?.trim()
           // Resolve: prefer explicit key; fallback to most recent local session
           let localKey = rawKey || fid || ''
           if (!localKey || localKey === 'main' || localKey === 'new') {
-            const sessions = listLocalSessions()
+            const sessions = listLocalSessions(ownerId)
             localKey = sessions[0]?.id ?? 'new'
           }
           if (localKey === 'new') {
             return json({ sessionKey: 'new', sessionId: 'new', messages: [], source: 'local' })
+          }
+          if (!canAccessLocalSession(localKey, ownerId)) {
+            return json({ ok: false, error: 'Forbidden' }, { status: 403 })
           }
           const limit2 = Number(url2.searchParams.get('limit') || '200')
           const msgs = getLocalMessages(localKey)
@@ -74,7 +82,9 @@ export const Route = createFileRoute('/api/history')({
             }
           }
           const messages = await getMessages(sessionKey)
-          const boundedMessages = limit > 0 ? messages.slice(-limit) : messages
+          const safeMessages = Array.isArray(messages) ? messages : []
+          const boundedMessages =
+            limit > 0 ? safeMessages.slice(-limit) : safeMessages
 
           return json({
             sessionKey,

@@ -12,20 +12,27 @@
 import { randomUUID } from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { isAuthenticated } from '../../../server/auth-middleware'
-import { requireJsonContentType } from '../../../server/rate-limit'
-import { getCrew, createCrew } from '../../../server/crew-store'
 import {
+  getEffectiveSessionOwner,
+  isAuthenticated,
+} from '../../../server/auth-middleware'
+import { requireJsonContentType } from '../../../server/rate-limit'
+import { createCrew, getCrew } from '../../../server/crew-store'
+import {
+  createSession,
   ensureGatewayProbed,
   getGatewayCapabilities,
-  createSession,
 } from '../../../server/hermes-api'
 import {
   ensureLocalSession,
   toLocalSessionSummary,
 } from '../../../server/local-session-store'
 
-async function mintSession(persona: string, model: string | null): Promise<string> {
+async function mintSession(
+  persona: string,
+  model: string | null,
+  ownerId?: string,
+): Promise<string> {
   const friendlyId = `crew-${persona}-${randomUUID().slice(0, 8)}`
   await ensureGatewayProbed()
   if (getGatewayCapabilities().sessions) {
@@ -40,7 +47,7 @@ async function mintSession(persona: string, model: string | null): Promise<strin
       // fall through to local
     }
   }
-  const local = ensureLocalSession(friendlyId, model ?? undefined)
+  const local = ensureLocalSession(friendlyId, model ?? undefined, ownerId)
   void toLocalSessionSummary(local)
   return local.id
 }
@@ -57,8 +64,10 @@ export const Route = createFileRoute('/api/crews/$crewId/clone')({
 
         const source = getCrew(params.crewId)
         if (!source) {
-          return json({ ok: false, error: 'Crew not found' }, { status: 404 })
+          return json({ ok: false, error: '未找到该多智能体' }, { status: 404 })
         }
+
+        const ownerId = getEffectiveSessionOwner(request)
 
         // Mint fresh sessions for every member in parallel
         const members = await Promise.all(
@@ -66,7 +75,7 @@ export const Route = createFileRoute('/api/crews/$crewId/clone')({
             const personaForSession = m.displayName
               .replace(/^[^\s]+\s*/, '')  // strip leading emoji+space
               .toLowerCase()
-            const sessionKey = await mintSession(personaForSession || m.persona, m.model)
+            const sessionKey = await mintSession(personaForSession || m.persona, m.model, ownerId)
             return {
               sessionKey,
               role: m.role,

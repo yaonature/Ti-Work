@@ -7,8 +7,8 @@
  */
 import { createFileRoute } from '@tanstack/react-router'
 import {
+  getHermesApiToken,
   HERMES_API,
-  BEARER_TOKEN,
 } from '../../server/gateway-capabilities'
 import { isAuthenticated } from '../../server/auth-middleware'
 
@@ -112,7 +112,7 @@ function buildLines(entry: HermesProviderUsage): Array<UsageLine> {
     ) {
       lines.push({
         type: 'progress',
-        label: 'Requests remaining',
+        label: '剩余请求',
         used: rl.requests_limit - rl.requests_remaining,
         limit: rl.requests_limit,
         format: 'tokens',
@@ -127,7 +127,7 @@ function buildLines(entry: HermesProviderUsage): Array<UsageLine> {
     ) {
       lines.push({
         type: 'progress',
-        label: 'Tokens remaining',
+        label: '剩余令牌',
         used: rl.tokens_limit - rl.tokens_remaining,
         limit: rl.tokens_limit,
         format: 'tokens',
@@ -142,14 +142,14 @@ function buildLines(entry: HermesProviderUsage): Array<UsageLine> {
     if (totalTokens > 0) {
       lines.push({
         type: 'text',
-        label: 'Tokens today',
+        label: '今日令牌',
         value: `${totalTokens.toLocaleString()}`,
       })
     }
     if (typeof today.cost_usd === 'number' && today.cost_usd > 0) {
       lines.push({
         type: 'text',
-        label: 'Cost today',
+        label: '今日费用',
         value: `$${today.cost_usd.toFixed(4)}`,
       })
     }
@@ -181,8 +181,9 @@ function mapEntry(entry: HermesProviderUsage): ProviderUsageEntry {
 }
 
 async function fetchProviderUsage(force: boolean): Promise<Array<ProviderUsageEntry>> {
-  const authHeaders: Record<string, string> = BEARER_TOKEN
-    ? { Authorization: `Bearer ${BEARER_TOKEN}` }
+  const token = getHermesApiToken()
+  const authHeaders: Record<string, string> = token
+    ? { Authorization: `Bearer ${token}` }
     : {}
 
   const url = `${HERMES_API}/api/usage${force ? '?force=1' : ''}`

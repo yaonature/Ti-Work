@@ -27,7 +27,7 @@ export const Route = createFileRoute('/api/terminal-close')({
           typeof body.sessionId === 'string' ? body.sessionId.trim() : ''
         if (!sessionId) {
           return new Response(
-            JSON.stringify({ ok: false, error: 'sessionId required' }),
+            JSON.stringify({ ok: false, error: 'sessionId 必填' }),
             {
               status: 400,
               headers: { 'Content-Type': 'application/json' },

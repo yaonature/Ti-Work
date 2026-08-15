@@ -7,6 +7,8 @@ import {
   SESSIONS_API_UNAVAILABLE_MESSAGE,
   ensureGatewayProbed,
   getGatewayCapabilities,
+  getGatewayOfflineMessage,
+  isGatewayReachable,
   sendChat,
 } from '../../../server/hermes-api'
 import { resolveSessionKey } from '../../../server/session-utils'
@@ -21,6 +23,12 @@ export const Route = createFileRoute('/api/sessions/send')({
         const csrfCheck = requireJsonContentType(request)
         if (csrfCheck) return csrfCheck
         await ensureGatewayProbed()
+        if (!isGatewayReachable()) {
+          return json(
+            { ok: false, error: getGatewayOfflineMessage() },
+            { status: 503 },
+          )
+        }
         if (!getGatewayCapabilities().sessions) {
           return json(
             { ok: false, error: SESSIONS_API_UNAVAILABLE_MESSAGE },
@@ -42,7 +50,7 @@ export const Route = createFileRoute('/api/sessions/send')({
 
           if (!message) {
             return json(
-              { ok: false, error: 'message required' },
+              { ok: false, error: '消息内容必填' },
               { status: 400 },
             )
           }

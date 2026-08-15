@@ -31,7 +31,7 @@ export const Route = createFileRoute('/api/terminal-resize')({
         const rows = Math.max(5, Math.min(300, Math.floor(rowsRaw)))
         if (!sessionId) {
           return new Response(
-            JSON.stringify({ ok: false, error: 'sessionId required' }),
+            JSON.stringify({ ok: false, error: 'sessionId 必填' }),
             {
               status: 400,
               headers: { 'Content-Type': 'application/json' },

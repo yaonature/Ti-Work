@@ -24,7 +24,7 @@ export const Route = createFileRoute('/api/hermes-runs/$runId/events')({
           )
         } catch {
           return new Response(
-            JSON.stringify({ error: 'Could not connect to gateway' }),
+            JSON.stringify({ error: '无法连接到网关' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } },
           )
         }

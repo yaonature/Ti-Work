@@ -79,7 +79,7 @@ async function installFromGithubUrl(
     throw new Error(`GitHub tree API returned ${treeRes.status} for ${owner}/${repo}`)
   }
   const treeData = asRecord(await treeRes.json())
-  const tree = Array.isArray(treeData.tree) ? (treeData.tree as unknown[]) : []
+  const tree = Array.isArray(treeData.tree) ? (treeData.tree as Array<unknown>) : []
 
   // Find all blob files under the skill directory
   const prefix = dirPath.endsWith('/') ? dirPath : `${dirPath}/`
@@ -166,7 +166,7 @@ export const Route = createFileRoute('/api/skills/install')({
           }
           const skillId = (body.skillId || '').trim()
           if (!skillId) {
-            return json({ ok: false, error: 'skillId required' }, { status: 400 })
+            return json({ ok: false, error: 'skillId 必填' }, { status: 400 })
           }
 
           const source = (body.source || '').trim()
@@ -177,7 +177,7 @@ export const Route = createFileRoute('/api/skills/install')({
             const githubUrl = (body.githubUrl || '').trim()
             if (!githubUrl) {
               return json(
-                { ok: false, error: 'githubUrl required for marketplace skills' },
+                { ok: false, error: '市场技能需要提供 githubUrl' },
                 { status: 400 },
               )
             }
@@ -191,7 +191,7 @@ export const Route = createFileRoute('/api/skills/install')({
               !localInstallPath.startsWith(skillsBase + path.sep) &&
               localInstallPath !== skillsBase
             ) {
-              return json({ ok: false, error: 'Invalid skillId' }, { status: 400 })
+              return json({ ok: false, error: '无效的 skillId' }, { status: 400 })
             }
 
             await installFromGithubUrl(githubUrl, localInstallPath)
@@ -233,7 +233,7 @@ export const Route = createFileRoute('/api/skills/install')({
           }
 
           return json(
-            { ok: false, error: 'No install method available.' },
+            { ok: false, error: '没有可用的安装方式。' },
             { status: 503 },
           )
         } catch (error) {
@@ -241,7 +241,7 @@ export const Route = createFileRoute('/api/skills/install')({
             {
               ok: false,
               error:
-                error instanceof Error ? error.message : 'Failed to install skill',
+                error instanceof Error ? error.message : '安装技能失败',
             },
             { status: 500 },
           )

@@ -20,7 +20,7 @@ export const Route = createFileRoute('/api/memory/list')({
               error:
                 error instanceof Error
                   ? error.message
-                  : 'Failed to list memory files',
+                  : '列出记忆文件失败',
             },
             { status: 500 },
           )
