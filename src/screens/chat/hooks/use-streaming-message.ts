@@ -40,11 +40,43 @@ type PortableHistoryMessage = {
   content: string
 }
 
+type StreamError = {
+  message: string
+  code?: string
+}
+
+function parseErrorResponse(errorText: string): StreamError {
+  const trimmed = errorText.trim()
+  if (!trimmed) return { message: '发送请求失败' }
+  try {
+    const parsed = JSON.parse(trimmed) as {
+      error?: string
+      message?: string
+      code?: string
+    }
+    if (typeof parsed.error === 'string' && parsed.error.trim()) {
+      return {
+        message: parsed.error.trim(),
+        code: typeof parsed.code === 'string' ? parsed.code.trim() : undefined,
+      }
+    }
+    if (typeof parsed.message === 'string' && parsed.message.trim()) {
+      return {
+        message: parsed.message.trim(),
+        code: typeof parsed.code === 'string' ? parsed.code.trim() : undefined,
+      }
+    }
+  } catch {
+    // fall back to raw text
+  }
+  return { message: trimmed }
+}
+
 type UseStreamingMessageOptions = {
   onStarted?: (payload: { runId: string | null }) => void
   onChunk?: (text: string, fullText: string) => void
   onComplete?: (message: ChatMessage) => void
-  onError?: (error: string) => void
+  onError?: (error: StreamError) => void
   onThinking?: (thinking: string) => void
   onTool?: (tool: unknown) => void
   onApprovalRequest?: (approval: Record<string, unknown>) => void
@@ -170,7 +202,7 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
   }, [])
 
   const markFailed = useCallback(
-    (message: string) => {
+    (message: string, code?: string) => {
       if (finishedRef.current) return
       finishedRef.current = true
       eventSourceRef.current = null
@@ -184,7 +216,7 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
         isStreaming: false,
         error: message,
       }))
-      onError?.(message)
+      onError?.({ message, code })
     },
     [
       clearHandoffTimer,
@@ -680,7 +712,7 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
 
         if (!response.ok) {
           const errorText = await response.text()
-          throw new Error(errorText || 'Stream request failed')
+          throw parseErrorResponse(errorText)
         }
 
         const resolvedSessionKey =
@@ -760,8 +792,23 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
         }
       } catch (err) {
         if ((err as Error).name === 'AbortError') return
-        const errorMessage = err instanceof Error ? err.message : String(err)
-        markFailed(errorMessage)
+        const errorMessage =
+          typeof err === 'object' &&
+          err !== null &&
+          'message' in err &&
+          typeof (err as { message: unknown }).message === 'string'
+            ? (err as { message: string }).message
+            : err instanceof Error
+              ? err.message
+              : String(err)
+        const errorCode =
+          typeof err === 'object' &&
+          err !== null &&
+          'code' in err &&
+          typeof (err as { code: unknown }).code === 'string'
+            ? (err as { code: string }).code
+            : undefined
+        markFailed(errorMessage, errorCode)
       }
     },
     [

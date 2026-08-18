@@ -1,5 +1,6 @@
 /**
- * Hermes Config API — read/write ~/.hermes/config.yaml and ~/.hermes/.env
+ * Hermes Config API — read/write $HERMES_HOME/config.yaml and $HERMES_HOME/.env
+ * (managed 路径，默认 %LOCALAPPDATA%\Ti Work\Hermes，与网关/引导链路一致)
  * Gives the web UI the same config power as `hermes setup`
  */
 import fs from 'node:fs'
@@ -9,8 +10,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import YAML from 'yaml'
 import { requireAuth, requireRole } from '../../server/auth-middleware'
 import { ensureGatewayProbed } from '../../server/gateway-capabilities'
+import { getHermesHome } from '../../server/env-models'
 
-const HERMES_HOME = path.join(os.homedir(), '.hermes')
+const HERMES_HOME = getHermesHome()
 const CONFIG_PATH = path.join(HERMES_HOME, 'config.yaml')
 const ENV_PATH = path.join(HERMES_HOME, '.env')
 
@@ -127,8 +129,9 @@ function checkAuthStore(providerId: string): {
   source: string
   maskedKey?: string
 } {
-  // Check Hermes auth store
+  // Check Hermes auth store（managed 路径优先，legacy ~/.hermes 兜底）
   for (const storePath of [
+    path.join(HERMES_HOME, 'auth-profiles.json'),
     path.join(os.homedir(), '.hermes', 'auth-profiles.json'),
     path.join(
       os.homedir(),

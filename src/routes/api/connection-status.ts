@@ -4,7 +4,6 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
-import os from 'node:os'
 import { createFileRoute } from '@tanstack/react-router'
 import YAML from 'yaml'
 import {
@@ -12,9 +11,11 @@ import {
   ensureGatewayProbed,
   getChatMode,
 } from '../../server/gateway-capabilities'
+import { getHermesHome } from '../../server/env-models'
 import { requireAuth } from '../../server/auth-middleware'
 
-const CONFIG_PATH = path.join(os.homedir(), '.hermes', 'config.yaml')
+// 统一走 managed 路径（默认 %LOCALAPPDATA%\Ti Work\Hermes），与网关/引导链路一致
+const CONFIG_PATH = path.join(getHermesHome(), 'config.yaml')
 
 function readActiveModel(): string {
   try {

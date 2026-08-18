@@ -76,6 +76,9 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
+  # 安装期 Hermes 执行引擎预装（资源落地 + 依赖 + 配置骨架）：
+  # build/installer.nsh 定义 customInit / customInstall / customUnInstall 宏。
+  include: build/installer.nsh
   # 安装包/卸载程序图标显式指向多尺寸 ICO（避免依赖 PNG 自动转换）
   installerIcon: build/icon.ico
   uninstallerIcon: build/icon.ico

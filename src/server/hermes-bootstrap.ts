@@ -48,6 +48,21 @@ export type BootstrapPhase =
   | 'ready'
   | 'failed'
 
+/**
+ * 失败/引导分类（规划 5.2-4：首启失败需可区分）。
+ *  - install-failed    执行引擎未装好（安装器未跑 / 阶段失败）
+ *  - gateway-not-ready 引擎已装好，但网关未启动或健康检查不通过
+ *  - config-needed     网关已就绪，但缺少模型 API Key（由 UI 依据配置状态判定）
+ *  - config-invalid    网关已就绪，但模型配置无效（由 UI 依据聊天探测判定）
+ */
+export type FailureCategory =
+  | 'install-failed'
+  | 'gateway-not-ready'
+  | 'config-needed'
+  | 'config-invalid'
+
+export type PreparedBy = 'installer' | 'first-launch'
+
 export type BootstrapStageInfo = {
   name: string
   title: string
@@ -66,6 +81,10 @@ export type BootstrapState = {
   attempt: number
   startedAt: number | null
   finishedAt: number | null
+  /** 失败/引导分类：区分安装失败、网关未就绪（规划 5.2-4） */
+  failureCategory: FailureCategory | null
+  /** 引擎产物由谁准备：安装器预装 or 首启自举（null=未知/未准备） */
+  preparedBy: PreparedBy | null
 }
 
 const INITIAL_STATE: BootstrapState = {
@@ -79,6 +98,8 @@ const INITIAL_STATE: BootstrapState = {
   attempt: 0,
   startedAt: null,
   finishedAt: null,
+  failureCategory: null,
+  preparedBy: null,
 }
 
 let runningPromise: Promise<BootstrapState> | null = null
@@ -808,6 +829,7 @@ async function doRun(): Promise<BootstrapState> {
     state.phase = 'detecting'
     state.attempt += 1
     state.error = null
+    state.failureCategory = null
     state.startedAt = state.startedAt ?? Date.now()
     state.finishedAt = null
     state.stageIndex = -1
@@ -829,6 +851,7 @@ async function doRun(): Promise<BootstrapState> {
       state.phase = 'failed'
       state.error =
         '未找到 Hermes 安装器（install.ps1）。请检查安装包完整性，或联网后重试。'
+      state.failureCategory = 'install-failed'
       state.finishedAt = Date.now()
       saveState(state)
       return state
@@ -842,6 +865,7 @@ async function doRun(): Promise<BootstrapState> {
       state.message = '未找到安装包内置的 Hermes 固定版本源码'
       state.error =
         '未找到 hermes-agent-source。当前安装包不完整，无法保证按固定版本安装执行引擎。'
+      state.failureCategory = 'install-failed'
       state.finishedAt = Date.now()
       saveState(state)
       traceBootstrap('[doRun] bundled source missing -> failed')
@@ -864,6 +888,7 @@ async function doRun(): Promise<BootstrapState> {
       )
       state.phase = 'failed'
       state.error = error instanceof Error ? error.message : String(error)
+      state.failureCategory = 'install-failed'
       state.finishedAt = Date.now()
       saveState(state)
       return state
@@ -871,6 +896,7 @@ async function doRun(): Promise<BootstrapState> {
     if (stages.length === 0) {
       state.phase = 'failed'
       state.error = '安装清单为空，无法继续。'
+      state.failureCategory = 'install-failed'
       state.finishedAt = Date.now()
       saveState(state)
       return state
@@ -923,6 +949,7 @@ async function doRun(): Promise<BootstrapState> {
         state.error =
           result.reason ||
           `安装阶段「${stage.title}」失败，可稍后重试。`
+        state.failureCategory = 'install-failed'
         state.finishedAt = Date.now()
         saveState(state)
         return state
@@ -935,6 +962,7 @@ async function doRun(): Promise<BootstrapState> {
     if (!hermesBin) {
       state.phase = 'failed'
       state.error = '引擎已安装，但未找到 hermes 命令，无法继续。'
+      state.failureCategory = 'install-failed'
       state.finishedAt = Date.now()
       saveState(state)
       return state
@@ -953,6 +981,7 @@ async function doRun(): Promise<BootstrapState> {
   } catch (error) {
     state.phase = 'failed'
     state.error = `写入网关密钥失败：${error instanceof Error ? error.message : String(error)}`
+    state.failureCategory = 'install-failed'
     state.finishedAt = Date.now()
     saveState(state)
     return state
@@ -983,6 +1012,7 @@ async function doRun(): Promise<BootstrapState> {
   state.phase = 'failed'
   state.error =
     '执行引擎进程已启动，但网关未就绪。请稍后点击「重试」，或在设置中检查 HERMES_HOME 配置。'
+  state.failureCategory = 'gateway-not-ready'
   state.finishedAt = Date.now()
   saveState(state)
   console.error('[bootstrap] gateway not healthy after wait → failed')

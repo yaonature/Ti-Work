@@ -5,7 +5,17 @@
  * 用法：node scripts/electron-package.mjs [--dir] [target...]
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs'
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -17,6 +27,9 @@ const builderBin = join(
   '.bin',
   process.platform === 'win32' ? 'electron-builder.cmd' : 'electron-builder',
 )
+const RELEASE_DIR = join(ROOT, 'release')
+const WIN_UNPACKED_DIR = join(RELEASE_DIR, 'win-unpacked')
+const TEMP_OUTPUT_DIR = join(ROOT, '.electron-builder-output')
 
 /**
  * electron-builder 缓存（.electron-builder-cache）位于项目根时，解压出的
@@ -57,9 +70,127 @@ function ensureIconsBundleCommonJs() {
   }
 }
 
-ensureIconsBundleCommonJs()
+function sleep(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+}
 
-const res = spawnSync(builderBin, process.argv.slice(2), {
+function stopProcessesUsingWinUnpacked() {
+  if (process.platform !== 'win32') return
+  if (!existsSync(WIN_UNPACKED_DIR)) return
+
+  const script = `
+$target = [System.IO.Path]::GetFullPath('${WIN_UNPACKED_DIR.replace(/\\/g, '\\\\')}')
+$targetLower = $target.ToLowerInvariant()
+Get-CimInstance Win32_Process | ForEach-Object {
+  $path = $_.ExecutablePath
+  if (-not $path) { return }
+  try {
+    $full = [System.IO.Path]::GetFullPath($path)
+    if ($full.ToLowerInvariant().StartsWith($targetLower)) {
+      Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+    }
+  } catch {
+  }
+}
+`.trim()
+
+  spawnSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  })
+}
+
+function removeWithRetries(path, attempts = 6) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      rmSync(path, { recursive: true, force: true, maxRetries: 0 })
+      return
+    } catch (error) {
+      if (!existsSync(path)) return
+      if (attempt === attempts) throw error
+      const waitMs = 500 * attempt
+      console.warn(
+        `[electron-package] 清理输出目录失败（第 ${attempt}/${attempts} 次），${waitMs}ms 后重试：${error instanceof Error ? error.message : String(error)}`,
+      )
+      sleep(waitMs)
+    }
+  }
+}
+
+function prepareWindowsOutputDir(argv) {
+  if (process.platform !== 'win32') return
+  if (argv.includes('--prepackaged')) return
+  if (!existsSync(WIN_UNPACKED_DIR)) return
+
+  console.log(`[electron-package] 检测到旧输出目录，准备清理：${WIN_UNPACKED_DIR}`)
+  stopProcessesUsingWinUnpacked()
+  sleep(1200)
+  removeWithRetries(WIN_UNPACKED_DIR)
+}
+
+function shouldSyncArtifact(name) {
+  return (
+    name.endsWith('.exe') ||
+    name.endsWith('.blockmap') ||
+    name.endsWith('.yaml') ||
+    name.endsWith('.yml')
+  )
+}
+
+function syncTempOutputToRelease() {
+  if (!existsSync(TEMP_OUTPUT_DIR)) return
+  mkdirSync(RELEASE_DIR, { recursive: true })
+
+  for (const name of readdirSync(TEMP_OUTPUT_DIR)) {
+    const source = join(TEMP_OUTPUT_DIR, name)
+    if (!statSync(source).isFile()) continue
+    if (!shouldSyncArtifact(name)) continue
+    copyFileSync(source, join(RELEASE_DIR, name))
+  }
+
+  const tempWinUnpackedDir = join(TEMP_OUTPUT_DIR, 'win-unpacked')
+  if (!existsSync(tempWinUnpackedDir)) {
+    rmSync(TEMP_OUTPUT_DIR, { recursive: true, force: true, maxRetries: 0 })
+    return
+  }
+
+  try {
+    stopProcessesUsingWinUnpacked()
+    sleep(1200)
+    removeWithRetries(WIN_UNPACKED_DIR, 3)
+    renameSync(tempWinUnpackedDir, WIN_UNPACKED_DIR)
+    rmSync(TEMP_OUTPUT_DIR, { recursive: true, force: true, maxRetries: 0 })
+  } catch (error) {
+    console.warn(
+      `[electron-package] 旧的 win-unpacked 仍被占用，新的解包产物保留在 ${tempWinUnpackedDir}：${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+}
+
+function buildArgsWithFallbackOutput(argv) {
+  if (process.platform !== 'win32') return { builderArgs: argv, usingTempOutput: false }
+  if (argv.includes('--prepackaged')) return { builderArgs: argv, usingTempOutput: false }
+
+  try {
+    prepareWindowsOutputDir(argv)
+    return { builderArgs: argv, usingTempOutput: false }
+  } catch (error) {
+    console.warn(
+      `[electron-package] 默认输出目录仍被占用，改用临时输出目录继续打包：${error instanceof Error ? error.message : String(error)}`,
+    )
+    rmSync(TEMP_OUTPUT_DIR, { recursive: true, force: true, maxRetries: 0 })
+    return {
+      builderArgs: [...argv, `-c.directories.output=${TEMP_OUTPUT_DIR}`],
+      usingTempOutput: true,
+    }
+  }
+}
+
+ensureIconsBundleCommonJs()
+const argv = process.argv.slice(2)
+const { builderArgs, usingTempOutput } = buildArgsWithFallbackOutput(argv)
+
+const res = spawnSync(builderBin, builderArgs, {
   stdio: 'inherit',
   shell: process.platform === 'win32',
   env: {
@@ -86,4 +217,9 @@ const res = spawnSync(builderBin, process.argv.slice(2), {
       process.env.electron_config_cache ?? join(ROOT, '.electron-cache'),
   },
 })
+
+if (res.status === 0 && usingTempOutput) {
+  syncTempOutputToRelease()
+}
+
 process.exit(res.status ?? 1)

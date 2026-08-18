@@ -14,6 +14,8 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { errorLine, logLine } from './safe-log'
 
+const ENGINE_STOP_TIMEOUT_MS = 5_000
+
 export interface EngineHealthProbe {
   (url: string): Promise<{ ok: boolean }>
 }
@@ -168,6 +170,49 @@ function launcherFor(command: string, projectRoot: string): HermesLauncher {
 
 const DEFAULT_GATEWAY_URL = 'http://127.0.0.1:8642'
 const FALLBACK_GATEWAY_URL = 'http://127.0.0.1:8643'
+
+async function waitForChildExit(
+  child: ChildProcess,
+  timeoutMs: number,
+): Promise<boolean> {
+  if (child.exitCode !== null) return true
+  return new Promise<boolean>((resolve) => {
+    const onExit = (): void => {
+      clearTimeout(timer)
+      resolve(true)
+    }
+    const timer = setTimeout(() => {
+      child.removeListener('exit', onExit)
+      resolve(false)
+    }, timeoutMs)
+    child.once('exit', onExit)
+  })
+}
+
+async function killProcessTree(child: ChildProcess): Promise<void> {
+  const pid = child.pid
+  if (pid === undefined) return
+  if (process.platform === 'win32') {
+    await new Promise<void>((resolve) => {
+      const killer = spawn(
+        join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'taskkill.exe'),
+        ['/PID', String(pid), '/T', '/F'],
+        {
+          stdio: 'ignore',
+          windowsHide: true,
+        },
+      )
+      killer.once('exit', () => resolve())
+      killer.once('error', () => resolve())
+    })
+    return
+  }
+  try {
+    child.kill('SIGKILL')
+  } catch {
+    // ignore: process may have exited between timeout and force-kill
+  }
+}
 
 export class EngineManager {
   private readonly gatewayUrl: string
@@ -343,11 +388,17 @@ export class EngineManager {
     const child = this.child
     this.child = null
     if (child === null) return
-    if (this.status !== 'ready') this.setStatus('idle')
-    child.kill()
-    if (child.exitCode !== null) return
-    await new Promise<void>((resolve) => {
-      child.once('exit', () => resolve())
-    })
+    this.setStatus('idle')
+    try {
+      child.kill()
+    } catch (error) {
+      errorLine(
+        `[engine] failed to signal child exit: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+    if (await waitForChildExit(child, ENGINE_STOP_TIMEOUT_MS)) return
+    errorLine('[engine] timed out waiting for exit; forcing process tree kill')
+    await killProcessTree(child)
+    await waitForChildExit(child, 1_500)
   }
 }

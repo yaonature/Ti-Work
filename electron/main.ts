@@ -53,6 +53,8 @@ import type { UpdateManifest } from './update-check'
 import type { UpdateState } from './updater'
 import { errorLine, logLine } from './safe-log'
 
+const CHILD_STOP_TIMEOUT_MS = 5_000
+
 try {
   appendFileSync(
     join(tmpdir(), 'tiwork-main-debug.log'),
@@ -161,9 +163,32 @@ function ensureWritableUserDataPath(): void {
 
 function resolveBackendHermesHome(): string {
   if (process.platform === 'win32') {
-    return join(tmpdir(), APP_NAME, 'Hermes')
+    // 与后端 defaultHermesHome() 保持一致：%LOCALAPPDATA%\Ti Work\Hermes。
+    // 安装期预装脚本也写入该目录，确保首启直接命中已就绪的引擎产物。
+    const localAppData =
+      process.env.LOCALAPPDATA?.trim() ||
+      join(app.getPath('home'), 'AppData', 'Local')
+    return join(localAppData, APP_NAME, 'Hermes')
   }
   return join(app.getPath('userData'), 'Hermes')
+}
+
+async function waitForChildExit(
+  child: ReturnType<typeof spawn>,
+  timeoutMs: number,
+): Promise<boolean> {
+  if (child.exitCode !== null) return true
+  return new Promise<boolean>((resolve) => {
+    const onExit = (): void => {
+      clearTimeout(timer)
+      resolve(true)
+    }
+    const timer = setTimeout(() => {
+      child.removeListener('exit', onExit)
+      resolve(false)
+    }, timeoutMs)
+    child.once('exit', onExit)
+  })
 }
 
 async function resolveBackendPort(): Promise<number> {
@@ -260,11 +285,23 @@ class BackendManager {
     this.child = null
     if (child === null) return
     this.setStatus('stopped')
-    child.kill()
-    if (child.exitCode !== null) return
-    await new Promise<void>((resolve) => {
-      child.once('exit', () => resolve())
-    })
+    try {
+      child.kill()
+    } catch (error) {
+      errorLine(
+        `[backend] failed to signal child exit: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+    if (await waitForChildExit(child, CHILD_STOP_TIMEOUT_MS)) return
+    errorLine('[backend] timed out waiting for child exit; forcing kill')
+    try {
+      child.kill('SIGKILL')
+    } catch (error) {
+      errorLine(
+        `[backend] failed to force kill child: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+    await waitForChildExit(child, 1_500)
   }
 
   async restart(): Promise<void> {
@@ -276,6 +313,8 @@ class BackendManager {
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 let isQuitting = false
+let shutdownComplete = false
+let shutdownPromise: Promise<void> | null = null
 let lastUpdateCheckAt: number | null = null
 let updateState: UpdateState = { status: 'idle' }
 
@@ -307,11 +346,47 @@ function showMainWindow(): void {
   mainWindow.focus()
 }
 
+async function shutdownRuntime(): Promise<void> {
+  if (shutdownComplete) return
+  if (shutdownPromise !== null) {
+    await shutdownPromise
+    return
+  }
+  shutdownPromise = (async () => {
+    const results = await Promise.allSettled([
+      engineManager.stop(),
+      backendManager.stop(),
+    ])
+    for (const [index, result] of results.entries()) {
+      if (result.status === 'fulfilled') continue
+      const label = index === 0 ? 'engine' : 'backend'
+      errorLine(
+        `[shutdown] ${label} stop failed: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
+      )
+    }
+    shutdownComplete = true
+  })()
+  try {
+    await shutdownPromise
+  } finally {
+    shutdownPromise = null
+  }
+}
+
 function quitApp(): void {
+  if (shutdownComplete) {
+    isQuitting = true
+    app.quit()
+    return
+  }
+  if (shutdownPromise !== null) {
+    isQuitting = true
+    return
+  }
   isQuitting = true
-  void engineManager.stop()
-  void backendManager.stop()
-  app.quit()
+  void shutdownRuntime().then(() => {
+    app.quit()
+  })
 }
 
 function notify(title: string, body: string): void {
@@ -547,8 +622,12 @@ app.on('ready', () => {
 app.on('window-all-closed', () => {
   // no-op：应用驻留托盘
 })
-app.on('before-quit', () => {
+app.on('before-quit', (event) => {
   isQuitting = true
-  void engineManager.stop()
-  void backendManager.stop()
+  if (shutdownComplete) return
+  event.preventDefault()
+  if (shutdownPromise !== null) return
+  void shutdownRuntime().then(() => {
+    app.quit()
+  })
 })

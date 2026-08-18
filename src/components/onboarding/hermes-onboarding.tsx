@@ -300,10 +300,20 @@ export function HermesOnboarding() {
               stageIndex?: number
               stageCount?: number
               error?: string | null
+              failureCategory?: string | null
+              preparedBy?: string | null
             }
             if (progress.phase === 'failed') {
               setBackendStatus('error')
-              setBackendMessage(progress.error || '执行引擎安装失败，请重试。')
+              if (progress.failureCategory === 'gateway-not-ready') {
+                setBackendMessage('执行引擎已安装，但网关未就绪。请稍后点击「重试」。')
+              } else if (progress.failureCategory === 'install-failed') {
+                setBackendMessage(
+                  progress.error || '执行引擎安装失败，请重试。',
+                )
+              } else {
+                setBackendMessage(progress.error || '执行引擎安装失败，请重试。')
+              }
               return
             }
             if (
@@ -312,9 +322,11 @@ export function HermesOnboarding() {
               progress.phase === 'starting'
             ) {
               setBackendMessage(
-                progress.currentStage
-                  ? `正在安装执行引擎（${progress.stageIndex ?? 0}/${progress.stageCount ?? 0}）：${progress.currentStage}`
-                  : '正在安装执行引擎…',
+                progress.preparedBy === 'installer'
+                  ? '执行引擎已就绪（安装期预装），正在启动网关…'
+                  : progress.currentStage
+                    ? `正在安装执行引擎（${progress.stageIndex ?? 0}/${progress.stageCount ?? 0}）：${progress.currentStage}`
+                    : '正在安装执行引擎…',
               )
             }
           }

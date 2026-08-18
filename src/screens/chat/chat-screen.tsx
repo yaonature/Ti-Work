@@ -86,6 +86,14 @@ import { ModelSuggestionToast } from '@/components/model-suggestion-toast'
 import { MobileSessionsPanel } from '@/components/mobile-sessions-panel'
 import { ContextAlertModal } from '@/components/usage-meter/context-alert-modal'
 import { ErrorToastContainer, showErrorToast } from '@/components/error-toast'
+import {
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogRoot,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 // ContextMeter removed — ContextBar (PR #32) replaces it
 import { useChatStore } from '@/stores/chat-store'
 import { useResearchCard } from '@/hooks/use-research-card'
@@ -113,6 +121,12 @@ type ChatScreenProps = {
 type PortableHistoryMessage = {
   role: 'user' | 'assistant' | 'system'
   content: string
+}
+
+function isModelConfigRequiredError(code?: string, message?: string): boolean {
+  if (code === 'model_config_required') return true
+  if (!message) return false
+  return message.includes('当前未完成模型配置')
 }
 
 function normalizeMimeType(value: unknown): string {
@@ -455,6 +469,7 @@ export function ChatScreen({
   const [_creatingSession, setCreatingSession] = useState(false)
   const [sessionsOpen, setSessionsOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [modelConfigDialogOpen, setModelConfigDialogOpen] = useState(false)
   const [isRedirecting, setIsRedirecting] = useState(false)
   const { headerRef, composerRef, mainRef, pinGroupMinHeight, headerHeight } =
     useChatMeasurements()
@@ -1014,7 +1029,7 @@ export function ChatScreen({
       streamFinish()
     }, [queryClient, streamFinish]),
     onError: useCallback(
-      (messageText: string) => {
+      ({ message: messageText, code }: { message: string; code?: string }) => {
         const activeSend = activeSendRef.current
         if (activeSend?.clientId && !isMissingAuth(messageText)) {
           updateHistoryMessageByClientIdEverywhere(
@@ -1034,6 +1049,14 @@ export function ChatScreen({
           } catch {
             /* router not ready */
           }
+          return
+        }
+        if (isModelConfigRequiredError(code, messageText)) {
+          setError(null)
+          setModelConfigDialogOpen(true)
+          toast('请先完成模型配置', { type: 'warning' })
+          setPendingGeneration(false)
+          setWaitingForResponse(false)
           return
         }
         const errorMessage = `发送消息失败。${messageText}`
@@ -2135,7 +2158,7 @@ export function ChatScreen({
   )
 
   const send = useCallback(
-    (
+    async (
       body: string,
       attachments: Array<ChatComposerAttachment>,
       fastMode: boolean,
@@ -2176,7 +2199,7 @@ export function ChatScreen({
       if (isNewChat) {
         // In portable mode, use 'main' — no server-side sessions exist.
         // In enhanced mode, create a UUID thread for the sessions API.
-        const threadId = isPortableMode ? 'main' : crypto.randomUUID()
+        let threadId = isPortableMode ? 'main' : crypto.randomUUID()
         const { optimisticMessage } = createOptimisticMessage(
           trimmedBody,
           attachmentPayload,
@@ -2188,14 +2211,30 @@ export function ChatScreen({
         setWaitingForResponse(true)
 
         if (!isPortableMode) {
-          void createSessionForMessage(threadId).catch((err: unknown) => {
+          try {
+            const created = await createSessionForMessage(threadId)
+            threadId = created.sessionKey
+            onSessionResolved?.({
+              sessionKey: created.sessionKey,
+              friendlyId: created.friendlyId,
+            })
+          } catch (err: unknown) {
             if (import.meta.env.DEV) {
               console.warn('[chat] failed to register new thread', err)
             }
+            setSending(false)
+            setPendingGeneration(false)
+            setWaitingForResponse(false)
+            const messageText =
+              err instanceof Error ? err.message : '创建会话失败，请稍后重试'
+            setError(`发送消息失败。${messageText}`)
+            toast('创建会话失败', { type: 'error' })
+            showErrorToast(messageText)
             void queryClient.invalidateQueries({
               queryKey: chatQueryKeys.sessions,
             })
-          })
+            return
+          }
         }
 
         sendMessage(
@@ -2624,6 +2663,38 @@ export function ChatScreen({
         threshold={alertThreshold}
         contextPercent={alertPercent}
       />
+
+      <AlertDialogRoot
+        open={modelConfigDialogOpen}
+        onOpenChange={setModelConfigDialogOpen}
+      >
+        <AlertDialogContent>
+          <div className="p-4">
+            <AlertDialogTitle className="mb-1">
+              先完成模型配置
+            </AlertDialogTitle>
+            <AlertDialogDescription className="mb-4">
+              当前还没有可用模型，所以这条消息不会发送到 Hermes。请先在设置中选择服务提供方和模型，保存后即可继续对话。
+            </AlertDialogDescription>
+            <div className="flex justify-end gap-2">
+              <AlertDialogCancel>稍后再说</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-accent-600 hover:bg-accent-700"
+                onClick={() => {
+                  setModelConfigDialogOpen(false)
+                  window.dispatchEvent(
+                    new CustomEvent(CHAT_OPEN_SETTINGS_EVENT, {
+                      detail: { section: 'hermes' },
+                    }),
+                  )
+                }}
+              >
+                去配置模型
+              </AlertDialogAction>
+            </div>
+          </div>
+        </AlertDialogContent>
+      </AlertDialogRoot>
 
       <ErrorToastContainer />
     </div>

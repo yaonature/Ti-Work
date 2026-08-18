@@ -17,7 +17,14 @@
  * 目录不存在时静默跳过：产物仍可打包，应用首次启动时改为在线下载官方脚本。
  * 用法：node scripts/stage-hermes-bootstrap.mjs
  */
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -80,6 +87,29 @@ async function main() {
   rmSync(TARGET, { recursive: true, force: true })
   mkdirSync(TARGET, { recursive: true })
   cpSync(installerPath, join(TARGET, 'install.ps1'))
+  // 安装期预装脚本（NSIS customInstall 调用）：资源落地 + 阶段安装 + 状态写入。
+  // 与 install.ps1 同目录打进安装包 resources/hermes-bootstrap。
+  // 注意：脚本含中文，Windows PowerShell 5.1 无 BOM 会按 ANSI 代码页解析出错，
+  // 因此这里强制以 UTF-8 BOM 形式落盘。
+  const preinstall = join(__dirname, 'hermes-installer-preinstall.ps1')
+  if (existsSync(preinstall)) {
+    // 循环剥离头部重复 BOM（源文件若被编辑器多次追加 BOM，Windows PowerShell
+    // 5.1 加载双 BOM 脚本会解析失败且不执行任何语句），再强制落盘单 BOM。
+    let raw = readFileSync(preinstall)
+    while (
+      raw.length >= 3 &&
+      raw[0] === 0xef &&
+      raw[1] === 0xbb &&
+      raw[2] === 0xbf
+    ) {
+      raw = raw.subarray(3)
+    }
+    const withBom = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), raw])
+    writeFileSync(join(TARGET, 'install-hermes.ps1'), withBom)
+    console.log('[stage-bootstrap] 安装期预装脚本已暂存 → install-hermes.ps1')
+  } else {
+    console.warn('[stage-bootstrap] 未找到 install-hermes.ps1，安装器将退回首启自举')
+  }
   writeFileSync(
     join(TARGET, 'version.json'),
     JSON.stringify(

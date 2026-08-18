@@ -29,7 +29,10 @@ import {
   appendLocalMessage,
   ensureLocalSession,
 } from '../../server/local-session-store'
+import { getHermesConfigPath } from '../../server/env-models'
 import type {OpenAICompatContentPart, OpenAICompatMessage} from '../../server/openai-compat-api';
+import fs from 'node:fs'
+import YAML from 'yaml'
 // Hermes agent runs can take 5+ minutes with complex tool chains
 const SEND_STREAM_RUN_TIMEOUT_MS = 600_000
 const SESSION_BOOTSTRAP_KEYS = new Set(['main', 'new'])
@@ -193,7 +196,60 @@ function normalizeHermesErrorMessage(error: unknown): string {
   const raw = error instanceof Error ? error.message : String(error)
   const message = raw.trim()
   if (!message) return 'Hermes request failed'
-  return message.replace(/\bserver\b/gi, 'Hermes')
+  const normalized = message.replace(/\bserver\b/gi, 'Hermes')
+  const lower = normalized.toLowerCase()
+  if (lower.includes('session not found')) {
+    return '会话初始化失败，请重试一次'
+  }
+  if (
+    lower.includes('invalid_request_error') &&
+    lower.includes('session not found')
+  ) {
+    return '会话初始化失败，请重试一次'
+  }
+  if (
+    lower.includes('model') &&
+    (lower.includes('not configured') ||
+      lower.includes('not found') ||
+      lower.includes('missing'))
+  ) {
+    return '当前未完成模型配置，请先在设置中选择服务提供方和模型'
+  }
+  return normalized
+}
+
+function readHermesConfigReadiness(): {
+  activeModel: string
+  activeProvider: string
+} {
+  try {
+    const raw = fs.readFileSync(getHermesConfigPath(), 'utf-8')
+    const config = (YAML.parse(raw) as Record<string, unknown>) || {}
+    const modelField = config.model
+    if (typeof modelField === 'string') {
+      return {
+        activeModel: modelField.trim(),
+        activeProvider:
+          typeof config.provider === 'string' ? config.provider.trim() : '',
+      }
+    }
+    if (modelField && typeof modelField === 'object') {
+      const modelObj = modelField as Record<string, unknown>
+      return {
+        activeModel:
+          typeof modelObj.default === 'string' ? modelObj.default.trim() : '',
+        activeProvider:
+          typeof modelObj.provider === 'string'
+            ? modelObj.provider.trim()
+            : typeof config.provider === 'string'
+              ? config.provider.trim()
+              : '',
+      }
+    }
+  } catch {
+    // ignore unreadable config
+  }
+  return { activeModel: '', activeProvider: '' }
 }
 
 function readRecord(value: unknown): Record<string, unknown> | undefined {
@@ -343,6 +399,20 @@ export const Route = createFileRoute('/api/send-stream')({
         }
 
         const chatMode = getChatMode()
+        const { activeModel } = readHermesConfigReadiness()
+        if (chatMode !== 'disconnected' && !activeModel) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: '当前未完成模型配置，请先在设置中选择模型',
+              code: 'model_config_required',
+            }),
+            {
+              status: 409,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          )
+        }
         // 直连降级：仅网关离线（chatMode=disconnected）且用户已配置某 OpenAI
         // 兼容服务商 Key 时，portable 分支改走直连端点，避免"有模型发不出"。
         // 网关在线时一律优先走网关（portable / enhanced），不启用直连。

@@ -46,9 +46,21 @@ type BootstrapProgress = {
   phase?: 'idle' | 'detecting' | 'installing' | 'configuring' | 'starting' | 'ready' | 'failed'
   message?: string
   error?: string | null
+  failureCategory?: 'install-failed' | 'gateway-not-ready' | 'config-needed' | 'config-invalid' | null
+  preparedBy?: 'installer' | 'first-launch' | null
   stageIndex?: number
   stageCount?: number
   currentStage?: string | null
+}
+
+function describeBootstrapFailure(progress: BootstrapProgress): string {
+  if (progress.failureCategory === 'gateway-not-ready') {
+    return '执行引擎已安装，但网关未就绪。请稍后点击「重试」。'
+  }
+  if (progress.failureCategory === 'install-failed') {
+    return `执行引擎安装失败。${progress.error ?? '请点击「重试」。'}`
+  }
+  return progress.error || '执行引擎安装失败'
 }
 
 async function fetchBootstrapProgress(): Promise<BootstrapProgress | null> {
@@ -156,12 +168,14 @@ export function HermesReconnectBanner({
                   ? Math.min((progress.stageIndex ?? -1) + 1, total)
                   : 0
               setMessage(
-                progress.currentStage
-                  ? `正在安装执行引擎（${index}/${total}）：${progress.currentStage}`
-                  : progress.message || '正在准备执行引擎…',
+                progress.preparedBy === 'installer'
+                  ? '执行引擎已就绪（安装期预装），正在启动网关…'
+                  : progress.currentStage
+                    ? `正在安装执行引擎（${index}/${total}）：${progress.currentStage}`
+                    : progress.message || '正在准备执行引擎…',
               )
             } else if (progress?.phase === 'failed') {
-              setMessage(progress.error || '执行引擎安装失败')
+              setMessage(describeBootstrapFailure(progress))
             } else if (!dismissedRef.current) {
               setMessage(null)
             }
@@ -247,7 +261,7 @@ export function HermesReconnectBanner({
           if (!progress) continue
           if (progress.phase === 'ready') break
           if (progress.phase === 'failed') {
-            throw new Error(progress.error || '执行引擎安装失败')
+            throw new Error(describeBootstrapFailure(progress))
           }
           if (
             progress.phase === 'installing' ||
@@ -257,9 +271,11 @@ export function HermesReconnectBanner({
             const total = progress.stageCount ?? 0
             const index = Math.min(progress.stageIndex ?? 0, total)
             setMessage(
-              progress.currentStage
-                ? `正在安装执行引擎（${index}/${total}）：${progress.currentStage}`
-                : progress.message || '正在安装执行引擎…',
+              progress.preparedBy === 'installer'
+                ? '执行引擎已就绪（安装期预装），正在启动网关…'
+                : progress.currentStage
+                  ? `正在安装执行引擎（${index}/${total}）：${progress.currentStage}`
+                  : progress.message || '正在安装执行引擎…',
             )
           }
         }
