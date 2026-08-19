@@ -106,6 +106,56 @@ const _noopSetActivity = (_s: string) => {}
 /** How long a resolved approval receipt stays visible before the card is removed. */
 const APPROVAL_RECEIPT_TTL_MS = 2500
 
+type BootstrapProgress = {
+  ok?: boolean
+  phase?:
+    | 'idle'
+    | 'detecting'
+    | 'installing'
+    | 'configuring'
+    | 'starting'
+    | 'ready'
+    | 'failed'
+  message?: string
+  error?: string | null
+  preparedBy?: 'installer' | 'first-launch' | null
+  stageIndex?: number
+  stageCount?: number
+  currentStage?: string | null
+}
+
+const ACTIVE_BOOTSTRAP_PHASES = new Set([
+  'detecting',
+  'installing',
+  'configuring',
+  'starting',
+])
+
+async function fetchBootstrapProgress(): Promise<BootstrapProgress | null> {
+  try {
+    const response = await fetch('/api/engine-bootstrap', {
+      cache: 'no-store',
+    })
+    if (!response.ok) return null
+    return (await response.json()) as BootstrapProgress
+  } catch {
+    return null
+  }
+}
+
+function describeBootstrapProgress(progress: BootstrapProgress): string {
+  if (progress.preparedBy === 'installer') {
+    return '执行引擎已就绪，正在启动网关，请稍候再试。'
+  }
+  if (progress.currentStage) {
+    return `执行引擎正在准备中：${progress.currentStage}`
+  }
+  if (progress.message?.trim()) {
+    return progress.message.trim()
+  }
+  return '执行引擎正在启动，请稍候再试。'
+}
+
 type ChatScreenProps = {
   activeFriendlyId: string
   isNewChat?: boolean
@@ -1991,6 +2041,7 @@ export function ChatScreen({
     function handleHealthRestored() {
       retriedQueuedMessageKeysRef.current.clear()
       hadErrorRef.current = false
+      setError(null)
       flushRetryableMessages()
       handleRefetch()
     }
@@ -2000,6 +2051,31 @@ export function ChatScreen({
       window.removeEventListener('hermes:health-restored', handleHealthRestored)
     }
   }, [flushRetryableMessages, handleRefetch])
+
+  const ensureBackendReadyForSend = useCallback(async (): Promise<boolean> => {
+    if (isPortableMode || connectionState === 'connected') {
+      return true
+    }
+
+    const latestStatus = await statusQuery.refetch()
+    if (latestStatus.data?.ok === true && !latestStatus.isError) {
+      return true
+    }
+
+    const progress = await fetchBootstrapProgress()
+    if (progress?.phase && ACTIVE_BOOTSTRAP_PHASES.has(progress.phase)) {
+      const message = describeBootstrapProgress(progress)
+      setError(message)
+      toast('执行引擎正在启动，请稍候', { type: 'warning' })
+      return false
+    }
+
+    const message =
+      '执行引擎尚未连接，请先点击顶部「一键连接」或稍后重试。'
+    setError(message)
+    toast('执行引擎尚未连接', { type: 'warning' })
+    return false
+  }, [connectionState, isPortableMode, statusQuery])
 
   const createSessionForMessage = useCallback(
     async (preferredFriendlyId?: string) => {
@@ -2167,6 +2243,7 @@ export function ChatScreen({
       const trimmedBody = body.trim()
       if (trimmedBody.length === 0 && attachments.length === 0) return
       if (attachments.length === 0 && handleUiSlashCommand(trimmedBody)) return
+      if (!(await ensureBackendReadyForSend())) return
 
       // Deduplicate sends with identical content within a 500ms window.
       // This prevents double-fire from paste events that trigger multiple send paths.
@@ -2282,6 +2359,7 @@ export function ChatScreen({
       queryClient,
       resolvedSessionKey,
       handleUiSlashCommand,
+      ensureBackendReadyForSend,
     ],
   )
 

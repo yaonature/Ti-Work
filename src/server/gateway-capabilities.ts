@@ -281,6 +281,14 @@ export async function probeGateway(options?: {
 }
 
 export async function ensureGatewayProbed(): Promise<GatewayCapabilities> {
+  const isDisconnectedCached =
+    capabilities.probed &&
+    !capabilities.health &&
+    !capabilities.chatCompletions
+  if (isDisconnectedCached) {
+    return probeGateway({ force: true })
+  }
+
   const isStale = Date.now() - lastProbeAt > PROBE_TTL_MS
   if (!capabilities.probed || isStale) {
     return probeGateway({ force: isStale })

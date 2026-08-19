@@ -82,6 +82,7 @@ export function HermesReconnectBanner({
   const [isChecking, setIsChecking] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [isBootstrapping, setIsBootstrapping] = useState(false)
 
   const mountedRef = useRef(true)
   const inFlightProbeRef = useRef<Promise<boolean> | null>(null)
@@ -108,6 +109,7 @@ export function HermesReconnectBanner({
       setIsChecking(false)
       setIsStarting(false)
       setMessage(null)
+      setIsBootstrapping(false)
       wasDisconnectedRef.current = false
       dismissedRef.current = false
       if (flashTimerRef.current !== null) {
@@ -139,7 +141,9 @@ export function HermesReconnectBanner({
 
           if (connected) {
             setMessage(null)
+            setIsBootstrapping(false)
             if (wasDisconnectedRef.current) {
+              window.dispatchEvent(new CustomEvent('hermes:health-restored'))
               setBannerState('connected')
               wasDisconnectedRef.current = false
               flashTimerRef.current = window.setTimeout(() => {
@@ -162,6 +166,7 @@ export function HermesReconnectBanner({
               progress?.phase === 'configuring' ||
               progress?.phase === 'starting'
             ) {
+              setIsBootstrapping(true)
               const total = progress.stageCount ?? 0
               const index =
                 total > 0
@@ -175,8 +180,10 @@ export function HermesReconnectBanner({
                     : progress.message || '正在准备执行引擎…',
               )
             } else if (progress?.phase === 'failed') {
+              setIsBootstrapping(false)
               setMessage(describeBootstrapFailure(progress))
             } else if (!dismissedRef.current) {
+              setIsBootstrapping(false)
               setMessage(null)
             }
           }
@@ -189,6 +196,7 @@ export function HermesReconnectBanner({
             if (!dismissedRef.current) {
               setBannerState('disconnected')
             }
+            setIsBootstrapping(false)
             setMessage(
               error instanceof Error ? error.message : '连接失败',
             )
@@ -229,6 +237,7 @@ export function HermesReconnectBanner({
     if (!enabled) return
     setIsStarting(true)
     setMessage(null)
+    setIsBootstrapping(true)
 
     try {
       const response = await fetch('/api/start-agent', {
@@ -281,6 +290,7 @@ export function HermesReconnectBanner({
         }
       }
     } catch (error) {
+      setIsBootstrapping(false)
       setMessage(
         error instanceof Error ? error.message : '执行引擎启动失败',
       )
@@ -295,6 +305,8 @@ export function HermesReconnectBanner({
   }
 
   const isDisconnected = bannerState === 'disconnected'
+  const title =
+    isDisconnected && isBootstrapping ? '执行引擎启动中' : isDisconnected ? '执行引擎未连接' : '已连接'
 
   return (
     <div
@@ -322,7 +334,7 @@ export function HermesReconnectBanner({
           />
           <div className="min-w-0">
             <p className="text-sm font-semibold">
-              {isDisconnected ? '执行引擎未连接' : '已连接'}
+              {title}
             </p>
             {isDisconnected && !message ? (
               <p className="text-xs opacity-70">
