@@ -255,7 +255,7 @@ export function SessionHistoryScreen() {
       {/* Header */}
       <div style={{ padding: '1.25rem 1.5rem 0.75rem', borderBottom: '1px solid var(--theme-border)' }}>
         <h1 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-          会话历史
+          业务记录
         </h1>
         {!loading && !error && (
           <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>

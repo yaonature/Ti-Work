@@ -4,7 +4,7 @@ import { TasksScreen } from '@/screens/tasks/tasks-screen'
 
 export const Route = createFileRoute('/tasks')({
   component: function TasksRoute() {
-    usePageTitle('任务')
+    usePageTitle('任务协同')
     return <TasksScreen />
   },
 })

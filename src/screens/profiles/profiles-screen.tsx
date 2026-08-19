@@ -283,7 +283,7 @@ export function ProfilesScreen() {
         <div>
           <div className="flex items-center gap-2">
             <HugeiconsIcon icon={UserGroupIcon} size={22} strokeWidth={1.7} />
-            <h1 className="text-lg font-semibold text-primary-900">配置档案</h1>
+            <h1 className="text-lg font-semibold text-primary-900">工作画像</h1>
           </div>
           <p className="mt-1 text-sm text-[var(--theme-muted)]">
             浏览并管理存储在{' '}

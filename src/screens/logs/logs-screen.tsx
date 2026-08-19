@@ -72,7 +72,7 @@ export function LogsScreen() {
       <div className="flex items-center justify-between border-b border-[var(--theme-border)] px-4 py-3">
         <div className="flex items-center gap-2">
           <HugeiconsIcon icon={ConsoleIcon} size={18} className="text-[var(--theme-accent)]" />
-          <h1 className="text-base font-semibold text-[var(--theme-text)]">日志</h1>
+          <h1 className="text-base font-semibold text-[var(--theme-text)]">系统日志</h1>
           {lines.length > 0 && (
             <span className="rounded-full bg-[var(--theme-panel)] px-2 py-0.5 text-xs text-[var(--theme-muted)]">
               {visible.length}

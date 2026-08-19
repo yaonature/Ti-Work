@@ -23,6 +23,7 @@ import type { Status } from '@/components/ds'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 import { EmptyState, StatusBadge } from '@/components/ds'
+import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
 import {
   createJob,
   deleteJob,
@@ -428,6 +429,7 @@ export function JobsScreen() {
   const [search, setSearch] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [editingJob, setEditingJob] = useState<HermesJob | null>(null)
+  const [pendingDeleteJob, setPendingDeleteJob] = useState<HermesJob | null>(null)
 
   const jobsQuery = useQuery({
     queryKey: QUERY_KEY,
@@ -620,10 +622,8 @@ export function JobsScreen() {
                 onLiveTrigger={() =>
                   void queryClient.invalidateQueries({ queryKey: QUERY_KEY })
                 }
-                onDelete={(id) => {
-                  if (confirm(`确定要删除定时任务"${job.name}"吗？`)) {
-                    deleteMutation.mutate(id)
-                  }
+                onDelete={() => {
+                  setPendingDeleteJob(job)
                 }}
               />
             ))}
@@ -651,6 +651,29 @@ export function JobsScreen() {
           })
         }}
         isSubmitting={updateMutation.isPending}
+      />
+      <ConfirmActionDialog
+        open={pendingDeleteJob !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteJob(null)
+        }}
+        title="删除定时任务"
+        description={
+          pendingDeleteJob ? (
+            <>
+              确定要删除 <strong>{pendingDeleteJob.name}</strong>{' '}
+              吗？删除后将不再自动执行，已有运行记录会保留在历史中。
+            </>
+          ) : (
+            '确定要删除这条定时任务吗？'
+          )
+        }
+        confirmLabel="删除安排"
+        onConfirm={() => {
+          if (!pendingDeleteJob) return
+          deleteMutation.mutate(pendingDeleteJob.id)
+          setPendingDeleteJob(null)
+        }}
       />
     </div>
   )

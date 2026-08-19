@@ -33,7 +33,7 @@ export const Route = createFileRoute('/terminal')({
 })
 
 function TerminalRoute() {
-  usePageTitle('终端')
+  usePageTitle('文件整理')
   // Terminal is rendered persistently in WorkspaceShell — return null here to avoid double mount
   return null
 }

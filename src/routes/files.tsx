@@ -49,7 +49,7 @@ export const Route = createFileRoute('/files')({
 })
 
 function FilesRoute() {
-  usePageTitle('文件')
+  usePageTitle('文档中心')
   const { settings } = useSettings()
   const [isMobile, setIsMobile] = useState(false)
   const [fileExplorerCollapsed, setFileExplorerCollapsed] = useState(false)

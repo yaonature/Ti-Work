@@ -4,7 +4,7 @@ import { LineageScreen } from '@/screens/lineage/lineage-screen'
 
 export const Route = createFileRoute('/lineage')({
   component: function LineageRoute() {
-    usePageTitle('任务血缘')
+    usePageTitle('流程分析')
     return <LineageScreen />
   },
 })

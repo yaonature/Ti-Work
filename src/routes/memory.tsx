@@ -18,7 +18,7 @@ export const Route = createFileRoute('/memory')({
   component: function MemoryRoute() {
     const [tab, setTab] = useState<'memory' | 'knowledge'>('memory')
 
-    usePageTitle('记忆')
+    usePageTitle('个人知识')
 
     return (
       <div className="flex h-full min-h-0 flex-col">
@@ -32,8 +32,8 @@ export const Route = createFileRoute('/memory')({
               variant="underline"
               className="w-full justify-start gap-1"
             >
-              <TabsTab value="memory">记忆</TabsTab>
-              <TabsTab value="knowledge">知识</TabsTab>
+              <TabsTab value="memory">个人知识</TabsTab>
+              <TabsTab value="knowledge">知识库</TabsTab>
             </TabsList>
           </div>
 

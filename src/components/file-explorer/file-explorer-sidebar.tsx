@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
 
 export type FileEntry = {
   name: string
@@ -140,6 +141,7 @@ export function FileExplorerSidebar({
   const [promptState, setPromptState] = useState<PromptState | null>(null)
   const [promptValue, setPromptValue] = useState('')
   const [previewPath, setPreviewPath] = useState<string | null>(null)
+  const [pendingDeleteEntry, setPendingDeleteEntry] = useState<FileEntry | null>(null)
   const uploadTargetRef = useRef<string>('')
   const uploadInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -224,7 +226,6 @@ export function FileExplorerSidebar({
 
   const handleDelete = useCallback(
     async (entry: FileEntry) => {
-      if (!window.confirm(`确定要将 ${entry.name} 移到回收站吗？`)) return
       await fetch('/api/files', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -599,7 +600,7 @@ export function FileExplorerSidebar({
           <button
             className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-red-700 hover:bg-red-50/80"
             onClick={() => {
-              void handleDelete(contextMenu.entry)
+              setPendingDeleteEntry(contextMenu.entry)
               setContextMenu(null)
             }}
           >
@@ -647,6 +648,30 @@ export function FileExplorerSidebar({
         onClose={() => setPreviewPath(null)}
         onSaved={refresh}
         profileName={profileName}
+      />
+
+      <ConfirmActionDialog
+        open={pendingDeleteEntry !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteEntry(null)
+        }}
+        title="移到回收站"
+        description={
+          pendingDeleteEntry ? (
+            <>
+              确定要将 <strong>{pendingDeleteEntry.name}</strong>{' '}
+              移到回收站吗？删除后可在系统回收站中恢复。
+            </>
+          ) : (
+            '确定要将该文件移到回收站吗？'
+          )
+        }
+        confirmLabel="移到回收站"
+        onConfirm={() => {
+          if (!pendingDeleteEntry) return
+          void handleDelete(pendingDeleteEntry)
+          setPendingDeleteEntry(null)
+        }}
       />
 
       <button

@@ -7,7 +7,6 @@ import {
   ArrowRight01Icon,
   BookOpen01Icon,
   BrainIcon,
-  Chat01Icon,
   CheckListIcon,
   Clock01Icon,
   ComputerTerminal01Icon,
@@ -537,19 +536,35 @@ function ChatSidebarComponent({
   const isLogsActive = pathname === '/logs'
   const isHelpActive = pathname === '/help'
   const isDocsActive = pathname === '/docs'
-  const mainRoutes = ['/chat', '/new', '/files', '/terminal']
-  const knowledgeRoutes = ['/memory', '/skills']
-  const systemRoutes = ['/settings', '/logs']
+  const workbenchRoutes = ['/dashboard']
+  const businessRoutes = ['/chat', '/new', '/agents', '/session-history']
+  const documentRoutes = ['/files', '/terminal']
+  const knowledgeRoutes = ['/memory', '/skills', '/profiles', '/patterns']
+  const collaborationRoutes = ['/tasks', '/jobs', '/crews', '/conductor']
+  const managementRoutes = [
+    '/operations',
+    '/analytics',
+    '/lineage',
+    '/audit',
+    '/logs',
+  ]
 
   useEffect(() => {
-    if (mainRoutes.includes(pathname)) setLastRoute('main', pathname)
+    if (workbenchRoutes.includes(pathname)) setLastRoute('workbench', pathname)
+    if (businessRoutes.includes(pathname)) setLastRoute('business', pathname)
+    if (documentRoutes.includes(pathname)) setLastRoute('document', pathname)
     if (knowledgeRoutes.includes(pathname)) setLastRoute('knowledge', pathname)
-    if (systemRoutes.includes(pathname)) setLastRoute('system', pathname)
+    if (collaborationRoutes.includes(pathname))
+      setLastRoute('collaboration', pathname)
+    if (managementRoutes.includes(pathname)) setLastRoute('management', pathname)
   }, [pathname])
 
-  const mainNav = getLastRoute('main') || '/chat'
+  const workbenchNav = getLastRoute('workbench') || '/dashboard'
+  const businessNav = getLastRoute('business') || '/chat'
+  const documentNav = getLastRoute('document') || '/files'
   const knowledgeNav = getLastRoute('knowledge') || '/memory'
-  const _systemNav = getLastRoute('system') || '/settings'
+  const collaborationNav = getLastRoute('collaboration') || '/tasks'
+  const managementNav = getLastRoute('management') || '/operations'
 
   const transition = {
     duration: 0.15,
@@ -557,16 +572,28 @@ function ChatSidebarComponent({
   } as const
 
   // Collapsible section states
-  const [mainExpanded, toggleMain] = usePersistedBool(
-    'hermes-sidebar-main-expanded',
+  const [workbenchExpanded, toggleWorkbench] = usePersistedBool(
+    'hermes-sidebar-workbench-expanded',
+    true,
+  )
+  const [businessExpanded, toggleBusiness] = usePersistedBool(
+    'hermes-sidebar-business-expanded',
+    true,
+  )
+  const [documentExpanded, toggleDocument] = usePersistedBool(
+    'hermes-sidebar-document-expanded',
     true,
   )
   const [knowledgeExpanded, toggleKnowledge] = usePersistedBool(
     'hermes-sidebar-knowledge-expanded',
     true,
   )
-  const [_systemExpanded, _toggleSystem] = usePersistedBool(
-    'hermes-sidebar-system-expanded',
+  const [collaborationExpanded, toggleCollaboration] = usePersistedBool(
+    'hermes-sidebar-collaboration-expanded',
+    true,
+  )
+  const [managementExpanded, toggleManagement] = usePersistedBool(
+    'hermes-sidebar-management-expanded',
     false,
   )
 
@@ -726,7 +753,7 @@ function ChatSidebarComponent({
 
   const isDashboardActive = pathname === '/dashboard'
 
-  const mainItems: Array<NavItemDef> = [
+  const workbenchItems: Array<NavItemDef> = [
     {
       kind: 'link',
       to: '/dashboard',
@@ -734,97 +761,134 @@ function ChatSidebarComponent({
       label: '工作台',
       active: isDashboardActive,
     },
+  ]
+
+  const businessItems: Array<NavItemDef> = [
     {
       kind: 'link',
       to: '/chat',
       icon: MessageMultiple01Icon,
-      label: '会话',
+      label: '业务会话',
       active: isChatActive,
       badge: pendingApprovalCount > 0 ? pendingApprovalCount : undefined,
     },
     {
       kind: 'link',
+      to: '/agents',
+      icon: AiUserIcon,
+      label: '任务助手',
+      active: isAgentsActive,
+    },
+    {
+      kind: 'link',
+      to: '/session-history',
+      icon: Clock01Icon,
+      label: '业务记录',
+      active: isSessionHistoryActive,
+    },
+  ]
+
+  const documentItems: Array<NavItemDef> = [
+    {
+      kind: 'link',
       to: '/files',
       icon: File01Icon,
-      label: '文件',
+      label: '文档中心',
       active: isFilesActive,
     },
     {
       kind: 'link',
       to: '/terminal',
       icon: ComputerTerminal01Icon,
-      label: '终端',
+      label: '文件整理',
       active: isTerminalActive,
     },
+  ]
+
+  const collaborationItems: Array<NavItemDef> = [
     {
       kind: 'link',
-      to: '/jobs',
-      icon: Clock01Icon,
-      label: '任务',
-      active: isJobsActive,
+      to: '/tasks',
+      icon: CheckListIcon,
+      label: '任务协同',
+      active: isTasksActive,
     },
     {
       kind: 'link',
       to: '/crews',
       icon: UserMultiple02Icon,
-      label: '多智能体',
+      label: '自动化流程',
       active: isCrewsActive,
     },
     {
       kind: 'link',
       to: '/conductor',
       icon: Flag01Icon,
-      label: '任务编排',
+      label: '流程流转',
       active: isConductorActive,
     },
     {
       kind: 'link',
-      to: '/operations',
-      icon: Radar01Icon,
-      label: '运维视图',
-      active: isOperationsActive,
+      to: '/jobs',
+      icon: Clock01Icon,
+      label: '定时任务',
+      active: isJobsActive,
+    },
+  ]
+
+  const knowledgeItems: Array<NavItemDef> = [
+    {
+      kind: 'link',
+      to: '/memory',
+      icon: BrainIcon,
+      label: '个人知识',
+      active: isMemoryActive,
     },
     {
       kind: 'link',
-      to: '/tasks',
-      icon: CheckListIcon,
-      label: '待办',
-      active: isTasksActive,
+      to: '/skills',
+      icon: PuzzleIcon,
+      label: '技能与模板',
+      active: isSkillsActive,
+      dataTour: 'skills',
     },
     {
       kind: 'link',
-      to: '/agents',
-      icon: AiUserIcon,
-      label: '智能体',
-      active: isAgentsActive,
+      to: '/profiles',
+      icon: UserGroupIcon,
+      label: '工作画像',
+      active: isProfilesActive,
     },
     {
       kind: 'link',
       to: '/patterns',
       icon: BrainIcon,
-      label: '模式与纠正',
+      label: '团队规则',
       active: isPatternsActive,
+    },
+  ]
+
+  const managementItems: Array<NavItemDef> = [
+    {
+      kind: 'link',
+      to: '/operations',
+      icon: Radar01Icon,
+      label: '运行状态',
+      active: isOperationsActive,
     },
     {
       kind: 'link',
       to: '/analytics',
       icon: Analytics01Icon,
-      label: '分析',
+      label: '使用分析',
       active: isAnalyticsActive,
     },
     {
       kind: 'link',
       to: '/lineage',
       icon: GitBranchIcon,
-      label: '血缘',
+      label: '流程分析',
       active: isLineageActive,
-    },
-    {
-      kind: 'link',
-      to: '/session-history',
-      icon: Clock01Icon,
-      label: '会话历史',
-      active: isSessionHistoryActive,
     },
     {
       kind: 'link',
@@ -837,33 +901,8 @@ function ChatSidebarComponent({
       kind: 'link',
       to: '/logs',
       icon: ConsoleIcon,
-      label: '日志',
+      label: '系统日志',
       active: isLogsActive,
-    },
-  ]
-
-  const knowledgeItems: Array<NavItemDef> = [
-    {
-      kind: 'link',
-      to: '/memory',
-      icon: BrainIcon,
-      label: '记忆',
-      active: isMemoryActive,
-    },
-    {
-      kind: 'link',
-      to: '/skills',
-      icon: PuzzleIcon,
-      label: '技能',
-      active: isSkillsActive,
-      dataTour: 'skills',
-    },
-    {
-      kind: 'link',
-      to: '/profiles',
-      icon: UserGroupIcon,
-      label: '用户档案',
-      active: isProfilesActive,
     },
   ]
 
@@ -924,7 +963,7 @@ function ChatSidebarComponent({
               transition={transition}
             >
               <Link
-                to="/chat"
+                to="/dashboard"
                 className={cn(
                   buttonVariants({ variant: 'ghost', size: 'sm' }),
                   'w-full pl-1.5 justify-start gap-2',
@@ -1021,7 +1060,7 @@ function ChatSidebarComponent({
               strokeWidth={1.5}
               className="size-5 shrink-0"
             />
-            <span>新建会话</span>
+            <span>发起会话</span>
           </Link>
         </div>
       )}
@@ -1031,17 +1070,51 @@ function ChatSidebarComponent({
         {/* Navigation sections */}
         <div className={cn('shrink-0 space-y-0.5 px-2', isMobile && 'order-2')}>
           <SectionLabel
-            label="主要"
+            label="工作台"
             isCollapsed={isVisuallyCollapsed}
             transition={transition}
             collapsible
-            expanded={mainExpanded}
-            onToggle={toggleMain}
-            navigateTo={mainNav}
+            expanded={workbenchExpanded}
+            onToggle={toggleWorkbench}
+            navigateTo={workbenchNav}
           />
           <CollapsibleSection
-            expanded={mainExpanded || isCollapsed}
-            items={mainItems}
+            expanded={workbenchExpanded || isCollapsed}
+            items={workbenchItems}
+            isCollapsed={isVisuallyCollapsed}
+            transition={transition}
+            onSelectSession={onSelectSession}
+          />
+
+          <SectionLabel
+            label="业务"
+            isCollapsed={isVisuallyCollapsed}
+            transition={transition}
+            collapsible
+            expanded={businessExpanded}
+            onToggle={toggleBusiness}
+            navigateTo={businessNav}
+          />
+          <CollapsibleSection
+            expanded={businessExpanded || isCollapsed}
+            items={businessItems}
+            isCollapsed={isVisuallyCollapsed}
+            transition={transition}
+            onSelectSession={onSelectSession}
+          />
+
+          <SectionLabel
+            label="文档"
+            isCollapsed={isVisuallyCollapsed}
+            transition={transition}
+            collapsible
+            expanded={documentExpanded}
+            onToggle={toggleDocument}
+            navigateTo={documentNav}
+          />
+          <CollapsibleSection
+            expanded={documentExpanded || isCollapsed}
+            items={documentItems}
             isCollapsed={isVisuallyCollapsed}
             transition={transition}
             onSelectSession={onSelectSession}
@@ -1059,6 +1132,40 @@ function ChatSidebarComponent({
           <CollapsibleSection
             expanded={knowledgeExpanded || isCollapsed}
             items={knowledgeItems}
+            isCollapsed={isVisuallyCollapsed}
+            transition={transition}
+            onSelectSession={onSelectSession}
+          />
+
+          <SectionLabel
+            label="协作"
+            isCollapsed={isVisuallyCollapsed}
+            transition={transition}
+            collapsible
+            expanded={collaborationExpanded}
+            onToggle={toggleCollaboration}
+            navigateTo={collaborationNav}
+          />
+          <CollapsibleSection
+            expanded={collaborationExpanded || isCollapsed}
+            items={collaborationItems}
+            isCollapsed={isVisuallyCollapsed}
+            transition={transition}
+            onSelectSession={onSelectSession}
+          />
+
+          <SectionLabel
+            label="管理"
+            isCollapsed={isVisuallyCollapsed}
+            transition={transition}
+            collapsible
+            expanded={managementExpanded}
+            onToggle={toggleManagement}
+            navigateTo={managementNav}
+          />
+          <CollapsibleSection
+            expanded={managementExpanded || isCollapsed}
+            items={managementItems}
             isCollapsed={isVisuallyCollapsed}
             transition={transition}
             onSelectSession={onSelectSession}

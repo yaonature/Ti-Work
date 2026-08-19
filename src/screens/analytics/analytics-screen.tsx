@@ -195,7 +195,7 @@ export function AnalyticsScreen() {
             marginBottom: '0.25rem',
           }}
         >
-          事件库分析
+          使用分析
         </h1>
         <p style={{ fontSize: '0.8rem', color: 'var(--theme-text-muted)' }}>
           来自 <code style={{ fontFamily: 'monospace' }}>.runtime/events.db</code> 的聚合洞察 · 每 30 秒自动刷新

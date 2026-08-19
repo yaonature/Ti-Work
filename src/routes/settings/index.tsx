@@ -21,6 +21,7 @@ import type { BrailleSpinnerPreset } from '@/components/ui/braille-spinner'
 import type { ThemeId } from '@/lib/theme'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { Button } from '@/components/ui/button'
+import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
 import { Switch } from '@/components/ui/switch'
 import { getStoredThemeMode, useSettings } from '@/hooks/use-settings'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -781,6 +782,8 @@ async function writeIdentityFile(
 
 function IdentityFileEditor() {
   const [selectedPath, setSelectedPath] = useState<IdentityFilePath>('SOUL.md')
+  const [pendingSelectedPath, setPendingSelectedPath] =
+    useState<IdentityFilePath | null>(null)
   const [content, setContent] = useState('')
   const [originalContent, setOriginalContent] = useState('')
   const [loading, setLoading] = useState(true)
@@ -840,6 +843,15 @@ function IdentityFileEditor() {
     setMessage(null)
   }
 
+  const handleSelectFile = (path: IdentityFilePath) => {
+    if (path === selectedPath) return
+    if (isDirty) {
+      setPendingSelectedPath(path)
+      return
+    }
+    setSelectedPath(path)
+  }
+
   return (
     <SettingsSection
       title="身份文件"
@@ -852,10 +864,7 @@ function IdentityFileEditor() {
           <button
             key={f.path}
             type="button"
-            onClick={() => {
-              if (isDirty && !window.confirm('确定放弃未保存的更改吗？')) return
-              setSelectedPath(f.path)
-            }}
+            onClick={() => handleSelectFile(f.path)}
             className={cn(
               'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border',
               selectedPath === f.path
@@ -926,6 +935,34 @@ function IdentityFileEditor() {
           </Button>
         </div>
       </div>
+      <ConfirmActionDialog
+        open={pendingSelectedPath !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingSelectedPath(null)
+        }}
+        title="放弃未保存的更改"
+        description={
+          pendingSelectedPath ? (
+            <>
+              当前文件还有未保存的内容。确定要放弃本次修改，并切换到{' '}
+              <strong>
+                {IDENTITY_FILES.find((item) => item.path === pendingSelectedPath)?.label}
+              </strong>{' '}
+              吗？
+            </>
+          ) : (
+            '当前文件还有未保存的内容，确定要放弃本次修改吗？'
+          )
+        }
+        confirmLabel="放弃并切换"
+        onConfirm={() => {
+          if (!pendingSelectedPath) return
+          setContent(originalContent)
+          setMessage(null)
+          setSelectedPath(pendingSelectedPath)
+          setPendingSelectedPath(null)
+        }}
+      />
     </SettingsSection>
   )
 }

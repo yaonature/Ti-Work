@@ -5,7 +5,7 @@ import { FeatureGate } from '@/components/feature-gate'
 
 export const Route = createFileRoute('/conductor')({
   component: function ConductorRoute() {
-    usePageTitle('调度台')
+    usePageTitle('流程流转')
     return (
       <FeatureGate feature="orchestration">
         <ConductorScreen />

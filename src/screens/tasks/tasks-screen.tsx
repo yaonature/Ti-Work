@@ -96,7 +96,7 @@ export function TasksScreen() {
       >
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold" style={{ color: 'var(--theme-text)' }}>
-            任务
+            任务协同
           </h1>
           <div className="flex items-center gap-3">
             <span className="text-xs" style={{ color: 'var(--theme-muted)' }}>

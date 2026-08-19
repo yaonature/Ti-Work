@@ -7,6 +7,6 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 function DashboardRoute() {
-  usePageTitle('仪表盘')
+  usePageTitle('工作台')
   return <DashboardScreen />
 }

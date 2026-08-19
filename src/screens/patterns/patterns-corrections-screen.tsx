@@ -289,7 +289,7 @@ export function PatternsCorrectionScreen() {
       {/* Header */}
       <div>
         <h1 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-          模式与修正
+          团队规则
         </h1>
         <p style={{ fontSize: '0.8rem', color: 'var(--theme-text-muted)' }}>
           来自{' '}
