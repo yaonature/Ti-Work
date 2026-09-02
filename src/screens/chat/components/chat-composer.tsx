@@ -99,6 +99,8 @@ type ChatComposerHelpers = {
 type ChatComposerHandle = {
   setValue: (value: string) => void
   insertText: (value: string) => void
+  /** 读取当前输入框内容（供外部在发送失败等场景判断是否需要回填）。 */
+  getValue: () => string
 }
 
 function nextThinkingLevel(level: ThinkingLevel): ThinkingLevel {
@@ -1182,8 +1184,8 @@ function ChatComposerComponent({
 
   useImperativeHandle(
     composerRef,
-    () => ({ setValue: setComposerValue, insertText }),
-    [insertText, setComposerValue],
+    () => ({ setValue: setComposerValue, insertText, getValue: () => value }),
+    [insertText, setComposerValue, value],
   )
 
   const handleRemoveAttachment = useCallback((id: string) => {

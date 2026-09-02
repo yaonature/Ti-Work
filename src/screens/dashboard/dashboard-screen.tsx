@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import {
   Area,
   AreaChart,
@@ -14,6 +14,7 @@ import type { ReactNode } from 'react'
 import type { HermesSession } from '@/server/hermes-api'
 import { cn } from '@/lib/utils'
 import { EmojiIcon } from '@/components/emoji-icon'
+import { stashHighFrequencyReplay } from '@/screens/chat/high-frequency-replay'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -587,6 +588,119 @@ function SessionRow({
   )
 }
 
+// ── 高频任务（P1-B 行为资产沉淀 — 工作台露出）────────────────
+
+// 本地只读镜像 API 画像结构，避免把服务端存储模块（Node 依赖）拉进客户端包。
+// firstTs/lastTs 仅供服务端排序与周期判定，客户端不消费，不收入镜像。
+type HfTaskSample = { value: string; count: number }
+type HfTask = {
+  taskId: string
+  intentCategory: string
+  intentAction: string
+  intentLabel: string | null
+  stepCount: number
+  parameterSamples: Array<HfTaskSample>
+  occurrenceCount: number
+  distinctDays: number
+  isPeriodic: boolean
+}
+
+// 意图类别展示元数据（英文枚举 → 中文标签 + 强调色 + 图标 key）。
+const HF_CATEGORY_META: Record<
+  string,
+  { label: string; color: string; icon: string }
+> = {
+  coding: { label: '编码', color: '#6366f1', icon: '💻' },
+  research: { label: '调研', color: '#0ea5e9', icon: '🔎' },
+  config: { label: '配置', color: '#f59e0b', icon: '⚙️' },
+  creative: { label: '创作', color: '#ec4899', icon: '🎨' },
+  analysis: { label: '分析', color: '#10b981', icon: '📊' },
+}
+
+function HfTaskRow({
+  task,
+  onReplay,
+}: {
+  task: HfTask
+  onReplay: (task: HfTask) => void
+}) {
+  const meta = HF_CATEGORY_META[task.intentCategory]
+  const accentColor = meta?.color ?? '#10b981'
+  const categoryLabel = meta?.label ?? task.intentCategory
+  const actionLabel = task.intentAction || ''
+  const title =
+    task.intentLabel?.trim() || `${categoryLabel} · ${actionLabel}`
+  const sampleText = (task.parameterSamples ?? [])
+    .slice(0, 2)
+    .map((s) => s.value)
+    .join('、')
+  // 可重放前提：最近一次真实意图措辞。一键重放 = 用该措辞在新会话自动发起
+  // 首条消息；缺措辞时无法召回用户原始请求语义，禁用入口，避免把
+  // 「类别 · 动作」这类占位拼装句当作真实请求发给 Agent。
+  const canReplay = Boolean(task.intentLabel?.trim())
+
+  return (
+    <button
+      type="button"
+      data-testid={`dashboard_high_frequency_replay_${task.taskId}`}
+      onClick={() => onReplay(task)}
+      disabled={!canReplay}
+      aria-disabled={!canReplay}
+      title={
+        canReplay ? undefined : '该任务暂无历史意图措辞，暂不支持一键重放'
+      }
+      className="w-full text-left px-4 py-2.5 rounded-lg transition-colors group enabled:hover:bg-[var(--theme-card2)] disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <div
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-sm"
+          style={{ background: `${accentColor}18` }}
+        >
+          <EmojiIcon emoji={meta?.icon ?? '⚡'} size={14} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink group-hover:text-ink">
+              {title}
+            </span>
+            {task.isPeriodic ? (
+              <span className="shrink-0 rounded-full border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-700">
+                周期
+              </span>
+            ) : null}
+            <span className="shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold tabular-nums text-emerald-400">
+              {task.occurrenceCount} 次
+            </span>
+          </div>
+          <div className="mt-1 flex items-center gap-1.5 text-[10px] text-neutral-500">
+            <span>{categoryLabel}</span>
+            {actionLabel ? <span>· {actionLabel}</span> : null}
+            <span>·</span>
+            <span>{task.stepCount} 步模板</span>
+            <span>·</span>
+            <span>跨 {task.distinctDays} 天</span>
+          </div>
+          {sampleText ? (
+            <div className="mt-0.5 truncate text-[10px] text-neutral-400">
+              常用要素：{sampleText}
+              {(task.parameterSamples ?? []).length > 2 ? ' 等' : ''}
+            </div>
+          ) : null}
+        </div>
+        {canReplay ? (
+          <span className="shrink-0 text-[10px] text-muted opacity-0 group-hover:opacity-100 transition-opacity">
+            重放 →
+          </span>
+        ) : (
+          <span className="shrink-0 text-[10px] text-neutral-400">
+            暂不可重放
+          </span>
+        )}
+      </div>
+    </button>
+  )
+}
+
 // ── Main Dashboard ───────────────────────────────────────────────
 
 export function DashboardScreen() {
@@ -655,6 +769,50 @@ export function DashboardScreen() {
   }, [recentSessions])
 
   const costEstimate = `~ $${((stats.totalTokens / 1_000_000) * 5).toFixed(2)}`
+
+  // 高频任务画像：服务端在 30 天窗口内对 agent 序列做结构相似度聚类，
+  // 结果仅在本地（~/.hermes/habit-sequences/），此处只读露出、点击重放。
+  const hfQuery = useQuery({
+    queryKey: ['dashboard', 'high-frequency-tasks'],
+    queryFn: async () => {
+      const res = await fetch('/api/high-frequency-tasks?limit=8')
+      if (!res.ok) return { tasks: [], windowDays: 30 }
+      const data = (await res.json()) as {
+        tasks?: Array<HfTask>
+        windowDays?: number
+      }
+      return { tasks: data.tasks ?? [], windowDays: data.windowDays ?? 30 }
+    },
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  })
+  const hfTasks = (hfQuery.data?.tasks ?? []).slice(0, 5)
+  const hfWindowDays = hfQuery.data?.windowDays ?? 30
+
+  // 点击重放：暂存任务措辞并跳转新会话，聊天屏挂载后自动发起首条消息，
+  // 用户可在新会话编辑措辞后再发送（意图措辞可编辑，不盲重放）。
+  const handleReplayHighFrequencyTask = useCallback(
+    (task: HfTask) => {
+      // 复用最近一次真实意图措辞作为新会话首条消息；缺措辞（intentLabel
+      // 为空）时 UI 层已禁用入口（HfTaskRow canReplay=false），此处再兜底，
+      // 防止把「类别 · 动作」占位拼装句当作真实请求自动发起。
+      const message = task.intentLabel?.trim()
+      if (!message) return
+      stashHighFrequencyReplay({
+        message,
+        taskLabel: message,
+        intentCategory: task.intentCategory,
+        intentAction: task.intentAction,
+        parameterSamples: task.parameterSamples,
+        taskId: task.taskId,
+      })
+      navigate({
+        to: '/chat/$sessionKey',
+        params: { sessionKey: 'new' },
+      })
+    },
+    [navigate],
+  )
 
   return (
     <div className="min-h-full px-4 py-4 md:px-8 md:py-6 lg:px-10 space-y-5 pb-28">
@@ -786,6 +944,45 @@ export function DashboardScreen() {
           )}
         </div>
       </GlassCard>
+
+      {/* ── 高频任务（P1-B 行为资产沉淀露出，点击一键重放）── */}
+      <div data-testid="dashboard_high_frequency_tasks">
+        {!hfQuery.isError ? (
+          <GlassCard
+            title="高频任务"
+            titleRight={
+              <span className="text-[10px] text-muted">
+                {hfTasks.length > 0
+                  ? `最近 ${hfWindowDays} 天 · 点击一键重放`
+                  : '行为资产沉淀'}
+              </span>
+            }
+            accentColor="#10b981"
+            noPadding
+          >
+            <div className="py-1">
+              {hfQuery.isLoading && hfTasks.length === 0 ? (
+                <div className="text-xs text-neutral-400 py-8 text-center">
+                  正在识别高频任务…
+                </div>
+              ) : hfTasks.length === 0 ? (
+                <div className="text-xs text-neutral-400 py-8 text-center">
+                  暂无沉淀 — 让 Agent 重复执行同类任务 3 次后，会在这里沉淀成
+                  可一键重放的画像
+                </div>
+              ) : (
+                hfTasks.map((task) => (
+                  <HfTaskRow
+                    key={task.taskId}
+                    task={task}
+                    onReplay={handleReplayHighFrequencyTask}
+                  />
+                ))
+              )}
+            </div>
+          </GlassCard>
+        ) : null}
+      </div>
     </div>
   )
 }

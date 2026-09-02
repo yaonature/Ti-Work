@@ -38,6 +38,7 @@ import {
   resetPendingSend,
   setPendingGeneration,
 } from './pending-send'
+import { consumeHighFrequencyReplay } from './high-frequency-replay'
 import { useChatMeasurements } from './hooks/use-chat-measurements'
 import { useChatHistory } from './hooks/use-chat-history'
 import { useRealtimeChatHistory } from './hooks/use-realtime-chat-history'
@@ -2239,11 +2240,11 @@ export function ChatScreen({
       attachments: Array<ChatComposerAttachment>,
       fastMode: boolean,
       helpers: ChatComposerHelpers,
-    ) => {
+    ): Promise<boolean> => {
       const trimmedBody = body.trim()
-      if (trimmedBody.length === 0 && attachments.length === 0) return
-      if (attachments.length === 0 && handleUiSlashCommand(trimmedBody)) return
-      if (!(await ensureBackendReadyForSend())) return
+      if (trimmedBody.length === 0 && attachments.length === 0) return false
+      if (attachments.length === 0 && handleUiSlashCommand(trimmedBody)) return false
+      if (!(await ensureBackendReadyForSend())) return false
 
       // Deduplicate sends with identical content within a 500ms window.
       // This prevents double-fire from paste events that trigger multiple send paths.
@@ -2253,7 +2254,7 @@ export function ChatScreen({
         sendKey === lastSendKeyRef.current &&
         now - lastSendAtRef.current < 500
       )
-        return
+        return false
       lastSendKeyRef.current = sendKey
       lastSendAtRef.current = now
 
@@ -2310,7 +2311,7 @@ export function ChatScreen({
             void queryClient.invalidateQueries({
               queryKey: chatQueryKeys.sessions,
             })
-            return
+            return false
           }
         }
 
@@ -2331,7 +2332,7 @@ export function ChatScreen({
           params: { sessionKey: threadId },
           replace: true,
         })
-        return
+        return true
       }
 
       const sessionKeyForSend = isPortableMode
@@ -2344,6 +2345,7 @@ export function ChatScreen({
         attachmentPayload,
         fastMode,
       )
+      return true
     },
     [
       activeFriendlyId,
@@ -2362,6 +2364,38 @@ export function ChatScreen({
       ensureBackendReadyForSend,
     ],
   )
+
+  // 高频任务一键重放：工作台「高频任务」卡片点击后暂存载荷并导航到
+  // 新会话，本 effect 在挂载时消费一次并自动发起首条消息。
+  // 为什么复用 send 的 isNewChat 分支而非 pending-send：pending-send
+  // 面向「已存在会话的续发/恢复」，其消费 effect 在 isNewChat 时被短路；
+  // 新会话唯一能创建服务端线程并收口到真实 sessionKey 的链路就是
+  // composer 提交同款 send → isNewChat 分支。consume 单次即清空，
+  // 与手动输入天然互斥：本 effect 在挂载后立即执行，远早于用户提交；
+  // 手动提交后 navigate 已离开 new 路由，不会二次触发。
+  // 失败兜底：send 对失败只 return false（不 throw），一旦失败 payload
+  // 已被 consume 清除、无法重试自动发起。因此在 send 结果为 false 时把
+  // 任务措辞回填 composer（含草稿持久化），用户可直接手动补发；回填前
+  // 检查 composer 是否已有内容，避免覆盖用户等待期间手动输入的新文案。
+  useLayoutEffect(() => {
+    if (!isNewChat) return
+    const replay = consumeHighFrequencyReplay()
+    if (!replay) return
+    const replayBody = replay.message.trim()
+    if (!replayBody) return
+    void send(replayBody, [], false, commandHelpers)
+      .then((sent) => {
+        if (sent) return
+        const currentText = composerHandleRef.current?.getValue().trim() ?? ''
+        if (currentText.length > 0) return
+        composerHandleRef.current?.setValue(replayBody)
+      })
+      .catch((err: unknown) => {
+        if (import.meta.env.DEV) {
+          console.warn('[chat] high-frequency replay send failed', err)
+        }
+      })
+  }, [isNewChat, send])
 
   const handleAbortStreaming = useCallback(() => {
     const activeSend = activeSendRef.current

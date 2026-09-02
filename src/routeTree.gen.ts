@@ -65,6 +65,7 @@ import { Route as ApiLineageRouteImport } from './routes/api/lineage'
 import { Route as ApiIntegrationsRouteImport } from './routes/api/integrations'
 import { Route as ApiHubRouteImport } from './routes/api/hub'
 import { Route as ApiHistoryRouteImport } from './routes/api/history'
+import { Route as ApiHighFrequencyTasksRouteImport } from './routes/api/high-frequency-tasks'
 import { Route as ApiHermesRunsRouteImport } from './routes/api/hermes-runs'
 import { Route as ApiHermesKeyTestRouteImport } from './routes/api/hermes-key-test'
 import { Route as ApiHermesJobsRouteImport } from './routes/api/hermes-jobs'
@@ -416,6 +417,11 @@ const ApiHubRoute = ApiHubRouteImport.update({
 const ApiHistoryRoute = ApiHistoryRouteImport.update({
   id: '/api/history',
   path: '/api/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHighFrequencyTasksRoute = ApiHighFrequencyTasksRouteImport.update({
+  id: '/api/high-frequency-tasks',
+  path: '/api/high-frequency-tasks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHermesRunsRoute = ApiHermesRunsRouteImport.update({
@@ -826,6 +832,7 @@ export interface FileRoutesByFullPath {
   '/api/hermes-jobs': typeof ApiHermesJobsRouteWithChildren
   '/api/hermes-key-test': typeof ApiHermesKeyTestRoute
   '/api/hermes-runs': typeof ApiHermesRunsRouteWithChildren
+  '/api/high-frequency-tasks': typeof ApiHighFrequencyTasksRoute
   '/api/history': typeof ApiHistoryRoute
   '/api/hub': typeof ApiHubRoute
   '/api/integrations': typeof ApiIntegrationsRouteWithChildren
@@ -955,6 +962,7 @@ export interface FileRoutesByTo {
   '/api/hermes-jobs': typeof ApiHermesJobsRouteWithChildren
   '/api/hermes-key-test': typeof ApiHermesKeyTestRoute
   '/api/hermes-runs': typeof ApiHermesRunsRouteWithChildren
+  '/api/high-frequency-tasks': typeof ApiHighFrequencyTasksRoute
   '/api/history': typeof ApiHistoryRoute
   '/api/hub': typeof ApiHubRoute
   '/api/integrations': typeof ApiIntegrationsRouteWithChildren
@@ -1086,6 +1094,7 @@ export interface FileRoutesById {
   '/api/hermes-jobs': typeof ApiHermesJobsRouteWithChildren
   '/api/hermes-key-test': typeof ApiHermesKeyTestRoute
   '/api/hermes-runs': typeof ApiHermesRunsRouteWithChildren
+  '/api/high-frequency-tasks': typeof ApiHighFrequencyTasksRoute
   '/api/history': typeof ApiHistoryRoute
   '/api/hub': typeof ApiHubRoute
   '/api/integrations': typeof ApiIntegrationsRouteWithChildren
@@ -1218,6 +1227,7 @@ export interface FileRouteTypes {
     | '/api/hermes-jobs'
     | '/api/hermes-key-test'
     | '/api/hermes-runs'
+    | '/api/high-frequency-tasks'
     | '/api/history'
     | '/api/hub'
     | '/api/integrations'
@@ -1347,6 +1357,7 @@ export interface FileRouteTypes {
     | '/api/hermes-jobs'
     | '/api/hermes-key-test'
     | '/api/hermes-runs'
+    | '/api/high-frequency-tasks'
     | '/api/history'
     | '/api/hub'
     | '/api/integrations'
@@ -1477,6 +1488,7 @@ export interface FileRouteTypes {
     | '/api/hermes-jobs'
     | '/api/hermes-key-test'
     | '/api/hermes-runs'
+    | '/api/high-frequency-tasks'
     | '/api/history'
     | '/api/hub'
     | '/api/integrations'
@@ -1608,6 +1620,7 @@ export interface RootRouteChildren {
   ApiHermesJobsRoute: typeof ApiHermesJobsRouteWithChildren
   ApiHermesKeyTestRoute: typeof ApiHermesKeyTestRoute
   ApiHermesRunsRoute: typeof ApiHermesRunsRouteWithChildren
+  ApiHighFrequencyTasksRoute: typeof ApiHighFrequencyTasksRoute
   ApiHistoryRoute: typeof ApiHistoryRoute
   ApiHubRoute: typeof ApiHubRoute
   ApiIntegrationsRoute: typeof ApiIntegrationsRouteWithChildren
@@ -2060,6 +2073,13 @@ declare module '@tanstack/react-router' {
       path: '/api/history'
       fullPath: '/api/history'
       preLoaderRoute: typeof ApiHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/high-frequency-tasks': {
+      id: '/api/high-frequency-tasks'
+      path: '/api/high-frequency-tasks'
+      fullPath: '/api/high-frequency-tasks'
+      preLoaderRoute: typeof ApiHighFrequencyTasksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/hermes-runs': {
@@ -2799,6 +2819,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHermesJobsRoute: ApiHermesJobsRouteWithChildren,
   ApiHermesKeyTestRoute: ApiHermesKeyTestRoute,
   ApiHermesRunsRoute: ApiHermesRunsRouteWithChildren,
+  ApiHighFrequencyTasksRoute: ApiHighFrequencyTasksRoute,
   ApiHistoryRoute: ApiHistoryRoute,
   ApiHubRoute: ApiHubRoute,
   ApiIntegrationsRoute: ApiIntegrationsRouteWithChildren,
