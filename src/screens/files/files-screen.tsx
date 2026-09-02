@@ -17,6 +17,8 @@ import {
   DialogRoot,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1016,13 +1018,8 @@ function FilePanel({ selectedEntry }: FilePanelProps) {
       <div className="flex h-full flex-col">
         {header}
         <div className="flex-1 min-h-0 p-3">
-          <textarea
-            className={cn(
-              'h-full w-full resize-none rounded-lg border border-[var(--theme-border)] ',
-              'bg-[var(--theme-card)]  px-3 py-2 font-mono text-xs leading-relaxed',
-              'text-[var(--theme-text)]  placeholder:text-[var(--theme-muted)]',
-              'focus:outline-none focus:ring-2 focus:ring-accent-500/30',
-            )}
+          <Textarea
+            className="h-full w-full resize-none font-mono text-xs"
             value={editValue}
             onChange={(e) => {
               setEditValue(e.target.value)
@@ -1360,13 +1357,13 @@ export function FilesScreen() {
                 ? '请输入新名称。'
                 : '请输入要创建的文件夹名称。'}
             </DialogDescription>
-            <input
+            <Input
               value={promptValue}
               onChange={(e) => setPromptValue(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void handlePromptSubmit()
               }}
-              className="w-full rounded-md border border-[var(--theme-border)] dark:border-neutral-700 bg-[var(--theme-bg)]  px-3 py-2 text-sm text-[var(--theme-text)]  focus:outline-none focus:ring-2 focus:ring-primary-300"
+              className="w-full"
               autoFocus
             />
             <div className="flex justify-end gap-2 pt-2">

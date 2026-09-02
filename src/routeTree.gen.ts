@@ -66,8 +66,10 @@ import { Route as ApiIntegrationsRouteImport } from './routes/api/integrations'
 import { Route as ApiHubRouteImport } from './routes/api/hub'
 import { Route as ApiHistoryRouteImport } from './routes/api/history'
 import { Route as ApiHermesRunsRouteImport } from './routes/api/hermes-runs'
+import { Route as ApiHermesKeyTestRouteImport } from './routes/api/hermes-key-test'
 import { Route as ApiHermesJobsRouteImport } from './routes/api/hermes-jobs'
 import { Route as ApiHermesConfigRouteImport } from './routes/api/hermes-config'
+import { Route as ApiHabitsRouteImport } from './routes/api/habits'
 import { Route as ApiGatewayStatusRouteImport } from './routes/api/gateway-status'
 import { Route as ApiFilesRouteImport } from './routes/api/files'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
@@ -114,6 +116,7 @@ import { Route as ApiKnowledgeReadRouteImport } from './routes/api/knowledge/rea
 import { Route as ApiKnowledgeListRouteImport } from './routes/api/knowledge/list'
 import { Route as ApiKnowledgeGraphRouteImport } from './routes/api/knowledge/graph'
 import { Route as ApiIntegrationsTestRouteImport } from './routes/api/integrations.test'
+import { Route as ApiIntegrationsFeishuRouteImport } from './routes/api/integrations.feishu'
 import { Route as ApiHermesProxySplatRouteImport } from './routes/api/hermes-proxy/$'
 import { Route as ApiHermesJobsJobIdRouteImport } from './routes/api/hermes-jobs.$jobId'
 import { Route as ApiEventsReplayRouteImport } from './routes/api/events/replay'
@@ -125,6 +128,7 @@ import { Route as ApiCrewsTemplatesIndexRouteImport } from './routes/api/crews/t
 import { Route as ApiTasksTaskIdMoveRouteImport } from './routes/api/tasks/$taskId.move'
 import { Route as ApiSessionsSessionKeyStatusRouteImport } from './routes/api/sessions/$sessionKey.status'
 import { Route as ApiSessionsSessionKeyActiveRunRouteImport } from './routes/api/sessions/$sessionKey.active-run'
+import { Route as ApiRiskApprovalsRequestIdResolveRouteImport } from './routes/api/risk-approvals.$requestId.resolve'
 import { Route as ApiHermesRunsRunIdEventsRouteImport } from './routes/api/hermes-runs.$runId.events'
 import { Route as ApiCrewsTemplatesIdRouteImport } from './routes/api/crews/templates/$id'
 import { Route as ApiCrewsCrewIdWorkflowRouteImport } from './routes/api/crews/$crewId.workflow'
@@ -419,6 +423,11 @@ const ApiHermesRunsRoute = ApiHermesRunsRouteImport.update({
   path: '/api/hermes-runs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHermesKeyTestRoute = ApiHermesKeyTestRouteImport.update({
+  id: '/api/hermes-key-test',
+  path: '/api/hermes-key-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHermesJobsRoute = ApiHermesJobsRouteImport.update({
   id: '/api/hermes-jobs',
   path: '/api/hermes-jobs',
@@ -427,6 +436,11 @@ const ApiHermesJobsRoute = ApiHermesJobsRouteImport.update({
 const ApiHermesConfigRoute = ApiHermesConfigRouteImport.update({
   id: '/api/hermes-config',
   path: '/api/hermes-config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHabitsRoute = ApiHabitsRouteImport.update({
+  id: '/api/habits',
+  path: '/api/habits',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGatewayStatusRoute = ApiGatewayStatusRouteImport.update({
@@ -659,6 +673,11 @@ const ApiIntegrationsTestRoute = ApiIntegrationsTestRouteImport.update({
   path: '/test',
   getParentRoute: () => ApiIntegrationsRoute,
 } as any)
+const ApiIntegrationsFeishuRoute = ApiIntegrationsFeishuRouteImport.update({
+  id: '/feishu',
+  path: '/feishu',
+  getParentRoute: () => ApiIntegrationsRoute,
+} as any)
 const ApiHermesProxySplatRoute = ApiHermesProxySplatRouteImport.update({
   id: '/api/hermes-proxy/$',
   path: '/api/hermes-proxy/$',
@@ -715,6 +734,12 @@ const ApiSessionsSessionKeyActiveRunRoute =
     id: '/$sessionKey/active-run',
     path: '/$sessionKey/active-run',
     getParentRoute: () => ApiSessionsRoute,
+  } as any)
+const ApiRiskApprovalsRequestIdResolveRoute =
+  ApiRiskApprovalsRequestIdResolveRouteImport.update({
+    id: '/api/risk-approvals/$requestId/resolve',
+    path: '/api/risk-approvals/$requestId/resolve',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiHermesRunsRunIdEventsRoute =
   ApiHermesRunsRunIdEventsRouteImport.update({
@@ -796,8 +821,10 @@ export interface FileRoutesByFullPath {
   '/api/events': typeof ApiEventsRouteWithChildren
   '/api/files': typeof ApiFilesRoute
   '/api/gateway-status': typeof ApiGatewayStatusRoute
+  '/api/habits': typeof ApiHabitsRoute
   '/api/hermes-config': typeof ApiHermesConfigRoute
   '/api/hermes-jobs': typeof ApiHermesJobsRouteWithChildren
+  '/api/hermes-key-test': typeof ApiHermesKeyTestRoute
   '/api/hermes-runs': typeof ApiHermesRunsRouteWithChildren
   '/api/history': typeof ApiHistoryRoute
   '/api/hub': typeof ApiHubRoute
@@ -840,6 +867,7 @@ export interface FileRoutesByFullPath {
   '/api/events/replay': typeof ApiEventsReplayRoute
   '/api/hermes-jobs/$jobId': typeof ApiHermesJobsJobIdRoute
   '/api/hermes-proxy/$': typeof ApiHermesProxySplatRoute
+  '/api/integrations/feishu': typeof ApiIntegrationsFeishuRoute
   '/api/integrations/test': typeof ApiIntegrationsTestRoute
   '/api/knowledge/graph': typeof ApiKnowledgeGraphRoute
   '/api/knowledge/list': typeof ApiKnowledgeListRoute
@@ -881,6 +909,7 @@ export interface FileRoutesByFullPath {
   '/api/crews/$crewId/workflow': typeof ApiCrewsCrewIdWorkflowRoute
   '/api/crews/templates/$id': typeof ApiCrewsTemplatesIdRoute
   '/api/hermes-runs/$runId/events': typeof ApiHermesRunsRunIdEventsRoute
+  '/api/risk-approvals/$requestId/resolve': typeof ApiRiskApprovalsRequestIdResolveRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
   '/api/sessions/$sessionKey/status': typeof ApiSessionsSessionKeyStatusRoute
   '/api/tasks/$taskId/move': typeof ApiTasksTaskIdMoveRoute
@@ -921,8 +950,10 @@ export interface FileRoutesByTo {
   '/api/events': typeof ApiEventsRouteWithChildren
   '/api/files': typeof ApiFilesRoute
   '/api/gateway-status': typeof ApiGatewayStatusRoute
+  '/api/habits': typeof ApiHabitsRoute
   '/api/hermes-config': typeof ApiHermesConfigRoute
   '/api/hermes-jobs': typeof ApiHermesJobsRouteWithChildren
+  '/api/hermes-key-test': typeof ApiHermesKeyTestRoute
   '/api/hermes-runs': typeof ApiHermesRunsRouteWithChildren
   '/api/history': typeof ApiHistoryRoute
   '/api/hub': typeof ApiHubRoute
@@ -965,6 +996,7 @@ export interface FileRoutesByTo {
   '/api/events/replay': typeof ApiEventsReplayRoute
   '/api/hermes-jobs/$jobId': typeof ApiHermesJobsJobIdRoute
   '/api/hermes-proxy/$': typeof ApiHermesProxySplatRoute
+  '/api/integrations/feishu': typeof ApiIntegrationsFeishuRoute
   '/api/integrations/test': typeof ApiIntegrationsTestRoute
   '/api/knowledge/graph': typeof ApiKnowledgeGraphRoute
   '/api/knowledge/list': typeof ApiKnowledgeListRoute
@@ -1006,6 +1038,7 @@ export interface FileRoutesByTo {
   '/api/crews/$crewId/workflow': typeof ApiCrewsCrewIdWorkflowRoute
   '/api/crews/templates/$id': typeof ApiCrewsTemplatesIdRoute
   '/api/hermes-runs/$runId/events': typeof ApiHermesRunsRunIdEventsRoute
+  '/api/risk-approvals/$requestId/resolve': typeof ApiRiskApprovalsRequestIdResolveRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
   '/api/sessions/$sessionKey/status': typeof ApiSessionsSessionKeyStatusRoute
   '/api/tasks/$taskId/move': typeof ApiTasksTaskIdMoveRoute
@@ -1048,8 +1081,10 @@ export interface FileRoutesById {
   '/api/events': typeof ApiEventsRouteWithChildren
   '/api/files': typeof ApiFilesRoute
   '/api/gateway-status': typeof ApiGatewayStatusRoute
+  '/api/habits': typeof ApiHabitsRoute
   '/api/hermes-config': typeof ApiHermesConfigRoute
   '/api/hermes-jobs': typeof ApiHermesJobsRouteWithChildren
+  '/api/hermes-key-test': typeof ApiHermesKeyTestRoute
   '/api/hermes-runs': typeof ApiHermesRunsRouteWithChildren
   '/api/history': typeof ApiHistoryRoute
   '/api/hub': typeof ApiHubRoute
@@ -1092,6 +1127,7 @@ export interface FileRoutesById {
   '/api/events/replay': typeof ApiEventsReplayRoute
   '/api/hermes-jobs/$jobId': typeof ApiHermesJobsJobIdRoute
   '/api/hermes-proxy/$': typeof ApiHermesProxySplatRoute
+  '/api/integrations/feishu': typeof ApiIntegrationsFeishuRoute
   '/api/integrations/test': typeof ApiIntegrationsTestRoute
   '/api/knowledge/graph': typeof ApiKnowledgeGraphRoute
   '/api/knowledge/list': typeof ApiKnowledgeListRoute
@@ -1133,6 +1169,7 @@ export interface FileRoutesById {
   '/api/crews/$crewId/workflow': typeof ApiCrewsCrewIdWorkflowRoute
   '/api/crews/templates/$id': typeof ApiCrewsTemplatesIdRoute
   '/api/hermes-runs/$runId/events': typeof ApiHermesRunsRunIdEventsRoute
+  '/api/risk-approvals/$requestId/resolve': typeof ApiRiskApprovalsRequestIdResolveRoute
   '/api/sessions/$sessionKey/active-run': typeof ApiSessionsSessionKeyActiveRunRoute
   '/api/sessions/$sessionKey/status': typeof ApiSessionsSessionKeyStatusRoute
   '/api/tasks/$taskId/move': typeof ApiTasksTaskIdMoveRoute
@@ -1176,8 +1213,10 @@ export interface FileRouteTypes {
     | '/api/events'
     | '/api/files'
     | '/api/gateway-status'
+    | '/api/habits'
     | '/api/hermes-config'
     | '/api/hermes-jobs'
+    | '/api/hermes-key-test'
     | '/api/hermes-runs'
     | '/api/history'
     | '/api/hub'
@@ -1220,6 +1259,7 @@ export interface FileRouteTypes {
     | '/api/events/replay'
     | '/api/hermes-jobs/$jobId'
     | '/api/hermes-proxy/$'
+    | '/api/integrations/feishu'
     | '/api/integrations/test'
     | '/api/knowledge/graph'
     | '/api/knowledge/list'
@@ -1261,6 +1301,7 @@ export interface FileRouteTypes {
     | '/api/crews/$crewId/workflow'
     | '/api/crews/templates/$id'
     | '/api/hermes-runs/$runId/events'
+    | '/api/risk-approvals/$requestId/resolve'
     | '/api/sessions/$sessionKey/active-run'
     | '/api/sessions/$sessionKey/status'
     | '/api/tasks/$taskId/move'
@@ -1301,8 +1342,10 @@ export interface FileRouteTypes {
     | '/api/events'
     | '/api/files'
     | '/api/gateway-status'
+    | '/api/habits'
     | '/api/hermes-config'
     | '/api/hermes-jobs'
+    | '/api/hermes-key-test'
     | '/api/hermes-runs'
     | '/api/history'
     | '/api/hub'
@@ -1345,6 +1388,7 @@ export interface FileRouteTypes {
     | '/api/events/replay'
     | '/api/hermes-jobs/$jobId'
     | '/api/hermes-proxy/$'
+    | '/api/integrations/feishu'
     | '/api/integrations/test'
     | '/api/knowledge/graph'
     | '/api/knowledge/list'
@@ -1386,6 +1430,7 @@ export interface FileRouteTypes {
     | '/api/crews/$crewId/workflow'
     | '/api/crews/templates/$id'
     | '/api/hermes-runs/$runId/events'
+    | '/api/risk-approvals/$requestId/resolve'
     | '/api/sessions/$sessionKey/active-run'
     | '/api/sessions/$sessionKey/status'
     | '/api/tasks/$taskId/move'
@@ -1427,8 +1472,10 @@ export interface FileRouteTypes {
     | '/api/events'
     | '/api/files'
     | '/api/gateway-status'
+    | '/api/habits'
     | '/api/hermes-config'
     | '/api/hermes-jobs'
+    | '/api/hermes-key-test'
     | '/api/hermes-runs'
     | '/api/history'
     | '/api/hub'
@@ -1471,6 +1518,7 @@ export interface FileRouteTypes {
     | '/api/events/replay'
     | '/api/hermes-jobs/$jobId'
     | '/api/hermes-proxy/$'
+    | '/api/integrations/feishu'
     | '/api/integrations/test'
     | '/api/knowledge/graph'
     | '/api/knowledge/list'
@@ -1512,6 +1560,7 @@ export interface FileRouteTypes {
     | '/api/crews/$crewId/workflow'
     | '/api/crews/templates/$id'
     | '/api/hermes-runs/$runId/events'
+    | '/api/risk-approvals/$requestId/resolve'
     | '/api/sessions/$sessionKey/active-run'
     | '/api/sessions/$sessionKey/status'
     | '/api/tasks/$taskId/move'
@@ -1554,8 +1603,10 @@ export interface RootRouteChildren {
   ApiEventsRoute: typeof ApiEventsRouteWithChildren
   ApiFilesRoute: typeof ApiFilesRoute
   ApiGatewayStatusRoute: typeof ApiGatewayStatusRoute
+  ApiHabitsRoute: typeof ApiHabitsRoute
   ApiHermesConfigRoute: typeof ApiHermesConfigRoute
   ApiHermesJobsRoute: typeof ApiHermesJobsRouteWithChildren
+  ApiHermesKeyTestRoute: typeof ApiHermesKeyTestRoute
   ApiHermesRunsRoute: typeof ApiHermesRunsRouteWithChildren
   ApiHistoryRoute: typeof ApiHistoryRoute
   ApiHubRoute: typeof ApiHubRoute
@@ -1613,6 +1664,7 @@ export interface RootRouteChildren {
   ApiApprovalsApprovalIdApproveRoute: typeof ApiApprovalsApprovalIdApproveRoute
   ApiApprovalsApprovalIdDenyRoute: typeof ApiApprovalsApprovalIdDenyRoute
   ApiCrewsTemplatesIdRoute: typeof ApiCrewsTemplatesIdRoute
+  ApiRiskApprovalsRequestIdResolveRoute: typeof ApiRiskApprovalsRequestIdResolveRoute
   ApiCrewsTemplatesIndexRoute: typeof ApiCrewsTemplatesIndexRoute
 }
 
@@ -2017,6 +2069,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHermesRunsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/hermes-key-test': {
+      id: '/api/hermes-key-test'
+      path: '/api/hermes-key-test'
+      fullPath: '/api/hermes-key-test'
+      preLoaderRoute: typeof ApiHermesKeyTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/hermes-jobs': {
       id: '/api/hermes-jobs'
       path: '/api/hermes-jobs'
@@ -2029,6 +2088,13 @@ declare module '@tanstack/react-router' {
       path: '/api/hermes-config'
       fullPath: '/api/hermes-config'
       preLoaderRoute: typeof ApiHermesConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/habits': {
+      id: '/api/habits'
+      path: '/api/habits'
+      fullPath: '/api/habits'
+      preLoaderRoute: typeof ApiHabitsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/gateway-status': {
@@ -2353,6 +2419,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntegrationsTestRouteImport
       parentRoute: typeof ApiIntegrationsRoute
     }
+    '/api/integrations/feishu': {
+      id: '/api/integrations/feishu'
+      path: '/feishu'
+      fullPath: '/api/integrations/feishu'
+      preLoaderRoute: typeof ApiIntegrationsFeishuRouteImport
+      parentRoute: typeof ApiIntegrationsRoute
+    }
     '/api/hermes-proxy/$': {
       id: '/api/hermes-proxy/$'
       path: '/api/hermes-proxy/$'
@@ -2429,6 +2502,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/sessions/$sessionKey/active-run'
       preLoaderRoute: typeof ApiSessionsSessionKeyActiveRunRouteImport
       parentRoute: typeof ApiSessionsRoute
+    }
+    '/api/risk-approvals/$requestId/resolve': {
+      id: '/api/risk-approvals/$requestId/resolve'
+      path: '/api/risk-approvals/$requestId/resolve'
+      fullPath: '/api/risk-approvals/$requestId/resolve'
+      preLoaderRoute: typeof ApiRiskApprovalsRequestIdResolveRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/hermes-runs/$runId/events': {
       id: '/api/hermes-runs/$runId/events'
@@ -2557,10 +2637,12 @@ const ApiHermesRunsRouteWithChildren = ApiHermesRunsRoute._addFileChildren(
 )
 
 interface ApiIntegrationsRouteChildren {
+  ApiIntegrationsFeishuRoute: typeof ApiIntegrationsFeishuRoute
   ApiIntegrationsTestRoute: typeof ApiIntegrationsTestRoute
 }
 
 const ApiIntegrationsRouteChildren: ApiIntegrationsRouteChildren = {
+  ApiIntegrationsFeishuRoute: ApiIntegrationsFeishuRoute,
   ApiIntegrationsTestRoute: ApiIntegrationsTestRoute,
 }
 
@@ -2712,8 +2794,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEventsRoute: ApiEventsRouteWithChildren,
   ApiFilesRoute: ApiFilesRoute,
   ApiGatewayStatusRoute: ApiGatewayStatusRoute,
+  ApiHabitsRoute: ApiHabitsRoute,
   ApiHermesConfigRoute: ApiHermesConfigRoute,
   ApiHermesJobsRoute: ApiHermesJobsRouteWithChildren,
+  ApiHermesKeyTestRoute: ApiHermesKeyTestRoute,
   ApiHermesRunsRoute: ApiHermesRunsRouteWithChildren,
   ApiHistoryRoute: ApiHistoryRoute,
   ApiHubRoute: ApiHubRoute,
@@ -2771,6 +2855,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiApprovalsApprovalIdApproveRoute: ApiApprovalsApprovalIdApproveRoute,
   ApiApprovalsApprovalIdDenyRoute: ApiApprovalsApprovalIdDenyRoute,
   ApiCrewsTemplatesIdRoute: ApiCrewsTemplatesIdRoute,
+  ApiRiskApprovalsRequestIdResolveRoute: ApiRiskApprovalsRequestIdResolveRoute,
   ApiCrewsTemplatesIndexRoute: ApiCrewsTemplatesIndexRoute,
 }
 export const routeTree = rootRouteImport

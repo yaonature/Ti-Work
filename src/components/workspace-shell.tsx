@@ -11,7 +11,7 @@
  * Chat routes get the full ChatScreen treatment.
  * Non-chat routes show the sub-page content.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Suspense, lazy } from 'react'
@@ -27,7 +27,6 @@ import { useSwipeNavigation } from '@/hooks/use-swipe-navigation'
 import { ChatPanel } from '@/components/chat-panel'
 import { ChatPanelToggle } from '@/components/chat-panel-toggle'
 import { LoginScreen } from '@/components/auth/login-screen'
-import { MobileTabBar } from '@/components/mobile-tab-bar'
 import { MobileHamburgerMenu } from '@/components/mobile-hamburger-menu'
 import { MobilePageHeader } from '@/components/mobile-page-header'
 import { HermesOnboarding } from '@/components/onboarding/hermes-onboarding'
@@ -37,7 +36,6 @@ import { useMobileKeyboard } from '@/hooks/use-mobile-keyboard'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { SystemMetricsFooter } from '@/components/system-metrics-footer'
 import { CommandPalette } from '@/components/command-palette'
-import { AgentStatusStrip } from '@/components/agent-status-strip'
 import { useSettings } from '@/hooks/use-settings'
 // ActivityTicker moved to dashboard-only (too noisy for global header)
 
@@ -67,12 +65,6 @@ export function WorkspaceShell() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
-  const isElectron = useMemo(
-    () =>
-      typeof navigator !== 'undefined' && /Electron/.test(navigator.userAgent),
-    [],
-  )
-
   const { settings } = useSettings()
   const sidebarCollapsed = useWorkspaceStore((s) => s.sidebarCollapsed)
   const chatFocusMode = useWorkspaceStore((s) => s.chatFocusMode)
@@ -96,14 +88,10 @@ export function WorkspaceShell() {
   // Map pathname to tab index (mirrors TABS order in mobile-tab-bar)
   const getTabIndex = useCallback((path: string): number => {
     if (path === '/dashboard') return 0
-    if (path.startsWith('/chat') || path === '/new' || path === '/') return 1
+    if (path.startsWith('/agents')) return 1
     if (path.startsWith('/files')) return 2
-    if (path.startsWith('/terminal')) return 3
-    if (path.startsWith('/jobs')) return 4
-    if (path.startsWith('/memory')) return 5
-    if (path.startsWith('/skills')) return 6
-    if (path.startsWith('/profiles')) return 7
-    if (path.startsWith('/settings')) return 8
+    if (path.startsWith('/jobs')) return 3
+    if (path.startsWith('/settings')) return 4
     return -1
   }, [])
 
@@ -126,24 +114,12 @@ export function WorkspaceShell() {
 
   // Derive active session from URL
   const mobilePageTitle = (() => {
-    if (pathname.startsWith('/terminal')) return '终端'
-    if (pathname.startsWith('/files')) return '文件'
-    if (pathname.startsWith('/jobs')) return '任务'
-    if (pathname.startsWith('/memory')) return '记忆'
-    if (pathname.startsWith('/skills')) return '技能'
-    if (pathname.startsWith('/agents')) return '智能体'
-    if (pathname.startsWith('/conductor')) return '任务编排'
-    if (pathname.startsWith('/operations')) return '运维视图'
-    if (pathname.startsWith('/tasks')) return '任务'
-    if (pathname.startsWith('/patterns')) return '模式与纠正'
-    if (pathname.startsWith('/analytics')) return '分析'
-    if (pathname.startsWith('/session-history')) return '会话历史'
-    if (pathname.startsWith('/audit')) return '审计记录'
-    if (pathname.startsWith('/logs')) return '日志'
-    if (pathname.startsWith('/profiles')) return '用户档案'
+    if (pathname.startsWith('/terminal')) return '执行终端'
+    if (pathname.startsWith('/files')) return '执行中心'
+    if (pathname.startsWith('/jobs')) return '定时任务'
+    if (pathname.startsWith('/agents')) return '数字员工'
+    if (pathname.startsWith('/audit')) return '权限与安全'
     if (pathname.startsWith('/settings')) return '设置'
-    if (pathname.startsWith('/debug')) return '调试'
-    if (pathname.startsWith('/activity')) return '活动'
     return null
   })()
 
@@ -203,15 +179,6 @@ export function WorkspaceShell() {
     media.addEventListener('change', update)
     return () => media.removeEventListener('change', update)
   }, [])
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return
-    const titlebarHeight = isElectron ? '40px' : '0px'
-    document.documentElement.style.setProperty('--titlebar-h', titlebarHeight)
-    return () => {
-      document.documentElement.style.removeProperty('--titlebar-h')
-    }
-  }, [isElectron])
 
   // On mobile, close the sidebar after every navigation (drawer behaviour).
   // Only update state when actually needed to avoid spurious store writes.
@@ -312,10 +279,8 @@ export function WorkspaceShell() {
     return <LoginScreen />
   }
 
-  const shellStyle: React.CSSProperties & Record<'--titlebar-h', string> = {
+  const shellStyle: React.CSSProperties = {
     height: 'var(--vvh, 100dvh)',
-    paddingTop: isElectron ? 40 : 0,
-    '--titlebar-h': isElectron ? '40px' : '0px',
   }
 
   return (
@@ -324,34 +289,7 @@ export function WorkspaceShell() {
         className="relative overflow-hidden theme-bg theme-text flex flex-col"
         style={shellStyle}
       >
-        <AgentStatusStrip />
         <HermesReconnectBanner enabled={authState.checked} />
-        {/* Electron: native-style title bar (absolute over the padding) */}
-        {isElectron && (
-          <div
-            className="absolute inset-x-0 top-0 flex h-10 items-center border-b border-primary-200 z-40"
-            style={
-              {
-                WebkitAppRegion: 'drag',
-                background: 'var(--theme-sidebar)',
-              } as React.CSSProperties
-            }
-          >
-            {/* Traffic light spacer (left ~78px for macOS buttons) */}
-            <div className="w-[78px] shrink-0" />
-            {/* Centered title */}
-            <div className="flex-1 text-center">
-              <span
-                className="text-[13px] font-medium select-none"
-                style={{ color: 'var(--theme-accent, #B98A44)' }}
-              >
-                Ti Work
-              </span>
-            </div>
-            {/* Right spacer to balance */}
-            <div className="w-[78px] shrink-0" />
-          </div>
-        )}
         <div
           className={cn(
             'grid flex-1 min-h-0 grid-cols-1 grid-rows-[minmax(0,1fr)] overflow-hidden',
@@ -409,7 +347,7 @@ export function WorkspaceShell() {
               }}
             >
               {isMobile && isOnTerminalRoute && (
-                <MobilePageHeader title="终端" />
+                <MobilePageHeader title="执行终端" />
               )}
               <div className="flex-1 min-h-0 overflow-hidden">
                 <Suspense fallback={null}>

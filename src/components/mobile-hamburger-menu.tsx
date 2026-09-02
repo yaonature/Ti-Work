@@ -1,17 +1,14 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
-  BrainIcon,
+  AiUserIcon,
   Cancel01Icon,
-  Chat01Icon,
   Clock01Icon,
-  CommandLineIcon,
   DashboardSquare01Icon,
   File01Icon,
   Menu01Icon,
-  PuzzleIcon,
   Settings01Icon,
-  UserGroupIcon,
+  TimelineIcon,
 } from '@hugeicons/core-free-icons'
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -24,13 +21,6 @@ import {
 
 const NAV_ITEMS = [
   {
-    id: 'chat',
-    label: '会话',
-    icon: Chat01Icon,
-    to: '/chat/main',
-    match: (p: string) => p.startsWith('/chat') || p === '/new' || p === '/',
-  },
-  {
     id: 'dashboard',
     label: '工作台',
     icon: DashboardSquare01Icon,
@@ -38,39 +28,32 @@ const NAV_ITEMS = [
     match: (p: string) => p.startsWith('/dashboard'),
   },
   {
-    id: 'terminal',
-    label: '终端',
-    icon: CommandLineIcon,
-    to: '/terminal',
-    match: (p: string) => p.startsWith('/terminal'),
+    id: 'agents',
+    label: '数字员工',
+    icon: AiUserIcon,
+    to: '/agents',
+    match: (p: string) => p.startsWith('/agents'),
+  },
+  {
+    id: 'files',
+    label: '执行中心',
+    icon: File01Icon,
+    to: '/files',
+    match: (p: string) => p.startsWith('/files'),
   },
   {
     id: 'jobs',
-    label: '任务',
+    label: '定时任务',
     icon: Clock01Icon,
     to: '/jobs',
     match: (p: string) => p.startsWith('/jobs'),
   },
   {
-    id: 'memory',
-    label: '记忆',
-    icon: BrainIcon,
-    to: '/memory',
-    match: (p: string) => p.startsWith('/memory'),
-  },
-  {
-    id: 'skills',
-    label: '技能',
-    icon: PuzzleIcon,
-    to: '/skills',
-    match: (p: string) => p.startsWith('/skills'),
-  },
-  {
-    id: 'profiles',
-    label: '用户档案',
-    icon: UserGroupIcon,
-    to: '/profiles',
-    match: (p: string) => p.startsWith('/profiles'),
+    id: 'audit',
+    label: '权限与安全',
+    icon: TimelineIcon,
+    to: '/audit',
+    match: (p: string) => p.startsWith('/audit'),
   },
 ]
 
@@ -182,7 +165,7 @@ export function MobileHamburgerMenu() {
                 className="font-bold text-[15px] tracking-tight"
                 style={{ color: 'var(--color-ink, #111)' }}
               >
-                Hermes
+                Ti Work
               </span>
               <span
                 className="text-[11px]"

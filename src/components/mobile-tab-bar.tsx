@@ -1,15 +1,11 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
-  BrainIcon,
-  Chat01Icon,
+  AiUserIcon,
   Clock01Icon,
-  CommandLineIcon,
   DashboardSquare01Icon,
   File01Icon,
-  PuzzleIcon,
   Settings01Icon,
-  UserGroupIcon,
 } from '@hugeicons/core-free-icons'
 import {
   useCallback,
@@ -37,7 +33,7 @@ export const MOBILE_TAB_BAR_OFFSET = 'var(--tabbar-h, 80px)'
 type TabItem = {
   id: string
   label: string
-  icon: typeof Chat01Icon
+  icon: typeof DashboardSquare01Icon
   to: string
   match: (path: string) => boolean
 }
@@ -45,59 +41,31 @@ type TabItem = {
 const TABS: Array<TabItem> = [
   {
     id: 'dashboard',
-    label: '首页',
+    label: '工作台',
     icon: DashboardSquare01Icon,
     to: '/dashboard',
     match: (p) => p === '/dashboard',
   },
   {
-    id: 'chat',
-    label: '会话',
-    icon: Chat01Icon,
-    to: '/chat/main',
-    match: (p) => p.startsWith('/chat') || p === '/new',
+    id: 'agents',
+    label: '数字员工',
+    icon: AiUserIcon,
+    to: '/agents',
+    match: (p) => p.startsWith('/agents'),
   },
   {
     id: 'files',
-    label: '文件',
+    label: '执行中心',
     icon: File01Icon,
     to: '/files',
     match: (p) => p.startsWith('/files'),
   },
   {
-    id: 'terminal',
-    label: '终端',
-    icon: CommandLineIcon,
-    to: '/terminal',
-    match: (p) => p.startsWith('/terminal'),
-  },
-  {
     id: 'jobs',
-    label: '任务',
+    label: '定时任务',
     icon: Clock01Icon,
     to: '/jobs',
     match: (p) => p.startsWith('/jobs'),
-  },
-  {
-    id: 'memory',
-    label: '记忆',
-    icon: BrainIcon,
-    to: '/memory',
-    match: (p) => p.startsWith('/memory'),
-  },
-  {
-    id: 'skills',
-    label: '技能',
-    icon: PuzzleIcon,
-    to: '/skills',
-    match: (p) => p.startsWith('/skills'),
-  },
-  {
-    id: 'profiles',
-    label: '档案',
-    icon: UserGroupIcon,
-    to: '/profiles',
-    match: (p) => p.startsWith('/profiles'),
   },
   {
     id: 'settings',
@@ -275,6 +243,7 @@ export function MobileTabBar() {
                   'outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0',
                 )}
                 data-tab-idx={idx}
+                data-testid={`mobile_tab_${tab.id}`}
               >
                 <span
                   className={cn(

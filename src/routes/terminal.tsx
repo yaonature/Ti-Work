@@ -1,12 +1,6 @@
-import { Suspense, lazy } from 'react'
+import { useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { usePageTitle } from '@/hooks/use-page-title'
-
-const TerminalWorkspace = lazy(() =>
-  import('@/components/terminal/terminal-workspace').then((m) => ({
-    default: m.TerminalWorkspace,
-  })),
-)
 
 export const Route = createFileRoute('/terminal')({
   component: TerminalRoute,
@@ -14,18 +8,18 @@ export const Route = createFileRoute('/terminal')({
     return (
       <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-primary-50">
         <h2 className="text-xl font-semibold text-primary-900 mb-3">
-          终端错误
+          执行中心跳转失败
         </h2>
         <p className="text-sm text-primary-600 mb-4 max-w-md">
           {error instanceof Error
             ? error.message
-            : '终端初始化失败'}
+            : '执行终端初始化失败'}
         </p>
         <button
           onClick={() => window.location.reload()}
           className="px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors"
         >
-          重新加载终端
+          重新加载页面
         </button>
       </div>
     )
@@ -33,7 +27,16 @@ export const Route = createFileRoute('/terminal')({
 })
 
 function TerminalRoute() {
-  usePageTitle('文件整理')
-  // Terminal is rendered persistently in WorkspaceShell — return null here to avoid double mount
+  usePageTitle('执行终端')
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    void navigate({
+      to: '/files',
+      search: { view: 'terminal' },
+      replace: true,
+    })
+  }, [navigate])
+
   return null
 }

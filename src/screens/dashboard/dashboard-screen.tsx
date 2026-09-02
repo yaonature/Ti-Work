@@ -483,6 +483,7 @@ function QuickAction({
   accentColor,
   disabled,
   badge,
+  testId,
 }: {
   label: string
   icon: string
@@ -490,12 +491,14 @@ function QuickAction({
   accentColor: string
   disabled?: boolean
   badge?: string
+  testId?: string
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
+      data-testid={testId}
       className={cn(
         'relative overflow-hidden flex min-h-12 w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all',
         'border-[var(--theme-border)] bg-[var(--theme-card)] text-left',
@@ -678,10 +681,11 @@ export function DashboardScreen() {
             }
           />
           <QuickAction
-            label="终端"
+            label="执行中心"
             icon="💻"
             accentColor="#22c55e"
-            onClick={() => navigate({ to: '/terminal' })}
+            onClick={() => navigate({ to: '/files' })}
+            testId="dashboard_quick_action_execution_center"
           />
           <QuickAction
             label="技能"

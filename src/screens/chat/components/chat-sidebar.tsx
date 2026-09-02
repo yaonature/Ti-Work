@@ -1,35 +1,20 @@
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
+  Add01Icon,
   AiUserIcon,
-  Analytics01Icon,
-  ArrowDown01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
-  BookOpen01Icon,
-  BrainIcon,
-  CheckListIcon,
   Clock01Icon,
-  ComputerTerminal01Icon,
-  ConsoleIcon,
   DashboardSquare01Icon,
   File01Icon,
-  Flag01Icon,
-  GitBranchIcon,
-  HelpCircleIcon,
-  MessageMultiple01Icon,
   Moon02Icon,
-  PencilEdit02Icon,
-  PuzzleIcon,
-  Radar01Icon,
-  Search01Icon,
   Settings01Icon,
+  Sun02Icon,
   TimelineIcon,
-  UserGroupIcon,
-  UserMultiple02Icon,
 } from '@hugeicons/core-free-icons'
 import { AnimatePresence, motion } from 'motion/react'
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useRouterState } from '@tanstack/react-router'
+import { memo, useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { CHAT_OPEN_SETTINGS_EVENT } from '../chat-events'
 import { useChatSettings as useSidebarSettings } from '../hooks/use-chat-settings'
 import { useDeleteSession } from '../hooks/use-delete-session'
@@ -40,6 +25,13 @@ import { SessionDeleteDialog } from './sidebar/session-delete-dialog'
 import { SidebarSessions } from './sidebar/sidebar-sessions'
 import type { ChatOpenSettingsDetail } from '../chat-events'
 import type { SessionMeta } from '../types'
+import type {SettingsThemeMode} from '@/hooks/use-settings';
+import {
+  
+  applyTheme,
+  getStoredThemeMode,
+  useSettingsStore
+} from '@/hooks/use-settings'
 import { SettingsDialog } from '@/components/settings-dialog'
 import {
   TooltipContent,
@@ -48,34 +40,38 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { getPendingApprovals } from '@/lib/approvals-store'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { UserAvatar } from '@/components/avatars'
-import { SEARCH_MODAL_EVENTS, useSearchModal } from '@/hooks/use-search-modal'
-import {
-  selectChatProfileAvatarDataUrl,
-  selectChatProfileDisplayName,
-  useChatSettingsStore,
-} from '@/hooks/use-chat-settings'
-import { StatusDot } from '@/components/status-indicator'
-import {
-  MenuContent,
-  MenuItem,
-  MenuRoot,
-  MenuTrigger,
-} from '@/components/ui/menu'
+import { StatusIndicator } from '@/components/status-indicator'
 
 type WorkspaceStats = Record<string, unknown>
 
 function ThemeToggleMini() {
+  const [mode, setMode] = useState<SettingsThemeMode>(getStoredThemeMode)
+  const updateSettings = useSettingsStore((state) => state.updateSettings)
+  const isLight =
+    mode === 'light' ||
+    (mode === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-color-scheme: light)').matches)
+
+  function toggleTheme() {
+    const next: SettingsThemeMode = isLight ? 'dark' : 'light'
+    setMode(next)
+    applyTheme(next)
+    updateSettings({ theme: next })
+  }
+
   return (
-    <span
-      className="shrink-0 rounded-lg p-1.5"
+    <button
+      type="button"
+      onClick={toggleTheme}
+      className="shrink-0 rounded-lg p-1.5 transition-colors hover:bg-[var(--theme-hover)] hover:text-[var(--theme-text)]"
       style={{ color: 'var(--theme-muted)' }}
-      aria-label="深色模式"
+      aria-label={isLight ? '切换到深色模式' : '切换到浅色模式'}
+      title={isLight ? '切换到深色模式' : '切换到浅色模式'}
     >
-      <HugeiconsIcon icon={Moon02Icon} size={16} strokeWidth={1.5} />
-    </span>
+      <HugeiconsIcon icon={isLight ? Moon02Icon : Sun02Icon} size={16} strokeWidth={1.5} />
+    </button>
   )
 }
 
@@ -101,6 +97,7 @@ type NavItemDef = {
   to?: string
   icon: unknown
   label: string
+  testId?: string
   active: boolean
   onClick?: () => void
   disabled?: boolean
@@ -201,6 +198,7 @@ function NavItem({
                   onClick={handleSelect}
                   className={cls}
                   data-tour={item.dataTour}
+                  data-testid={item.testId}
                 >
                   {iconEl}
                 </Link>
@@ -217,6 +215,7 @@ function NavItem({
         onClick={handleSelect}
         className={cls}
         data-tour={item.dataTour}
+        data-testid={item.testId}
       >
         {iconEl}
         {labelEl}
@@ -269,189 +268,90 @@ function NavItem({
   )
 }
 
-// ── Last-visited route tracking ─────────────────────────────────────────
+// ── New session button ──────────────────────────────────────────────────
 
-const LAST_ROUTE_KEY = 'hermes-sidebar-last-route'
-
-function getLastRoute(section: string): string | null {
-  try {
-    const stored = localStorage.getItem(LAST_ROUTE_KEY)
-    if (!stored) return null
-    const map = JSON.parse(stored) as Record<string, string>
-    return map[section] || null
-  } catch {
-    return null
-  }
-}
-
-function setLastRoute(section: string, route: string) {
-  try {
-    const stored = localStorage.getItem(LAST_ROUTE_KEY)
-    const map = stored ? (JSON.parse(stored) as Record<string, string>) : {}
-    map[section] = route
-    localStorage.setItem(LAST_ROUTE_KEY, JSON.stringify(map))
-  } catch {
-    // ignore
-  }
-}
-
-// ── Section header ──────────────────────────────────────────────────────
-
-function SectionLabel({
-  label,
+function NewSessionButton({
   isCollapsed,
+  creatingSession,
+  onSelect,
   transition,
-  collapsible,
-  expanded,
-  onToggle,
-  navigateTo,
 }: {
-  label: string
   isCollapsed: boolean
+  creatingSession: boolean
+  onSelect: () => void
   transition: Record<string, unknown>
-  collapsible?: boolean
-  expanded?: boolean
-  onToggle?: () => void
-  navigateTo?: string
 }) {
-  if (isCollapsed) return null
+  const cls = cn(
+    'w-full h-10 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)] text-[var(--theme-text)]',
+    'hover:bg-[var(--theme-hover)] transition-colors justify-center gap-2',
+    isCollapsed && 'px-0',
+    !isCollapsed && 'px-3',
+    creatingSession && 'opacity-60 pointer-events-none',
+  )
 
-  const labelContent = (
-    <span className="text-[10px] font-semibold uppercase tracking-wider text-primary-500 dark:text-neutral-400 select-none">
-      {label}
+  const iconEl = (
+    <span
+      className={cn(
+        'flex size-6 shrink-0 items-center justify-center rounded-full border border-current',
+        'text-[var(--theme-muted)]',
+      )}
+    >
+      <HugeiconsIcon icon={Add01Icon} size={14} strokeWidth={1.5} />
     </span>
   )
 
-  if (collapsible) {
-    return (
-      <motion.div
-        layout
-        transition={{ layout: transition }}
-        className="flex items-center gap-1.5 px-3 pt-3 pb-1 w-full"
-      >
-        {navigateTo ? (
-          <Link
-            to={navigateTo}
-            className="text-[10px] font-semibold uppercase tracking-wider text-primary-500 dark:text-neutral-400 hover:text-primary-700 dark:hover:text-neutral-200 select-none transition-colors"
-          >
-            {label}
-          </Link>
-        ) : (
-          labelContent
-        )}
-        <button
-          type="button"
-          onClick={onToggle}
-          className="ml-auto p-0.5 rounded hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors"
-          aria-label={expanded ? `收起 ${label}` : `展开 ${label}`}
+  const labelEl = (
+    <AnimatePresence initial={false} mode="wait">
+      {!isCollapsed ? (
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={transition}
+          className="text-sm font-medium"
         >
-          <HugeiconsIcon
-            icon={ArrowDown01Icon}
-            size={12}
-            strokeWidth={2}
-            className={cn(
-              'text-primary-500 transition-transform duration-150',
-              expanded ? 'rotate-0' : '-rotate-90',
-            )}
+          新会话
+        </motion.span>
+      ) : null}
+    </AnimatePresence>
+  )
+
+  if (isCollapsed) {
+    return (
+      <TooltipProvider>
+        <TooltipRoot>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onSelect}
+                className={cls}
+                disabled={creatingSession}
+                aria-label="新会话"
+              >
+                {iconEl}
+              </Button>
+            }
           />
-        </button>
-      </motion.div>
+          <TooltipContent side="right">新会话</TooltipContent>
+        </TooltipRoot>
+      </TooltipProvider>
     )
   }
 
   return (
-    <motion.div
-      layout
-      transition={{ layout: transition }}
-      className="px-3 pt-3 pb-1"
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={onSelect}
+      className={cls}
+      disabled={creatingSession}
     >
-      {navigateTo ? (
-        <Link
-          to={navigateTo}
-          className="text-[10px] font-semibold uppercase tracking-wider text-primary-500 dark:text-neutral-400 hover:text-primary-700 dark:hover:text-neutral-200 select-none transition-colors"
-        >
-          {label}
-        </Link>
-      ) : (
-        labelContent
-      )}
-    </motion.div>
+      {iconEl}
+      {labelEl}
+    </Button>
   )
-}
-
-// ── Collapsible section wrapper ─────────────────────────────────────────
-
-function CollapsibleSection({
-  expanded,
-  items,
-  isCollapsed,
-  transition,
-  onSelectSession,
-}: {
-  expanded: boolean
-  items: Array<NavItemDef>
-  isCollapsed: boolean
-  transition: Record<string, unknown>
-  onSelectSession?: () => void
-}) {
-  return (
-    <AnimatePresence initial={false}>
-      {expanded && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="overflow-hidden space-y-0.5"
-        >
-          {items.map((item) => (
-            <motion.div
-              key={item.label}
-              layout
-              transition={{ layout: transition }}
-              className="w-full"
-            >
-              <NavItem
-                item={item}
-                isCollapsed={isCollapsed}
-                transition={transition}
-                onSelectSession={onSelectSession}
-              />
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
-
-// ── Persist helper ──────────────────────────────────────────────────────
-
-function usePersistedBool(key: string, defaultValue: boolean) {
-  const [value, setValue] = useState(() => {
-    try {
-      const stored = localStorage.getItem(key)
-      if (stored === 'true') return true
-      if (stored === 'false') return false
-      return defaultValue
-    } catch {
-      return defaultValue
-    }
-  })
-
-  function toggle() {
-    setValue((prev) => {
-      const next = !prev
-      try {
-        localStorage.setItem(key, String(next))
-      } catch {
-        // ignore
-      }
-      return next
-    })
-  }
-
-  return [value, toggle] as const
 }
 
 // ── Main component ──────────────────────────────────────────────────────
@@ -459,6 +359,8 @@ function usePersistedBool(key: string, defaultValue: boolean) {
 function ChatSidebarComponent({
   sessions,
   activeFriendlyId,
+  creatingSession,
+  onCreateSession,
   isCollapsed,
   onToggleCollapse,
   onSelectSession,
@@ -470,19 +372,14 @@ function ChatSidebarComponent({
 }: ChatSidebarProps) {
   const { settingsOpen, settingsSection, setSettingsOpen, handleOpenSettings } =
     useSidebarSettings()
-  const profileDisplayName = useChatSettingsStore(selectChatProfileDisplayName)
-  const profileAvatarDataUrl = useChatSettingsStore(
-    selectChatProfileAvatarDataUrl,
-  )
   const { deleteSession } = useDeleteSession()
   const { renameSession } = useRenameSession()
-  const openSearchModal = useSearchModal((state) => state.openModal)
-  const isSearchModalOpen = useSearchModal((state) => state.isOpen)
   const pathname = useRouterState({
     select: function selectPathname(state) {
       return state.location.pathname
     },
   })
+  const navigate = useNavigate()
 
   useEffect(() => {
     function handleOpenSettingsEvent(event: Event) {
@@ -501,101 +398,17 @@ function ChatSidebarComponent({
     }
   }, [handleOpenSettings])
 
-  // Platform-aware modifier key
-  const _mod = useMemo(
-    () =>
-      typeof navigator !== 'undefined' &&
-      /Mac|iPod|iPhone|iPad/.test(navigator.userAgent)
-        ? '⌘'
-        : 'Ctrl+',
-    [],
-  )
-
   // Route active states
-  const isChatActive =
-    pathname === '/' || pathname === '/new' || pathname.startsWith('/chat')
-  const isNewSessionActive =
-    pathname === '/new' || pathname.startsWith('/chat/new')
-  const _isSettingsActive = pathname === '/settings'
-  const isSkillsActive = pathname === '/skills'
-  const isProfilesActive = pathname === '/profiles'
-  const isFilesActive = pathname === '/files'
-  const isTerminalActive = pathname === '/terminal'
-  const isJobsActive = pathname === '/jobs'
-  const isMemoryActive = pathname === '/memory'
-  const isCrewsActive = pathname === '/crews' || pathname.startsWith('/crews/')
-  const isConductorActive = pathname === '/conductor'
-  const isOperationsActive = pathname === '/operations'
-  const isTasksActive = pathname === '/tasks'
+  const isDashboardActive = pathname === '/dashboard'
   const isAgentsActive = pathname === '/agents'
-  const isPatternsActive = pathname === '/patterns'
-  const isAnalyticsActive = pathname === '/analytics'
-  const isLineageActive = pathname === '/lineage'
-  const isSessionHistoryActive = pathname === '/session-history'
+  const isFilesActive = pathname === '/files'
+  const isJobsActive = pathname === '/jobs'
   const isAuditActive = pathname === '/audit'
-  const isLogsActive = pathname === '/logs'
-  const isHelpActive = pathname === '/help'
-  const isDocsActive = pathname === '/docs'
-  const workbenchRoutes = ['/dashboard']
-  const businessRoutes = ['/chat', '/new', '/agents', '/session-history']
-  const documentRoutes = ['/files', '/terminal']
-  const knowledgeRoutes = ['/memory', '/skills', '/profiles', '/patterns']
-  const collaborationRoutes = ['/tasks', '/jobs', '/crews', '/conductor']
-  const managementRoutes = [
-    '/operations',
-    '/analytics',
-    '/lineage',
-    '/audit',
-    '/logs',
-  ]
-
-  useEffect(() => {
-    if (workbenchRoutes.includes(pathname)) setLastRoute('workbench', pathname)
-    if (businessRoutes.includes(pathname)) setLastRoute('business', pathname)
-    if (documentRoutes.includes(pathname)) setLastRoute('document', pathname)
-    if (knowledgeRoutes.includes(pathname)) setLastRoute('knowledge', pathname)
-    if (collaborationRoutes.includes(pathname))
-      setLastRoute('collaboration', pathname)
-    if (managementRoutes.includes(pathname)) setLastRoute('management', pathname)
-  }, [pathname])
-
-  const workbenchNav = getLastRoute('workbench') || '/dashboard'
-  const businessNav = getLastRoute('business') || '/chat'
-  const documentNav = getLastRoute('document') || '/files'
-  const knowledgeNav = getLastRoute('knowledge') || '/memory'
-  const collaborationNav = getLastRoute('collaboration') || '/tasks'
-  const managementNav = getLastRoute('management') || '/operations'
 
   const transition = {
     duration: 0.15,
     ease: isCollapsed ? 'easeIn' : 'easeOut',
   } as const
-
-  // Collapsible section states
-  const [workbenchExpanded, toggleWorkbench] = usePersistedBool(
-    'hermes-sidebar-workbench-expanded',
-    true,
-  )
-  const [businessExpanded, toggleBusiness] = usePersistedBool(
-    'hermes-sidebar-business-expanded',
-    true,
-  )
-  const [documentExpanded, toggleDocument] = usePersistedBool(
-    'hermes-sidebar-document-expanded',
-    true,
-  )
-  const [knowledgeExpanded, toggleKnowledge] = usePersistedBool(
-    'hermes-sidebar-knowledge-expanded',
-    true,
-  )
-  const [collaborationExpanded, toggleCollaboration] = usePersistedBool(
-    'hermes-sidebar-collaboration-expanded',
-    true,
-  )
-  const [managementExpanded, toggleManagement] = usePersistedBool(
-    'hermes-sidebar-management-expanded',
-    false,
-  )
 
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
   const [renameSessionKey, setRenameSessionKey] = useState<string | null>(null)
@@ -711,215 +524,50 @@ function ChatSidebarComponent({
     }
   }, [isCollapsed, isMobile, onToggleCollapse])
 
-  useEffect(() => {
-    function handleOpenSettingsFromSearch() {
-      handleOpenSettings()
-    }
-
-    window.addEventListener(
-      SEARCH_MODAL_EVENTS.OPEN_SETTINGS,
-      handleOpenSettingsFromSearch,
-    )
-    return () => {
-      window.removeEventListener(
-        SEARCH_MODAL_EVENTS.OPEN_SETTINGS,
-        handleOpenSettingsFromSearch,
-      )
-    }
-  }, [handleOpenSettings])
-
-  // ── Pending approvals badge ──────────────────────────────────────────
-
-  const [pendingApprovalCount, setPendingApprovalCount] = useState(
-    () => getPendingApprovals().length,
-  )
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setPendingApprovalCount(getPendingApprovals().length)
-    }, 2000)
-    return () => window.clearInterval(id)
-  }, [])
-
 // ── Nav definitions ─────────────────────────────────────────────────
-
-  // Search button definition (placed above Studio section)
-  const searchItem: NavItemDef = {
-    kind: 'button',
-    icon: Search01Icon,
-    label: '搜索',
-    active: isSearchModalOpen,
-    onClick: openSearchModal,
-  }
-
-  const isDashboardActive = pathname === '/dashboard'
-
-  const workbenchItems: Array<NavItemDef> = [
+  const mainNavItems: Array<NavItemDef> = [
     {
       kind: 'link',
       to: '/dashboard',
       icon: DashboardSquare01Icon,
       label: '工作台',
+      testId: 'desktop_nav_dashboard',
       active: isDashboardActive,
-    },
-  ]
-
-  const businessItems: Array<NavItemDef> = [
-    {
-      kind: 'link',
-      to: '/chat',
-      icon: MessageMultiple01Icon,
-      label: '业务会话',
-      active: isChatActive,
-      badge: pendingApprovalCount > 0 ? pendingApprovalCount : undefined,
     },
     {
       kind: 'link',
       to: '/agents',
       icon: AiUserIcon,
-      label: '任务助手',
+      label: '数字员工',
+      testId: 'desktop_nav_agents',
       active: isAgentsActive,
     },
     {
       kind: 'link',
-      to: '/session-history',
-      icon: Clock01Icon,
-      label: '业务记录',
-      active: isSessionHistoryActive,
-    },
-  ]
-
-  const documentItems: Array<NavItemDef> = [
-    {
-      kind: 'link',
       to: '/files',
       icon: File01Icon,
-      label: '文档中心',
+      label: '执行中心',
+      testId: 'desktop_nav_files',
       active: isFilesActive,
-    },
-    {
-      kind: 'link',
-      to: '/terminal',
-      icon: ComputerTerminal01Icon,
-      label: '文件整理',
-      active: isTerminalActive,
-    },
-  ]
-
-  const collaborationItems: Array<NavItemDef> = [
-    {
-      kind: 'link',
-      to: '/tasks',
-      icon: CheckListIcon,
-      label: '任务协同',
-      active: isTasksActive,
-    },
-    {
-      kind: 'link',
-      to: '/crews',
-      icon: UserMultiple02Icon,
-      label: '自动化流程',
-      active: isCrewsActive,
-    },
-    {
-      kind: 'link',
-      to: '/conductor',
-      icon: Flag01Icon,
-      label: '流程流转',
-      active: isConductorActive,
     },
     {
       kind: 'link',
       to: '/jobs',
       icon: Clock01Icon,
       label: '定时任务',
+      testId: 'desktop_nav_jobs',
       active: isJobsActive,
     },
   ]
 
-  const knowledgeItems: Array<NavItemDef> = [
-    {
-      kind: 'link',
-      to: '/memory',
-      icon: BrainIcon,
-      label: '个人知识',
-      active: isMemoryActive,
-    },
-    {
-      kind: 'link',
-      to: '/skills',
-      icon: PuzzleIcon,
-      label: '技能与模板',
-      active: isSkillsActive,
-      dataTour: 'skills',
-    },
-    {
-      kind: 'link',
-      to: '/profiles',
-      icon: UserGroupIcon,
-      label: '工作画像',
-      active: isProfilesActive,
-    },
-    {
-      kind: 'link',
-      to: '/patterns',
-      icon: BrainIcon,
-      label: '团队规则',
-      active: isPatternsActive,
-    },
-  ]
-
-  const managementItems: Array<NavItemDef> = [
-    {
-      kind: 'link',
-      to: '/operations',
-      icon: Radar01Icon,
-      label: '运行状态',
-      active: isOperationsActive,
-    },
-    {
-      kind: 'link',
-      to: '/analytics',
-      icon: Analytics01Icon,
-      label: '使用分析',
-      active: isAnalyticsActive,
-    },
-    {
-      kind: 'link',
-      to: '/lineage',
-      icon: GitBranchIcon,
-      label: '流程分析',
-      active: isLineageActive,
-    },
+  const bottomNavItems: Array<NavItemDef> = [
     {
       kind: 'link',
       to: '/audit',
       icon: TimelineIcon,
-      label: '审计记录',
+      label: '权限与安全',
+      testId: 'desktop_nav_audit',
       active: isAuditActive,
-    },
-    {
-      kind: 'link',
-      to: '/logs',
-      icon: ConsoleIcon,
-      label: '系统日志',
-      active: isLogsActive,
-    },
-  ]
-
-  const systemItems: Array<NavItemDef> = [
-    {
-      kind: 'link',
-      to: '/help',
-      icon: HelpCircleIcon,
-      label: '帮助',
-      active: isHelpActive,
-    },
-    {
-      kind: 'link',
-      to: '/docs',
-      icon: BookOpen01Icon,
-      label: '文档',
-      active: isDocsActive,
     },
   ]
 
@@ -974,11 +622,14 @@ function ChatSidebarComponent({
                   alt="Ti Work"
                   className="size-6 rounded-lg"
                 />
-                <span
-                  className="text-sm font-semibold tracking-tight"
-                  style={{ color: 'var(--theme-text)' }}
-                >
-                  Ti Work
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className="text-sm font-semibold tracking-tight"
+                    style={{ color: 'var(--theme-text)' }}
+                  >
+                    Ti Work
+                  </span>
+                  <StatusIndicator inline />
                 </span>
               </Link>
             </motion.div>
@@ -1021,164 +672,35 @@ function ChatSidebarComponent({
         </TooltipProvider>
       </motion.div>
 
-      {/* ── Search (ChatGPT-style, above sections) ─────────────────── */}
-      <div className="px-2 pb-1">
-        <motion.div
-          layout
-          transition={{ layout: transition }}
-          className="w-full"
-        >
-          <NavItem
-            item={searchItem}
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            onSelectSession={onSelectSession}
-          />
-        </motion.div>
-      </div>
-
-      {/* ── New Session button ──────────────────────────────────────── */}
-      {!isVisuallyCollapsed && (
-        <div className="px-2 pb-1">
-          <Link
-            to="/chat/$sessionKey"
-            params={{ sessionKey: 'new' }}
-            onClick={() => {
-              onSelectSession?.()
-            }}
-            className={cn(
-              buttonVariants({ variant: 'ghost', size: 'sm' }),
-              'w-full justify-start gap-2.5 px-3 py-2 text-primary-900 hover:bg-primary-200 dark:hover:bg-primary-800',
-              isNewSessionActive &&
-                'bg-accent-500/10 text-accent-500 hover:bg-accent-50 dark:hover:bg-accent-900/300/15',
-            )}
-            data-tour="new-session"
-          >
-            <HugeiconsIcon
-              icon={PencilEdit02Icon}
-              size={20}
-              strokeWidth={1.5}
-              className="size-5 shrink-0"
-            />
-            <span>发起会话</span>
-          </Link>
-        </div>
-      )}
-
       {/* ── Scrollable body: nav + sessions ─────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin flex flex-col">
         {/* Navigation sections */}
         <div className={cn('shrink-0 space-y-0.5 px-2', isMobile && 'order-2')}>
-          <SectionLabel
-            label="工作台"
+          {/* 常驻新会话入口：位于所有菜单上方，折叠时保留为图标 */}
+          <NewSessionButton
             isCollapsed={isVisuallyCollapsed}
+            creatingSession={creatingSession}
+            onSelect={onCreateSession}
             transition={transition}
-            collapsible
-            expanded={workbenchExpanded}
-            onToggle={toggleWorkbench}
-            navigateTo={workbenchNav}
-          />
-          <CollapsibleSection
-            expanded={workbenchExpanded || isCollapsed}
-            items={workbenchItems}
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            onSelectSession={onSelectSession}
           />
 
-          <SectionLabel
-            label="业务"
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            collapsible
-            expanded={businessExpanded}
-            onToggle={toggleBusiness}
-            navigateTo={businessNav}
-          />
-          <CollapsibleSection
-            expanded={businessExpanded || isCollapsed}
-            items={businessItems}
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            onSelectSession={onSelectSession}
-          />
-
-          <SectionLabel
-            label="文档"
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            collapsible
-            expanded={documentExpanded}
-            onToggle={toggleDocument}
-            navigateTo={documentNav}
-          />
-          <CollapsibleSection
-            expanded={documentExpanded || isCollapsed}
-            items={documentItems}
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            onSelectSession={onSelectSession}
-          />
-
-          <SectionLabel
-            label="知识"
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            collapsible
-            expanded={knowledgeExpanded}
-            onToggle={toggleKnowledge}
-            navigateTo={knowledgeNav}
-          />
-          <CollapsibleSection
-            expanded={knowledgeExpanded || isCollapsed}
-            items={knowledgeItems}
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            onSelectSession={onSelectSession}
-          />
-
-          <SectionLabel
-            label="协作"
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            collapsible
-            expanded={collaborationExpanded}
-            onToggle={toggleCollaboration}
-            navigateTo={collaborationNav}
-          />
-          <CollapsibleSection
-            expanded={collaborationExpanded || isCollapsed}
-            items={collaborationItems}
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            onSelectSession={onSelectSession}
-          />
-
-          <SectionLabel
-            label="管理"
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            collapsible
-            expanded={managementExpanded}
-            onToggle={toggleManagement}
-            navigateTo={managementNav}
-          />
-          <CollapsibleSection
-            expanded={managementExpanded || isCollapsed}
-            items={managementItems}
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            onSelectSession={onSelectSession}
-          />
-
-          {/* System */}
-          <CollapsibleSection
-            expanded={true}
-            items={systemItems}
-            isCollapsed={isVisuallyCollapsed}
-            transition={transition}
-            onSelectSession={onSelectSession}
-          />
+          <div className="space-y-0.5" data-testid="desktop_nav_main_menu">
+            {mainNavItems.map((item) => (
+              <motion.div
+                key={item.label}
+                layout
+                transition={{ layout: transition }}
+                className="w-full"
+              >
+                <NavItem
+                  item={item}
+                  isCollapsed={isVisuallyCollapsed}
+                  transition={transition}
+                  onSelectSession={onSelectSession}
+                />
+              </motion.div>
+            ))}
+          </div>
         </div>
 
         {/* Sessions list */}
@@ -1214,7 +736,22 @@ function ChatSidebarComponent({
       {/* end scrollable body */}
 
       {/* ── Footer with User Menu ─────────────────────────────────── */}
-      <div className="px-2 py-2.5 border-t shrink-0 theme-border theme-panel">
+      <div
+        className="px-2 py-2.5 border-t shrink-0 theme-border theme-panel"
+        data-testid="desktop_nav_bottom_menu"
+      >
+        {/* 权限与安全（常驻右下，置于设置上方） */}
+        <div className={cn('flex flex-col', isVisuallyCollapsed ? 'py-0.5' : 'pb-1')}>
+          {bottomNavItems.map((item) => (
+            <NavItem
+              key={item.label}
+              item={item}
+              isCollapsed={isVisuallyCollapsed}
+              transition={transition}
+              onSelectSession={onSelectSession}
+            />
+          ))}
+        </div>
         {/* User card + actions */}
         <div
           className={cn(
@@ -1222,71 +759,40 @@ function ChatSidebarComponent({
             isVisuallyCollapsed ? 'flex-col gap-2 py-2' : 'gap-2.5 px-2 py-1.5',
           )}
         >
-          {/* User menu trigger */}
-          <MenuRoot>
-            <MenuTrigger
-              data-tour="settings"
-              className={cn(
-                'flex items-center gap-2.5 rounded-lg py-1 transition-colors hover:bg-primary-200 dark:hover:bg-neutral-800 flex-1 min-w-0',
-                isVisuallyCollapsed ? 'justify-center px-0' : 'px-1.5',
+          {/* 设置入口（常驻左下角，替代原头像/名称） */}
+          <button
+            type="button"
+            data-tour="settings"
+            data-testid="desktop_nav_settings"
+            onClick={function onOpenSettings() {
+              navigate({ to: '/settings' })
+            }}
+            className={cn(
+              'flex items-center gap-2.5 rounded-lg py-1 transition-colors hover:bg-primary-200 dark:hover:bg-neutral-800 flex-1 min-w-0',
+              isVisuallyCollapsed ? 'justify-center px-0' : 'px-1.5',
+            )}
+          >
+            <HugeiconsIcon icon={Settings01Icon} size={20} strokeWidth={1.5} />
+            <AnimatePresence initial={false} mode="wait">
+              {!isVisuallyCollapsed && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={transition}
+                  className="flex-1 min-w-0 flex items-center gap-1.5"
+                >
+                  <span className="block truncate text-sm font-medium text-primary-900 dark:text-neutral-100">
+                    设置
+                  </span>
+                </motion.div>
               )}
-            >
-              <UserAvatar
-                size={28}
-                src={profileAvatarDataUrl}
-                alt={profileDisplayName}
-              />
-              <AnimatePresence initial={false} mode="wait">
-                {!isVisuallyCollapsed && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={transition}
-                    className="flex-1 min-w-0 flex items-center gap-1.5"
-                  >
-                    <span className="block truncate text-sm font-medium text-primary-900 dark:text-neutral-100">
-                      {profileDisplayName}
-                    </span>
-                    <StatusDot />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </MenuTrigger>
-            <MenuContent side="top" align="start" className="min-w-[200px]">
-              <MenuItem
-                onClick={function onOpenSettings() {
-                  handleOpenSettings('hermes')
-                }}
-                className="justify-between"
-              >
-                <span className="flex items-center gap-2">
-                  <HugeiconsIcon
-                    icon={Settings01Icon}
-                    size={20}
-                    strokeWidth={1.5}
-                  />
-                  设置
-                </span>
-              </MenuItem>
-            </MenuContent>
-          </MenuRoot>
+            </AnimatePresence>
+          </button>
 
-          {/* Settings + Theme toggle */}
+          {/* Theme toggle */}
           {!isVisuallyCollapsed && (
-            <div className="flex items-center gap-0.5">
-              <button
-                type="button"
-                onClick={() => handleOpenSettings('hermes')}
-                className="shrink-0 rounded-lg p-1.5 text-primary-400 hover:bg-primary-200 dark:hover:bg-neutral-800 hover:text-primary-600 dark:hover:text-neutral-300 transition-colors"
-                aria-label="设置"
-              >
-                <HugeiconsIcon
-                  icon={Settings01Icon}
-                  size={16}
-                  strokeWidth={1.5}
-                />
-              </button>
+            <div className="flex items-center">
               <ThemeToggleMini />
             </div>
           )}
