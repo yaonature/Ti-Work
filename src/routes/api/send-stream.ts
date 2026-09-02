@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto'
+import fs from 'node:fs'
 import { createFileRoute } from '@tanstack/react-router'
+import YAML from 'yaml'
 import { resolveSessionKey } from '../../server/session-utils'
 import {
   getEffectiveSessionOwner,
@@ -7,6 +9,7 @@ import {
 } from '../../server/auth-middleware'
 import { requireJsonContentType } from '../../server/rate-limit'
 import { publishChatEvent } from '../../server/chat-event-bus'
+import { publishPolicyDecision } from '../../server/policy-telemetry'
 import {
   registerActiveSendRun,
   unregisterActiveSendRun,
@@ -31,8 +34,6 @@ import {
 } from '../../server/local-session-store'
 import { getHermesConfigPath } from '../../server/env-models'
 import type {OpenAICompatContentPart, OpenAICompatMessage} from '../../server/openai-compat-api';
-import fs from 'node:fs'
-import YAML from 'yaml'
 // Hermes agent runs can take 5+ minutes with complex tool chains
 const SEND_STREAM_RUN_TIMEOUT_MS = 600_000
 const SESSION_BOOTSTRAP_KEYS = new Set(['main', 'new'])
@@ -933,6 +934,26 @@ export const Route = createFileRoute('/api/send-stream')({
                       sendEvent('approval', translated)
                       skipPublish ||
                         publishChatEvent('approval', translated)
+
+                      // Sediment the pending approval into the unified policy
+                      // telemetry stream so the later approve/deny response can
+                      // correlate against this prompt (subject = approvalId) and
+                      // label itself confirmed / rejected / corrected.
+                      publishPolicyDecision({
+                        source: 'approval',
+                        result: 'needs_approval',
+                        action: translated.action || 'authorization',
+                        subject: translated.approvalId || null,
+                        reason: 'gateway_approval_required',
+                        profileName: null,
+                        details: {
+                          agentName: translated.agentName,
+                          agentId: translated.agentId,
+                          sessionKey: translated.sessionKey,
+                          runId: translated.runId,
+                          context: translated.context,
+                        },
+                      })
                       return
                     }
 

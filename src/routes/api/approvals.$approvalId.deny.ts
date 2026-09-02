@@ -9,6 +9,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../server/auth-middleware'
 import { requireJsonContentType } from '../../server/rate-limit'
+import { recordAuthorizationDecision } from '../../server/policy-telemetry'
 import {
   HERMES_API,
   ensureGatewayProbed,
@@ -46,6 +47,10 @@ export const Route = createFileRoute('/api/approvals/$approvalId/deny')({
               },
             )
             if (res.ok) {
+              recordAuthorizationDecision({
+                outcome: 'denied',
+                approvalId,
+              })
               return json({ ok: true, method: 'gateway-endpoint' })
             }
           } catch {
@@ -56,6 +61,10 @@ export const Route = createFileRoute('/api/approvals/$approvalId/deny')({
         // Strategy 2: chat command
         try {
           await sendChat(sessionKey, { message: '/deny' })
+          recordAuthorizationDecision({
+            outcome: 'denied',
+            approvalId,
+          })
           return json({ ok: true, method: 'chat-command' })
         } catch (err) {
           return json(

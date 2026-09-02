@@ -17,6 +17,11 @@ import {
   safeErrorMessage,
 } from '../../server/rate-limit'
 import { getProfileWorkspaceRoot } from '../../server/profiles-browser'
+import {
+  AuthorizationGuardError,
+  enforceDirectoryAccess,
+  readDesktopSecurityPolicy,
+} from '../../server/authorization-guard'
 
 const execFileAsync = promisify(execFile)
 
@@ -36,15 +41,54 @@ type FileEntry = {
 }
 
 /**
+ * Resolve the "authorized workspace" root configured by the user in
+ * 权限与安全 → 目录访问. This is the primary business directory the agent is
+ * granted access to — distinct from `~/.hermes` (which only holds the agent's
+ * own config like `.env` / `config.yaml` / `habits` and must not be exposed
+ * as the default browsing root).
+ *
+ * Returns `null` when the user has not authorized any workspace yet.
+ */
+function getAuthorizedWorkspaceRoot(): string | null {
+  const policy = readDesktopSecurityPolicy()
+  const { workspaceRoot, allowedPaths } = policy.directoryAccess
+  if (workspaceRoot) return workspaceRoot
+  if (allowedPaths.length > 0) return allowedPaths[0]
+  return null
+}
+
+function workspaceNotConfiguredResponse() {
+  return json(
+    {
+      ok: false,
+      code: 'workspace_not_configured',
+      error: '尚未配置工作区，请先在权限与安全中完成目录授权。',
+    },
+    { status: 403 },
+  )
+}
+
+/**
  * Resolve the effective workspace root for a request.
  *
- * If `profileName` is provided (from the ?profile= query param), the root is
- * scoped to that profile's directory. Falls back to the global WORKSPACE_ROOT.
+ * - `rootScope === 'authorized'` (sent by the 执行中心 file browser) requests
+ *   the user's authorized workspace instead of the global `~/.hermes`,
+ *   returning `null` when no workspace has been authorized.
+ * - Otherwise, if `profileName` is provided (from the ?profile= query param),
+ *   the root is scoped to that profile's directory.
+ * - Falls back to the global WORKSPACE_ROOT for all legacy consumers (identity
+ *   file editor, search, chat) which intentionally operate on `~/.hermes`.
  *
  * Security: `getProfileWorkspaceRoot` validates the name and always returns a
  * path inside ~/.hermes — no arbitrary path injection is possible.
  */
-function getEffectiveRoot(profileName?: string | null): string {
+function getEffectiveRoot(
+  profileName?: string | null,
+  rootScope?: string | null,
+): string | null {
+  if (rootScope === 'authorized' && (!profileName || profileName === 'default')) {
+    return getAuthorizedWorkspaceRoot()
+  }
   if (!profileName || profileName === 'default') return WORKSPACE_ROOT
   try {
     return getProfileWorkspaceRoot(profileName)
@@ -65,18 +109,9 @@ function ensureWorkspacePathFor(input: string, root: string) {
   return resolved
 }
 
-/** Legacy single-root version — kept so existing call sites compile */
-function ensureWorkspacePath(input: string) {
-  return ensureWorkspacePathFor(input, WORKSPACE_ROOT)
-}
-
 function toRelativeFor(resolvedPath: string, root: string) {
   const relative = path.relative(root, resolvedPath)
   return relative || ''
-}
-
-function toRelative(resolvedPath: string) {
-  return toRelativeFor(resolvedPath, WORKSPACE_ROOT)
 }
 
 function sortEntries(entries: Array<FileEntry>) {
@@ -130,6 +165,7 @@ const MAX_DIRECTORY_DEPTH = 3
 const MAX_DIRECTORY_ENTRIES = 20_000
 
 type ReadDirectoryOptions = {
+  root: string
   maxDepth: number
   maxEntries: number | null
   countedEntries: { value: number }
@@ -175,7 +211,7 @@ async function readDirectory(
 
     if (IGNORED_DIRS.has(entry.name)) continue
     const fullPath = path.join(dirPath, entry.name)
-    const relativePath = toRelative(fullPath)
+    const relativePath = toRelativeFor(fullPath, options.root)
     try {
       const stats = await fs.stat(fullPath)
       if (entry.isDirectory()) {
@@ -207,9 +243,19 @@ async function readDirectory(
   return sortEntries(mapped)
 }
 
-async function readGlobDirectory(globPath: string) {
+async function readGlobDirectory(
+  globPath: string,
+  root: string,
+  profileName?: string | null,
+) {
   const { directoryPath, regex } = parseGlobPattern(globPath)
-  const resolvedDirectory = ensureWorkspacePath(directoryPath)
+  const resolvedDirectory = ensureWorkspacePathFor(directoryPath, root)
+  enforceDirectoryAccess({
+    action: 'list',
+    resolvedPath: resolvedDirectory,
+    fallbackRoot: root,
+    profileName,
+  })
   const entries = await fs.readdir(resolvedDirectory, { withFileTypes: true })
   const mapped: Array<FileEntry> = []
 
@@ -219,7 +265,7 @@ async function readGlobDirectory(globPath: string) {
     const stats = await fs.stat(fullPath)
     mapped.push({
       name: entry.name,
-      path: toRelative(fullPath),
+      path: toRelativeFor(fullPath, root),
       type: entry.isDirectory() ? 'folder' : 'file',
       size: stats.size,
       modifiedAt: stats.mtime.toISOString(),
@@ -227,7 +273,7 @@ async function readGlobDirectory(globPath: string) {
   }
 
   return {
-    root: toRelative(resolvedDirectory),
+    root: toRelativeFor(resolvedDirectory, root),
     entries: sortEntries(mapped),
   }
 }
@@ -268,16 +314,25 @@ export const Route = createFileRoute('/api/files')({
           const action = url.searchParams.get('action') || 'list'
           const inputPath = url.searchParams.get('path') || ''
           const profileName = url.searchParams.get('profile') || undefined
+          const rootScope = url.searchParams.get('root')
           const maxDepthParam = parseMaxDepth(url.searchParams.get('maxDepth'))
           const maxEntriesParam = parseMaxEntries(
             url.searchParams.get('maxEntries'),
           )
 
-          // Resolve effective root — profile-scoped or global
-          const effectiveRoot = getEffectiveRoot(profileName)
+          // Resolve effective root — profile-scoped, authorized workspace, or global
+          const effectiveRoot = getEffectiveRoot(profileName, rootScope)
+
+          if (effectiveRoot === null) {
+            return workspaceNotConfiguredResponse()
+          }
 
           if (action === 'list' && hasGlob(inputPath)) {
-            const globListing = await readGlobDirectory(inputPath)
+            const globListing = await readGlobDirectory(
+              inputPath,
+              effectiveRoot,
+              profileName,
+            )
             return json({
               root: globListing.root,
               base: effectiveRoot,
@@ -286,6 +341,17 @@ export const Route = createFileRoute('/api/files')({
           }
 
           const resolvedPath = ensureWorkspacePathFor(inputPath, effectiveRoot)
+          enforceDirectoryAccess({
+            action:
+              action === 'read'
+                ? 'read'
+                : action === 'download'
+                  ? 'download'
+                  : 'list',
+            resolvedPath,
+            fallbackRoot: effectiveRoot,
+            profileName,
+          })
 
           if (action === 'read') {
             const buffer = await fs.readFile(resolvedPath)
@@ -317,6 +383,7 @@ export const Route = createFileRoute('/api/files')({
           }
 
           const tree = await readDirectory(resolvedPath, 0, {
+            root: effectiveRoot,
             maxDepth: maxDepthParam ?? MAX_DIRECTORY_DEPTH,
             maxEntries: maxEntriesParam,
             countedEntries: { value: 0 },
@@ -328,6 +395,17 @@ export const Route = createFileRoute('/api/files')({
             profile: profileName ?? null,
           })
         } catch (err) {
+          if (err instanceof AuthorizationGuardError) {
+            return json(
+              {
+                ok: false,
+                error: err.message,
+                code: err.code,
+                details: err.details,
+              },
+              { status: err.status },
+            )
+          }
           return json({ error: safeErrorMessage(err) }, { status: 500 })
         }
       },
@@ -355,15 +433,34 @@ export const Route = createFileRoute('/api/files')({
             const file = form.get('file')
             const targetPath = String(form.get('path') || '')
             const uploadProfile = String(form.get('profile') || '')
+            const uploadRootScope = String(form.get('root') || '')
             if (!(file instanceof File)) {
               return json({ error: '缺少文件' }, { status: 400 })
             }
-            const uploadRoot = getEffectiveRoot(uploadProfile || undefined)
+            const uploadRoot = getEffectiveRoot(
+              uploadProfile || undefined,
+              uploadRootScope,
+            )
+            if (uploadRoot === null) {
+              return workspaceNotConfiguredResponse()
+            }
             const resolvedTarget = ensureWorkspacePathFor(targetPath, uploadRoot)
+            enforceDirectoryAccess({
+              action: 'upload',
+              resolvedPath: resolvedTarget,
+              fallbackRoot: uploadRoot,
+              profileName: uploadProfile || null,
+            })
             const isDir = (await fs.stat(resolvedTarget)).isDirectory()
             const destination = isDir
               ? path.join(resolvedTarget, file.name)
               : resolvedTarget
+            enforceDirectoryAccess({
+              action: 'upload',
+              resolvedPath: destination,
+              fallbackRoot: uploadRoot,
+              profileName: uploadProfile || null,
+            })
             await fs.mkdir(path.dirname(destination), { recursive: true })
             const buffer = Buffer.from(await file.arrayBuffer())
             await fs.writeFile(destination, buffer)
@@ -377,10 +474,21 @@ export const Route = createFileRoute('/api/files')({
           const action = typeof body.action === 'string' ? body.action : 'write'
           const postProfile =
             typeof body.profile === 'string' ? body.profile : undefined
-          const postRoot = getEffectiveRoot(postProfile)
+          const postRootScope =
+            typeof body.root === 'string' ? body.root : undefined
+          const postRoot = getEffectiveRoot(postProfile, postRootScope)
+          if (postRoot === null) {
+            return workspaceNotConfiguredResponse()
+          }
 
           if (action === 'mkdir') {
             const dirPath = ensureWorkspacePathFor(String(body.path || ''), postRoot)
+            enforceDirectoryAccess({
+              action: 'mkdir',
+              resolvedPath: dirPath,
+              fallbackRoot: postRoot,
+              profileName: postProfile || null,
+            })
             await fs.mkdir(dirPath, { recursive: true })
             return json({ ok: true, path: toRelativeFor(dirPath, postRoot) })
           }
@@ -388,6 +496,18 @@ export const Route = createFileRoute('/api/files')({
           if (action === 'rename') {
             const fromPath = ensureWorkspacePathFor(String(body.from || ''), postRoot)
             const toPath = ensureWorkspacePathFor(String(body.to || ''), postRoot)
+            enforceDirectoryAccess({
+              action: 'rename',
+              resolvedPath: fromPath,
+              fallbackRoot: postRoot,
+              profileName: postProfile || null,
+            })
+            enforceDirectoryAccess({
+              action: 'rename',
+              resolvedPath: toPath,
+              fallbackRoot: postRoot,
+              profileName: postProfile || null,
+            })
             await fs.mkdir(path.dirname(toPath), { recursive: true })
             await fs.rename(fromPath, toPath)
             return json({ ok: true, path: toRelativeFor(toPath, postRoot) })
@@ -398,6 +518,12 @@ export const Route = createFileRoute('/api/files')({
               return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
             }
             const targetPath = ensureWorkspacePathFor(String(body.path || ''), postRoot)
+            enforceDirectoryAccess({
+              action: 'delete',
+              resolvedPath: targetPath,
+              fallbackRoot: postRoot,
+              profileName: postProfile || null,
+            })
             try {
               // Try macOS trash command first
               await execFileAsync('trash', [targetPath])
@@ -409,11 +535,28 @@ export const Route = createFileRoute('/api/files')({
           }
 
           const filePath = ensureWorkspacePathFor(String(body.path || ''), postRoot)
+          enforceDirectoryAccess({
+            action: 'write',
+            resolvedPath: filePath,
+            fallbackRoot: postRoot,
+            profileName: postProfile || null,
+          })
           const content = typeof body.content === 'string' ? body.content : ''
           await fs.mkdir(path.dirname(filePath), { recursive: true })
           await fs.writeFile(filePath, content, 'utf8')
           return json({ ok: true, path: toRelativeFor(filePath, postRoot) })
         } catch (err) {
+          if (err instanceof AuthorizationGuardError) {
+            return json(
+              {
+                ok: false,
+                error: err.message,
+                code: err.code,
+                details: err.details,
+              },
+              { status: err.status },
+            )
+          }
           return json({ error: safeErrorMessage(err) }, { status: 500 })
         }
       },
