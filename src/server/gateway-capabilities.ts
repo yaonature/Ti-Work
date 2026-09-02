@@ -13,15 +13,15 @@ import { getHermesEnvPath, readEnvValue } from './env-models'
 export let HERMES_API = process.env.HERMES_API_URL || 'http://127.0.0.1:8642'
 
 export const HERMES_UPGRADE_INSTRUCTIONS =
-  'Update Hermes: cd hermes-agent && git pull && pip install -e . && hermes --gateway'
+  '请更新执行引擎：cd hermes-agent && git pull && pip install -e . && hermes --gateway'
 
-export const SESSIONS_API_UNAVAILABLE_MESSAGE = `您的 Hermes 网关不支持 sessions API。${HERMES_UPGRADE_INSTRUCTIONS}`
+export const SESSIONS_API_UNAVAILABLE_MESSAGE = `您的执行引擎不支持会话 API。${HERMES_UPGRADE_INSTRUCTIONS}`
 
 /** 网关完全不可达（未安装 / 未启动 / 端口不通）时的提示，与"版本过旧"区分开。
  *  注意：本文件会被 client 端（feature-gates）引用，勿在此 import server-only 模块；
  *  bootstrap 安装状态的感知在 server-only 的调用方（hermes-proxy 路由）完成。 */
 export function getGatewayOfflineMessage(): string {
-  return `无法连接 Hermes 执行引擎网关（${HERMES_API}）。请先安装并启动 Hermes Agent 网关（hermes --gateway，监听 8642/8643 端口）后重试。`
+  return `无法连接 Ti Work 执行引擎网关（${HERMES_API}）。请先安装并启动执行引擎网关（监听 8642/8643 端口）后重试。`
 }
 
 const PROBE_TIMEOUT_MS = 3_000
@@ -103,7 +103,7 @@ export function getHermesApiToken(): string {
   return readEnvValue(envPath, 'API_SERVER_KEY')
 }
 
-function authHeaders(): Record<string, string> {
+export function authHeaders(): Record<string, string> {
   const token = getHermesApiToken()
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
