@@ -90,9 +90,9 @@ export function HelpScreen() {
         <section id="getting-started" style={sectionStyle}>
           <h2 style={h2Style}>1. 快速上手</h2>
 
-          <h3 style={h3Style}>连接 Hermes 执行引擎（网关）</h3>
+          <h3 style={h3Style}>连接 Ti Work 执行引擎（网关）</h3>
           <p style={pStyle}>
-            Ti Work 通过 Hermes 执行引擎（网关）服务器与您的 AI 智能体通信。在使用任何功能之前，您需要先建立连接。
+            Ti Work 通过 Ti Work 执行引擎（网关）服务器与您的 AI 智能体通信。在使用任何功能之前，您需要先建立连接。
           </p>
           <ol style={olStyle}>
             <li>点击侧边栏中的齿轮图标打开<strong>设置</strong>页面，或按 <kbd style={kbdStyle}>Ctrl+,</kbd>。</li>
@@ -102,7 +102,7 @@ export function HelpScreen() {
             <li>顶部状态栏中的绿色指示灯表示连接成功。</li>
           </ol>
           <div style={tipStyle}>
-            <strong>提示：</strong>如果您在本地运行 Hermes 执行引擎（网关），默认地址通常为 <code>http://localhost:3001</code>。顶部导航栏中的连接状态指示灯在已连接时显示绿色，断开时显示红色。
+            <strong>提示：</strong>如果您在本地运行 Ti Work 执行引擎（网关），默认地址通常为 <code>http://localhost:3001</code>。顶部导航栏中的连接状态指示灯在已连接时显示绿色，断开时显示红色。
           </div>
 
           <h3 style={h3Style}>首次设置</h3>
@@ -668,7 +668,7 @@ export function HelpScreen() {
             <li>支持多个终端标签页 - 点击<strong>+</strong>创建新标签页。</li>
           </ol>
           <div style={noteStyle}>
-            <strong>注意：</strong>终端连接到运行 Hermes 执行引擎（网关）的同一系统。命令会在该机器上执行。
+            <strong>注意：</strong>终端连接到运行 Ti Work 执行引擎（网关）的同一系统。命令会在该机器上执行。
           </div>
         </section>
 
@@ -729,7 +729,7 @@ export function HelpScreen() {
             配置 Ti Work 如何连接到您的网关：
           </p>
           <ul style={ulStyle}>
-            <li><strong>网关地址</strong> - 您的 Hermes 执行引擎（网关）服务器的 HTTP 地址。</li>
+            <li><strong>网关地址</strong> - 您的 Ti Work 执行引擎（网关）服务器的 HTTP 地址。</li>
             <li><strong>API 密钥</strong> - 受保护网关的认证密钥。</li>
             <li><strong>重连间隔</strong> - 连接断开时的重试频率（默认：5 秒）。</li>
             <li><strong>实时连接</strong> - 启用/禁用用于实时流式输出的实时连接通道（建议：启用）。</li>
@@ -793,7 +793,7 @@ export function HelpScreen() {
 
           <h3 style={h3Style}>Systemd 自启动</h3>
           <p style={pStyle}>
-            配置 Hermes 执行引擎（网关）随系统自动启动：
+            配置 Ti Work 执行引擎（网关）随系统自动启动：
           </p>
           <ol style={olStyle}>
             <li>在<strong>设置</strong>中找到<strong>系统</strong>部分。</li>
@@ -994,7 +994,7 @@ export function HelpScreen() {
           </p>
           <ol style={olStyle}>
             <li>在<strong>设置</strong>中检查您的网关地址（确认没有拼写错误且端口号正确）。</li>
-            <li>确保 Hermes 执行引擎（网关）服务器正在运行。如果您将其安装为系统服务，请使用 <code>systemctl --user status hermes-gateway</code> 检查。</li>
+            <li>确保 Ti Work 执行引擎（网关）服务器正在运行。如果您将其安装为系统服务，请使用 <code>systemctl --user status hermes-gateway</code> 检查。</li>
             <li>检查防火墙是否阻止了连接端口。</li>
             <li>如果您使用远程服务器，请确保您的网络可以访问它（尝试 ping 该主机）。</li>
             <li>尝试<strong>设置</strong>中的<strong>测试连接</strong>按钮 - 它会提供具体的错误消息。</li>
@@ -1016,7 +1016,7 @@ export function HelpScreen() {
             如果某些功能显示为灰色或显示“不可用”：
           </p>
           <ul style={ulStyle}>
-            <li>某些功能需要特定的网关能力。请将您的 Hermes 执行引擎（网关）更新到最新版本。</li>
+            <li>某些功能需要特定的网关能力。请将您的 Ti Work 执行引擎（网关）更新到最新版本。</li>
             <li>检查<strong>技能</strong>页面中所需技能是否已安装并启用。</li>
             <li>确认网关的配置包含必要的模块（例如用于任务的编排模块）。</li>
             <li>确保您的连接具有相应的权限。某些网关会按 API 密钥划分功能范围。</li>

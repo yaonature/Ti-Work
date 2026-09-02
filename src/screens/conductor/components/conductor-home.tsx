@@ -26,6 +26,7 @@ import type { useConductorGateway } from '../hooks/use-conductor-gateway'
 import { cn } from '@/lib/utils'
 import { Markdown } from '@/components/prompt-kit/markdown'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -533,13 +534,12 @@ export function ConductorHome({ conductor, goalDraft, setGoalDraft, onSubmit, on
                 ))}
               </div>
 
-              <textarea
+              <Textarea
                 value={goalDraft}
                 onChange={(e) => setGoalDraft(e.target.value)}
                 placeholder={`${QUICK_ACTIONS.find((a) => a.id === selectedAction)?.label ?? '构建'}：描述目标、约束条件和预期结果。`}
                 disabled={conductor.isSending}
                 rows={8}
-                className="min-h-[220px] w-full rounded-3xl border border-[var(--theme-border2)] bg-[var(--theme-bg)] px-4 py-4 text-sm text-[var(--theme-text)] outline-none transition-colors placeholder:text-[var(--theme-muted-2)] focus:border-[var(--theme-accent)] disabled:cursor-not-allowed disabled:opacity-60 md:text-base"
               />
 
               <div className="flex justify-end">

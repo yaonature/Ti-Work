@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { EmojiIcon } from '@/components/emoji-icon'
 import {
   Add01Icon,
   CheckmarkCircle02Icon,
@@ -13,10 +12,22 @@ import {
   Share01Icon,
 } from '@hugeicons/core-free-icons'
 import type { Crew, CrewMember } from '@/lib/crews-api'
+import type { Workflow, WorkflowEdge, WorkflowTask } from '@/lib/workflow-api'
 import { dispatchTask } from '@/lib/crews-api'
-import type { Workflow, WorkflowTask, WorkflowEdge } from '@/lib/workflow-api'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { clearWorkflow, fetchWorkflow, saveWorkflow } from '@/lib/workflow-api'
+import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
 import { toast } from '@/components/ui/toast'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
 // ─── Canvas constants ─────────────────────────────────────────────────────────
@@ -32,8 +43,8 @@ type WorkflowTaskStatus = 'idle' | 'running' | 'done' | 'error'
 
 // ─── Layout & graph algorithms ────────────────────────────────────────────────
 
-function buildAdj(tasks: WorkflowTask[], edges: WorkflowEdge[]) {
-  const adj = new Map<string, string[]>()
+function buildAdj(tasks: Array<WorkflowTask>, edges: Array<WorkflowEdge>) {
+  const adj = new Map<string, Array<string>>()
   const indeg = new Map<string, number>()
   for (const t of tasks) { adj.set(t.id, []); indeg.set(t.id, 0) }
   for (const e of edges) {
@@ -44,16 +55,16 @@ function buildAdj(tasks: WorkflowTask[], edges: WorkflowEdge[]) {
 }
 
 /** Kahn BFS topological sort → array of parallel layers */
-function topoLayers(tasks: WorkflowTask[], edges: WorkflowEdge[]): string[][] {
+function topoLayers(tasks: Array<WorkflowTask>, edges: Array<WorkflowEdge>): Array<Array<string>> {
   if (tasks.length === 0) return []
   const { adj, indeg } = buildAdj(tasks, edges)
-  const layers: string[][] = []
+  const layers: Array<Array<string>> = []
   let frontier = tasks.filter(t => (indeg.get(t.id) ?? 0) === 0).map(t => t.id)
   const placed = new Set<string>()
   while (frontier.length > 0) {
     layers.push(frontier)
     frontier.forEach(id => placed.add(id))
-    const next: string[] = []
+    const next: Array<string> = []
     for (const id of frontier) {
       for (const succ of adj.get(id) ?? []) {
         const newDeg = (indeg.get(succ) ?? 1) - 1
@@ -71,8 +82,8 @@ function topoLayers(tasks: WorkflowTask[], edges: WorkflowEdge[]): string[][] {
 
 /** DFS cycle check — used client-side before adding an edge */
 function wouldCreateCycle(
-  tasks: WorkflowTask[],
-  edges: WorkflowEdge[],
+  tasks: Array<WorkflowTask>,
+  edges: Array<WorkflowEdge>,
   newFrom: string,
   newTo: string,
 ): boolean {
@@ -99,8 +110,8 @@ function wouldCreateCycle(
 
 /** Hierarchical left-to-right layout */
 function computeAutoLayout(
-  tasks: WorkflowTask[],
-  edges: WorkflowEdge[],
+  tasks: Array<WorkflowTask>,
+  edges: Array<WorkflowEdge>,
 ): Record<string, { x: number; y: number }> {
   const layers = topoLayers(tasks, edges)
   const COL_W = 220
@@ -152,7 +163,7 @@ const STATUS_STROKE: Record<WorkflowTaskStatus, string> = {
 interface TaskDialogProps {
   title: string
   initial?: Partial<WorkflowTask>
-  members: CrewMember[]
+  members: Array<CrewMember>
   onSubmit: (vals: { label: string; prompt: string; assigneeId: string | null }) => void
   onClose: () => void
 }
@@ -192,55 +203,46 @@ function TaskDialog({ title, initial, members, onSubmit, onClose }: TaskDialogPr
             <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--theme-muted)' }}>
               任务名称 *
             </label>
-            <input
+            <Input
               autoFocus
               value={label}
               onChange={e => setLabel(e.target.value)}
               placeholder="例如：研究竞争对手"
-              className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-              style={{
-                background: 'var(--theme-card)',
-                border: '1px solid var(--theme-border)',
-                color: 'var(--theme-text)',
-              }}
+              className="w-full"
             />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--theme-muted)' }}>
               发送给智能体的提示词
             </label>
-            <textarea
+            <Textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
               placeholder="描述智能体应该做什么…"
               rows={4}
-              className="w-full resize-none rounded-lg px-3 py-2 text-sm outline-none"
-              style={{
-                background: 'var(--theme-card)',
-                border: '1px solid var(--theme-border)',
-                color: 'var(--theme-text)',
-              }}
+              className="w-full resize-none"
             />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--theme-muted)' }}>
               指派给
             </label>
-            <select
-              value={assigneeId ?? ''}
-              onChange={e => setAssigneeId(e.target.value || null)}
-              className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-              style={{
-                background: 'var(--theme-card)',
-                border: '1px solid var(--theme-border)',
-                color: 'var(--theme-text)',
-              }}
+            <Select
+              value={assigneeId || null}
+              onValueChange={value => setAssigneeId(value)}
             >
-              <option value="">全部智能体</option>
-              {members.map(m => (
-                <option key={m.id} value={m.id}>{m.displayName} — {m.roleLabel}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="全部智能体" />
+              </SelectTrigger>
+              <SelectPopup>
+                <SelectList>
+                  <SelectItem value={null}>全部智能体</SelectItem>
+                  {members.map(m => (
+                    <SelectItem key={m.id} value={m.id}>{m.displayName} — {m.roleLabel}</SelectItem>
+                  ))}
+                </SelectList>
+              </SelectPopup>
+            </Select>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <button
@@ -275,15 +277,15 @@ function TaskDialog({ title, initial, members, onSubmit, onClose }: TaskDialogPr
 interface WorkflowBuilderProps {
   crewId: string
   crew: Crew
-  displayMembers: CrewMember[]
+  displayMembers: Array<CrewMember>
 }
 
 export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilderProps) {
   const queryClient = useQueryClient()
 
   // ── Canvas state ─────────────────────────────────────────────────────────
-  const [tasks, setTasks] = useState<WorkflowTask[]>([])
-  const [edges, setEdges] = useState<WorkflowEdge[]>([])
+  const [tasks, setTasks] = useState<Array<WorkflowTask>>([])
+  const [edges, setEdges] = useState<Array<WorkflowEdge>>([])
   const [dirty, setDirty] = useState(false)
 
   // Interaction
@@ -299,11 +301,12 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
   const [runState, setRunState] = useState<Record<string, WorkflowTaskStatus>>({})
   const [isRunning, setIsRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
 
   // Pending dispatches: sessionKey → taskId (so SSE can resolve completions)
   const pendingRef = useRef<Map<string, string>>(new Map())
   // Current layers for sequential execution
-  const layersRef = useRef<string[][]>([])
+  const layersRef = useRef<Array<Array<string>>>([])
   const currentLayerRef = useRef<number>(0)
   const runStateRef = useRef<Record<string, WorkflowTaskStatus>>({})
 
@@ -504,7 +507,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
   }
 
   // ── Run workflow ──────────────────────────────────────────────────────────
-  async function dispatchLayer(layer: string[], status: Record<string, WorkflowTaskStatus>) {
+  async function dispatchLayer(layer: Array<string>, status: Record<string, WorkflowTaskStatus>) {
     const nextStatus = { ...status }
     for (const taskId of layer) {
       const task = tasks.find(t => t.id === taskId)
@@ -514,7 +517,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
         ? displayMembers.find(m => m.id === task.assigneeId)
         : null
       // Map each dispatched sessionKey to its taskId
-      const sessionKeys: string[] = member
+      const sessionKeys: Array<string> = member
         ? [member.sessionKey]
         : displayMembers.map(m => m.sessionKey)
       for (const sk of sessionKeys) {
@@ -600,7 +603,6 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
     es.addEventListener('done', handleRunEnd)
 
     return () => es.close()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning, displayMembers, crewId])
 
   // ── Derived values ────────────────────────────────────────────────────────
@@ -699,7 +701,7 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
 
         {tasks.length > 0 && (
           <button
-            onClick={() => { if (window.confirm('清空整个工作流？')) clearMutation.mutate() }}
+            onClick={() => setClearConfirmOpen(true)}
             className="ml-auto rounded-lg p-1.5 transition-colors"
             style={{ color: 'var(--theme-muted)' }}
             title="清空工作流"
@@ -1133,6 +1135,19 @@ export function WorkflowBuilder({ crewId, crew, displayMembers }: WorkflowBuilde
           onClose={() => setEditingTask(null)}
         />
       )}
+
+      <ConfirmActionDialog
+        open={clearConfirmOpen}
+        onOpenChange={setClearConfirmOpen}
+        title="清空整个工作流"
+        description="当前工作流中的任务与连线都会被移除，且无法恢复。"
+        confirmLabel="确认清空"
+        confirmVariant="destructive"
+        onConfirm={() => {
+          setClearConfirmOpen(false)
+          clearMutation.mutate()
+        }}
+      />
     </div>
   )
 }

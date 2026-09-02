@@ -29,6 +29,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
@@ -353,9 +361,6 @@ export function UsersSettingsScreen() {
     }
   }
 
-  const selectClassName =
-    'h-8.5 rounded-lg border border-primary-200 bg-white px-2 text-sm text-primary-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20'
-
   const isNotMultiUser = useMemo(
     () => authInfo !== null && !authInfo.multiUser,
     [authInfo],
@@ -594,15 +599,23 @@ export function UsersSettingsScreen() {
                     placeholder="密码（至少 8 个字符）"
                     disabled={creating}
                   />
-                  <select
+                  <Select
                     value={createRole}
-                    onChange={(e) => setCreateRole(e.target.value as Role)}
-                    className={selectClassName}
+                    onValueChange={(value) =>
+                      setCreateRole((value || 'regular_admin') as Role)
+                    }
                     disabled={creating}
                   >
-                    <option value="regular_admin">管理员</option>
-                    <option value="super_admin">超级管理员</option>
-                  </select>
+                    <SelectTrigger className="h-8.5">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectPopup>
+                      <SelectList>
+                        <SelectItem value="regular_admin">管理员</SelectItem>
+                        <SelectItem value="super_admin">超级管理员</SelectItem>
+                      </SelectList>
+                    </SelectPopup>
+                  </Select>
                 </div>
                 <div className="mt-3 flex justify-end">
                   <Button
@@ -667,27 +680,32 @@ export function UsersSettingsScreen() {
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2">
                                   <RoleBadge role={user.role} />
-                                  <select
+                                  <Select
                                     value={user.role}
-                                    onChange={(e) =>
+                                    onValueChange={(value) =>
                                       void handleRoleChange(
                                         user,
-                                        e.target.value as Role,
+                                        (value || 'regular_admin') as Role,
                                       )
                                     }
                                     disabled={
                                       roleUpdating === user.userId || isLastSuper
                                     }
-                                    className={cn(
-                                      selectClassName,
-                                      'h-7 text-xs',
-                                    )}
                                   >
-                                    <option value="regular_admin">
-                                      管理员
-                                    </option>
-                                    <option value="super_admin">超级管理员</option>
-                                  </select>
+                                    <SelectTrigger className="h-7 text-xs">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectPopup>
+                                      <SelectList>
+                                        <SelectItem value="regular_admin">
+                                          管理员
+                                        </SelectItem>
+                                        <SelectItem value="super_admin">
+                                          超级管理员
+                                        </SelectItem>
+                                      </SelectList>
+                                    </SelectPopup>
+                                  </Select>
                                 </div>
                               </td>
                               <td className="px-4 py-3">

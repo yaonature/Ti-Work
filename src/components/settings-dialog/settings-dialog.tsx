@@ -12,8 +12,6 @@ import {
   Moon01Icon,
   Notification03Icon,
   PaintBoardIcon,
-  Settings02Icon,
-  SparklesIcon,
   VolumeHighIcon,
 } from '@hugeicons/core-free-icons'
 import { Component, useCallback, useEffect, useRef, useState } from 'react'
@@ -35,6 +33,14 @@ import {
 } from '@/hooks/use-chat-settings'
 import { UserAvatar } from '@/components/avatars'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { LogoLoader } from '@/components/logo-loader'
 import { BrailleSpinner } from '@/components/ui/braille-spinner'
 import { ThreeDotsSpinner } from '@/components/ui/three-dots-spinner'
@@ -61,15 +67,13 @@ type SectionId =
   | 'chat'
   | 'notifications'
 
+// 弹窗作为「快速设置」入口，仅保留高频项；低频能力统一收敛到「全部设置」独立页（/settings）
 const SECTIONS: Array<{ id: SectionId; label: string; icon: any }> = [
   { id: 'hermes', label: '模型与服务商', icon: CloudIcon },
-  { id: 'agent', label: '智能体', icon: Settings02Icon },
-  { id: 'routing', label: '智能路由', icon: SparklesIcon },
-  { id: 'voice', label: '语音', icon: VolumeHighIcon },
-  { id: 'display', label: '显示', icon: PaintBoardIcon },
-  { id: 'appearance', label: '主题', icon: PaintBoardIcon },
+  { id: 'appearance', label: '外观', icon: PaintBoardIcon },
   { id: 'chat', label: '会话', icon: MessageMultiple01Icon },
   { id: 'notifications', label: '通知', icon: Notification03Icon },
+  { id: 'voice', label: '语音', icon: VolumeHighIcon },
 ]
 
 const DARK_ENTERPRISE_THEMES = new Set<ThemeId>([
@@ -345,8 +349,7 @@ function HermesContent() {
                 网关未连接或版本过旧
               </p>
               <p className="mt-0.5 text-amber-500/80">
-                模型列表已降级为内置默认值，本地 Provider / API Key 配置不受影响。连接支持增强 API
-                的 Hermes 网关后，可在线拉取可用模型并解锁完整能力。
+                模型列表已降级为内置默认值，本地配置不受影响。连接增强 API 网关后可在线拉取模型。
               </p>
             </div>
           </div>
@@ -374,7 +377,7 @@ function HermesContent() {
           Provider
         </p>
         <p className="mb-3 text-[11px]" style={mutedStyle}>
-          选择你的 AI 服务提供方。OAuth 服务提供方通过浏览器完成认证。
+          选择 AI 服务提供方。OAuth 通过浏览器认证。
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {PROVIDER_CARDS.map((p) => {
@@ -604,7 +607,7 @@ function HermesContent() {
             <div>
               <div className="text-sm font-medium">记忆</div>
               <div className="text-[11px]" style={mutedStyle}>
-                跨会话存储与回忆记忆
+                跨会话存储记忆
               </div>
             </div>
             <Switch
@@ -732,7 +735,7 @@ function _ProfileContent() {
     <div className="space-y-4">
       <SectionHeader
         title="资料"
-        description="你在聊天中显示的身份。"
+        description="聊天中显示的身份。"
       />
       <div className={SETTINGS_CARD_CLASS}>
         <div className="flex items-center gap-3">
@@ -742,13 +745,13 @@ function _ProfileContent() {
               {displayName}
             </p>
             <p className="text-xs text-primary-500 dark:text-neutral-400">
-              No email connected
+              未绑定邮箱
             </p>
           </div>
         </div>
       </div>
       <div className={SETTINGS_CARD_CLASS}>
-        <Row label="显示名称" description="显示在聊天和侧栏中">
+        <Row label="显示名称" description="聊天与侧栏中的名称">
           <div className="w-full max-w-xs">
             <Input
               value={cs.displayName}
@@ -840,7 +843,7 @@ function AppearanceContent() {
         </p>
         <Row
           label="界面明暗"
-          description="切换浅色 / 深色，或跟随系统。"
+          description="浅色 / 深色 / 跟随系统。"
         >
           <ThemeToggle />
         </Row>
@@ -854,7 +857,7 @@ function AppearanceContent() {
       <div className={SETTINGS_CARD_CLASS}>
         <Row
           label="系统指标页脚"
-          description="显示包含 CPU、内存、磁盘和 Hermes 状态的常驻页脚。"
+          description="显示 CPU、内存、磁盘与 Ti Work 状态。"
         >
           <Switch
             checked={settings.showSystemMetricsFooter}
@@ -908,7 +911,7 @@ function getEnterpriseThemes(mode: 'light' | 'dark') {
   return THEMES.map((theme) => ({
     ...theme,
     desc: theme.description,
-    preview: (previews[theme.id] ?? THEME_PREVIEWS_DARK[theme.id] ?? THEME_PREVIEW_FALLBACK) as ThemePreview,
+    preview: (previews[theme.id] ?? THEME_PREVIEWS_DARK[theme.id] ?? THEME_PREVIEW_FALLBACK),
   }))
 }
 
@@ -1033,7 +1036,7 @@ function _LoaderContent() {
   const { settings: cs, updateSettings: updateCS } = useChatSettingsStore()
   const styles: Array<{ value: LoaderStyle; label: string }> = [
     { value: 'dots', label: '圆点' },
-    { value: 'braille-hermes', label: 'Hermes' },
+    { value: 'braille-hermes', label: 'Ti Work' },
     { value: 'braille-orbit', label: '轨道' },
     { value: 'braille-breathe', label: '呼吸' },
     { value: 'braille-pulse', label: '脉冲' },
@@ -1108,12 +1111,12 @@ function ChatContent() {
     <div className="space-y-4">
       <SectionHeader
         title="会话"
-        description="消息可见性与回复加载样式。"
+        description="消息可见性与回复样式。"
       />
       <div className={SETTINGS_CARD_CLASS}>
         <Row
           label="显示工具消息"
-          description="在助手回复中展示工具调用详情。"
+          description="展示工具调用详情。"
         >
           <Switch
             checked={cs.showToolMessages}
@@ -1123,7 +1126,7 @@ function ChatContent() {
         </Row>
         <Row
           label="显示推理块"
-          description="在模型提供时展示推理内容块。"
+          description="展示推理内容块。"
         >
           <Switch
             checked={cs.showReasoningBlocks}
@@ -1143,7 +1146,7 @@ function NotificationsContent() {
     <div className="space-y-4">
       <SectionHeader
         title="通知"
-        description="简单提醒与阈值控制。"
+        description="提醒与阈值控制。"
       />
       <div className={SETTINGS_CARD_CLASS}>
         <Row label="启用提醒">
@@ -1241,10 +1244,10 @@ function _AdvancedContent() {
     <div className="space-y-4">
       <SectionHeader
         title="高级"
-        description="Hermes 端点、连接与数据管理。"
+        description="端点、连接与数据管理。"
       />
       <div className={SETTINGS_CARD_CLASS}>
-        <Row label="Hermes URL" description="用于来自 Studio 的 API 请求">
+        <Row label="Ti Work URL" description="Studio API 请求地址">
           <div className="w-full max-w-sm">
             <Input
               type="url"
@@ -1252,7 +1255,7 @@ function _AdvancedContent() {
               value={settings.hermesUrl}
               onChange={(e) => validateAndUpdateUrl(e.target.value)}
               className="h-8 w-full rounded-lg border-primary-200 text-sm"
-              aria-label="Hermes URL"
+              aria-label="Ti Work URL"
               aria-invalid={!!urlError}
               aria-describedby={urlError ? urlErrorId : undefined}
             />
@@ -1267,14 +1270,14 @@ function _AdvancedContent() {
             )}
           </div>
         </Row>
-        <Row label="API 服务器密钥" description="用于非回环 Hermes 实例的 API_SERVER_KEY（v0.9.0）">
+        <Row label="API 服务器密钥" description="非回环实例的 API_SERVER_KEY">
           <Input
             type="password"
             placeholder="sk-…"
             value={settings.hermesApiKey}
             onChange={(e) => updateSettings({ hermesApiKey: e.target.value })}
             className="h-8 w-full max-w-sm rounded-lg border-primary-200 text-sm"
-            aria-label="Hermes API server key"
+            aria-label="Ti Work API server key"
           />
         </Row>
         <Row label="连接状态">
@@ -1316,7 +1319,7 @@ function _AdvancedContent() {
         </Row>
       </div>
       <div className={SETTINGS_CARD_CLASS}>
-        <Row label="备份" description="将配置、会话、技能和记忆导出为快照文件。">
+        <Row label="备份" description="导出配置、会话、技能与记忆。">
           <Button
             variant="outline"
             size="sm"
@@ -1333,7 +1336,7 @@ function _AdvancedContent() {
                   : '创建备份'}
           </Button>
         </Row>
-        <Row label="导入" description="恢复此前创建的备份归档。">
+        <Row label="导入" description="恢复备份归档。">
           <div>
             <input
               ref={importRef}
@@ -1426,7 +1429,7 @@ function AgentBehaviorContent() {
     <div className="space-y-4">
       <SectionHeader
         title="智能体行为"
-        description="执行限制与工具访问控制。"
+        description="执行限制与工具控制。"
       />
       {msg && (
         <div
@@ -1443,37 +1446,45 @@ function AgentBehaviorContent() {
       <div className={SETTINGS_CARD_CLASS}>
         <Row
           label="最大轮次"
-          description="每次请求允许的最大智能体轮次（1-100）"
+          description="每次请求的最大轮次（1-100）"
         >
-          <input
+          <Input
             type="number"
             min={1}
             max={100}
             value={Number(config.max_turns) || 50}
             onChange={(e) => save('max_turns', Number(e.target.value))}
-            className="h-8 w-20 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-center text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            className="h-8 w-20"
           />
         </Row>
-        <Row label="网关超时" description="超时前等待的秒数">
-          <input
+        <Row label="网关超时" description="等待秒数">
+          <Input
             type="number"
             min={10}
             max={600}
             value={Number(config.gateway_timeout) || 120}
             onChange={(e) => save('gateway_timeout', Number(e.target.value))}
-            className="h-8 w-20 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-center text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            className="h-8 w-20"
           />
         </Row>
-        <Row label="工具使用策略" description="控制智能体何时必须调用工具">
-          <select
+        <Row label="工具使用策略" description="控制何时必须调用工具">
+          <Select
             value={String(config.tool_use_enforcement || 'auto')}
-            onChange={(e) => save('tool_use_enforcement', e.target.value)}
-            className="h-8 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            onValueChange={(value) =>
+              save('tool_use_enforcement', value || '')
+            }
           >
-            <option value="auto">自动</option>
-            <option value="required">必须</option>
-            <option value="none">禁用</option>
-          </select>
+            <SelectTrigger className="h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectPopup>
+              <SelectList>
+                <SelectItem value="auto">自动</SelectItem>
+                <SelectItem value="required">必须</SelectItem>
+                <SelectItem value="none">禁用</SelectItem>
+              </SelectList>
+            </SelectPopup>
+          </Select>
         </Row>
       </div>
     </div>
@@ -1526,7 +1537,7 @@ function SmartRoutingContent() {
     <div className="space-y-4">
       <SectionHeader
         title="智能路由"
-        description="将简单查询路由到更便宜的模型。"
+        description="简单查询路由到更便宜模型。"
       />
       {msg && (
         <div
@@ -1550,41 +1561,47 @@ function SmartRoutingContent() {
             onCheckedChange={(c) => save('enabled', c)}
           />
         </Row>
-        <Row label="廉价模型" description="处理简单查询的模型">
-          <select
-            value={String(config.cheap_model || '')}
-            onChange={(e) => save('cheap_model', e.target.value)}
-            className="h-8 max-w-[12rem] rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+        <Row label="廉价模型" description="简单查询使用">
+          <Select
+            value={config.cheap_model || null}
+            onValueChange={(value) => save('cheap_model', value || '')}
           >
-            <option value="">自动</option>
-            {models.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name || m.id}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-8 max-w-[12rem]">
+              <SelectValue placeholder="自动" />
+            </SelectTrigger>
+            <SelectPopup>
+              <SelectList>
+                <SelectItem value={null}>自动</SelectItem>
+                {models.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.name || m.id}
+                  </SelectItem>
+                ))}
+              </SelectList>
+            </SelectPopup>
+          </Select>
         </Row>
-        <Row label="最大字符数" description="较短的对话使用廉价模型">
-          <input
+        <Row label="最大字符数" description="较短对话使用">
+          <Input
             type="number"
             min={10}
             max={2000}
             value={Number(config.max_simple_chars) || 200}
             onChange={(e) => save('max_simple_chars', Number(e.target.value))}
-            className="h-8 w-20 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-center text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            className="h-8 w-20"
           />
         </Row>
         <Row
           label="最大词数"
-          description="词数更少的对话使用廉价模型"
+          description="词数更少使用"
         >
-          <input
+          <Input
             type="number"
             min={1}
             max={500}
             value={Number(config.max_simple_words) || 30}
             onChange={(e) => save('max_simple_words', Number(e.target.value))}
-            className="h-8 w-20 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-center text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            className="h-8 w-20"
           />
         </Row>
       </div>
@@ -1647,7 +1664,7 @@ function VoiceContent() {
     <div className="space-y-4">
       <SectionHeader
         title="语音"
-        description="文字转语音与语音转文字。"
+        description="TTS 与 STT。"
       />
       {msg && (
         <div
@@ -1666,39 +1683,51 @@ function VoiceContent() {
           文字转语音
         </p>
         <Row label="TTS 服务提供方">
-          <select
+          <Select
             value={ttsProvider}
-            onChange={(e) => saveTts('provider', e.target.value)}
-            className="h-8 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            onValueChange={(value) => saveTts('provider', value || '')}
           >
-            <option value="edge">Edge TTS</option>
-            <option value="elevenlabs">ElevenLabs</option>
-            <option value="openai">OpenAI TTS</option>
-            <option value="neutts">NeuTTS</option>
-          </select>
+            <SelectTrigger className="h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectPopup>
+              <SelectList>
+                <SelectItem value="edge">Edge TTS</SelectItem>
+                <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
+                <SelectItem value="openai">OpenAI TTS</SelectItem>
+                <SelectItem value="neutts">NeuTTS</SelectItem>
+              </SelectList>
+            </SelectPopup>
+          </Select>
         </Row>
         {ttsProvider === 'openai' && (
           <Row label="音色">
-            <select
+            <Select
               value={String(
                 (tts.openai as Record<string, unknown>)?.voice || 'nova',
               )}
-              onChange={(e) =>
+              onValueChange={(value) =>
                 saveTts('openai', {
                   ...((tts.openai) || {}),
-                  voice: e.target.value,
+                  voice: value || '',
                 })
               }
-              className="h-8 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
             >
-              {['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'].map(
-                (v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ),
-              )}
-            </select>
+              <SelectTrigger className="h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectPopup>
+                <SelectList>
+                  {['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'].map(
+                    (v) => (
+                      <SelectItem key={v} value={v}>
+                        {v}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectList>
+              </SelectPopup>
+            </Select>
           </Row>
         )}
       </div>
@@ -1713,14 +1742,20 @@ function VoiceContent() {
           />
         </Row>
         <Row label="STT 服务提供方">
-          <select
+          <Select
             value={String(stt.provider || 'local')}
-            onChange={(e) => saveStt('provider', e.target.value)}
-            className="h-8 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            onValueChange={(value) => saveStt('provider', value || '')}
           >
-            <option value="local">Local (Whisper)</option>
-            <option value="openai">OpenAI Whisper</option>
-          </select>
+            <SelectTrigger className="h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectPopup>
+              <SelectList>
+                <SelectItem value="local">本地（Whisper）</SelectItem>
+                <SelectItem value="openai">OpenAI Whisper</SelectItem>
+              </SelectList>
+            </SelectPopup>
+          </Select>
         </Row>
       </div>
     </div>
@@ -1762,7 +1797,7 @@ function DisplayContent() {
     <div className="space-y-4">
       <SectionHeader
         title="显示"
-        description="智能体回复风格与输出偏好。"
+        description="回复风格与输出偏好。"
       />
       {msg && (
         <div
@@ -1777,19 +1812,25 @@ function DisplayContent() {
         </div>
       )}
       <div className={SETTINGS_CARD_CLASS}>
-        <Row label="个性" description="智能体回复风格">
-          <select
+        <Row label="个性" description="回复风格">
+          <Select
             value={String(config.personality || 'default')}
-            onChange={(e) => save('personality', e.target.value)}
-            className="h-8 rounded-lg border border-primary-200 bg-primary-50 px-2 text-sm text-primary-900 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            onValueChange={(value) => save('personality', value || '')}
           >
-            <option value="default">默认</option>
-            <option value="concise">简洁</option>
-            <option value="verbose">详细</option>
-            <option value="creative">有创造力</option>
-          </select>
+            <SelectTrigger className="h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectPopup>
+              <SelectList>
+                <SelectItem value="default">默认</SelectItem>
+                <SelectItem value="concise">简洁</SelectItem>
+                <SelectItem value="verbose">详细</SelectItem>
+                <SelectItem value="creative">有创造力</SelectItem>
+              </SelectList>
+            </SelectPopup>
+          </Select>
         </Row>
-        <Row label="流式输出" description="实时流式返回回复">
+        <Row label="流式输出" description="实时返回">
           <Switch
             checked={config.streaming !== false}
             onCheckedChange={(c) => save('streaming', c)}
@@ -1797,20 +1838,20 @@ function DisplayContent() {
         </Row>
         <Row
           label="显示推理"
-          description="展示模型的思考过程"
+          description="展示思考过程"
         >
           <Switch
             checked={config.show_reasoning !== false}
             onCheckedChange={(c) => save('show_reasoning', c)}
           />
         </Row>
-        <Row label="显示费用" description="显示每次回复的 Token 费用">
+        <Row label="显示费用" description="显示 Token 费用">
           <Switch
             checked={config.show_cost === true}
             onCheckedChange={(c) => save('show_cost', c)}
           />
         </Row>
-        <Row label="紧凑模式" description="压缩回复间距">
+        <Row label="紧凑模式" description="压缩间距">
           <Switch
             checked={config.compact === true}
             onCheckedChange={(c) => save('compact', c)}

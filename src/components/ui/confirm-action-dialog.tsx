@@ -1,7 +1,6 @@
 'use client'
 
 import { AlertDialog } from '@base-ui/react/alert-dialog'
-import type { ReactNode } from 'react'
 import { Button } from './button'
 import {
   AlertDialogContent,
@@ -9,6 +8,7 @@ import {
   AlertDialogRoot,
   AlertDialogTitle,
 } from './alert-dialog'
+import type { ReactNode } from 'react'
 
 type ConfirmActionDialogProps = {
   open: boolean

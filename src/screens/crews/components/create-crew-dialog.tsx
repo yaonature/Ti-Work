@@ -4,11 +4,21 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
-import { EmojiIcon } from '@/components/emoji-icon'
 import type { AgentDefinition } from '@/types/agent'
 import type { CreateCrewInput, CrewMemberRole } from '@/lib/crews-api'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { AGENT_PERSONAS } from '@/lib/agent-personas'
 import { fetchAgents } from '@/lib/agents-api'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
 const ROLES: Array<{ value: CrewMemberRole; label: string }> = [
@@ -161,13 +171,13 @@ export function CreateCrewDialog({
             <label className="mb-1.5 block text-xs font-medium text-[var(--theme-muted)]">
               多智能体名称
             </label>
-            <input
+            <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="例如：产品发布团队"
               required
-              className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
+              className="w-full"
             />
           </div>
 
@@ -177,12 +187,12 @@ export function CreateCrewDialog({
               目标{' '}
               <span className="font-normal opacity-60">（可选）</span>
             </label>
-            <textarea
+            <Textarea
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
               rows={2}
               placeholder="这个多智能体要完成什么？"
-              className="w-full resize-none rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
+              className="w-full resize-none"
             />
           </div>
 
@@ -213,72 +223,49 @@ export function CreateCrewDialog({
                     className="flex items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] p-2"
                   >
                     {/* Persona picker */}
-                    <select
+                    <Select
                       value={member.persona}
-                      onChange={(e) =>
-                        setMemberField(idx, 'persona', e.target.value)
+                      onValueChange={(value) =>
+                        setMemberField(idx, 'persona', value ?? '')
                       }
-                      className="flex-1 rounded border-0 bg-transparent text-sm text-[var(--theme-text)] focus:outline-none cursor-pointer"
                     >
-                      {agentOptions.length > AGENT_PERSONAS.length && (
-                        <optgroup label="内置" className="bg-[var(--theme-bg)]">
-                          {agentOptions.filter((a) => a.isBuiltIn).map((a) => (
-                            <option
+                      <SelectTrigger className="flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        <SelectList>
+                          {agentOptions.map((a) => (
+                            <SelectItem
                               key={a.id}
                               value={a.name.toLowerCase()}
-                              className="bg-[var(--theme-bg)]"
                             >
                               {a.name} — {a.roleLabel}
-                            </option>
+                            </SelectItem>
                           ))}
-                        </optgroup>
-                      )}
-                      {agentOptions.length > AGENT_PERSONAS.length && agentOptions.some((a) => !a.isBuiltIn) && (
-                        <optgroup label="自定义" className="bg-[var(--theme-bg)]">
-                          {agentOptions.filter((a) => !a.isBuiltIn).map((a) => (
-                            <option
-                              key={a.id}
-                              value={a.name.toLowerCase()}
-                              className="bg-[var(--theme-bg)]"
-                            >
-                              {a.name} — {a.roleLabel}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      {agentOptions.length <= AGENT_PERSONAS.length && agentOptions.map((a) => (
-                        <option
-                          key={a.id}
-                          value={a.name.toLowerCase()}
-                          className="bg-[var(--theme-bg)]"
-                        >
-                          {a.name} — {a.roleLabel}
-                        </option>
-                      ))}
-                    </select>
+                        </SelectList>
+                      </SelectPopup>
+                    </Select>
 
                     {/* Role picker */}
-                    <select
+                    <Select
                       value={member.role}
-                      onChange={(e) =>
-                        setMemberField(
-                          idx,
-                          'role',
-                          e.target.value as CrewMemberRole,
-                        )
+                      onValueChange={(value) =>
+                        setMemberField(idx, 'role', value as CrewMemberRole)
                       }
-                      className="rounded border-0 bg-transparent text-xs text-[var(--theme-muted)] focus:outline-none cursor-pointer"
                     >
-                      {ROLES.map((r) => (
-                        <option
-                          key={r.value}
-                          value={r.value}
-                          className="bg-[var(--theme-bg)]"
-                        >
-                          {r.label}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-auto text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        <SelectList>
+                          {ROLES.map((r) => (
+                            <SelectItem key={r.value} value={r.value}>
+                              {r.label}
+                            </SelectItem>
+                          ))}
+                        </SelectList>
+                      </SelectPopup>
+                    </Select>
 
                     {/* Color swatch */}
                     {agent && (

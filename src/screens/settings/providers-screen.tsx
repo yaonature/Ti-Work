@@ -14,8 +14,18 @@ import type { ModelCatalogEntry } from '@/lib/model-types'
 import type { ProviderSummaryForEdit } from './components/provider-wizard'
 import BackendUnavailableState from '@/components/backend-unavailable-state'
 import { Button } from '@/components/ui/button'
+import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from '@/components/ui/toast'
 import { getUnavailableReason } from '@/lib/feature-gates'
@@ -634,26 +644,32 @@ function SettingCard(props: {
           ) : null}
 
           {setting.kind === 'select' ? (
-            <select
-              className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm text-[var(--theme-text)] outline-none"
-              value={coerceString(currentValue)}
+            <Select
+              value={coerceString(currentValue) || null}
               disabled={disabled}
-              onChange={(event) => {
+              onValueChange={(value) => {
                 if (!setting.path || setting.unsupported) return
                 void saveSetting({
                   path: setting.path,
-                  value: event.target.value,
+                  value: value || '',
                   label: setting.label,
                 })
               }}
             >
-              <option value="">请选择…</option>
-              {(setting.options ?? []).map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="请选择…" />
+              </SelectTrigger>
+              <SelectPopup>
+                <SelectList>
+                  <SelectItem value={null}>请选择…</SelectItem>
+                  {(setting.options ?? []).map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectList>
+              </SelectPopup>
+            </Select>
           ) : null}
 
           {setting.kind === 'text' ? (
@@ -724,8 +740,7 @@ function SettingCard(props: {
           ) : null}
 
           {setting.kind === 'multiline' ? (
-            <textarea
-              className="min-h-[88px] w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm text-[var(--theme-text)] outline-none placeholder:text-[var(--theme-muted)]"
+            <Textarea
               value={draftValue}
               disabled={disabled}
               rows={setting.rows ?? 4}
@@ -760,6 +775,7 @@ type ModelConfigDraft = {
   provider: ModelProviderOption
   model: string
   baseUrl: string
+  apiKey: string
 }
 
 type PerformanceDraft = {
@@ -960,22 +976,28 @@ function ModelConfigSection(props: {
           <span className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--theme-muted)]">
             服务提供方
           </span>
-          <select
-            className="h-10 w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 text-sm text-[var(--theme-text)] outline-none"
+          <Select
             value={value.provider}
-            onChange={(event) => {
+            onValueChange={(nextValue) => {
               onChange({
                 ...value,
-                provider: parseModelProvider(event.target.value),
+                provider: parseModelProvider(nextValue),
               })
             }}
           >
-            {MODEL_PROVIDER_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-10 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectPopup>
+              <SelectList>
+                {MODEL_PROVIDER_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectList>
+            </SelectPopup>
+          </Select>
         </label>
 
         <label className="space-y-1.5">
@@ -1224,7 +1246,7 @@ function ActiveModelCard({
         </p>
       ) : configQuery.error ? (
         <p className="mt-4 text-sm text-red-500">
-          加载配置失败 — 请确保 Hermes Agent 正在运行。
+          加载配置失败 — 请确保 Ti Work 正在运行。
         </p>
       ) : (
         <div className="mt-5 space-y-4">
@@ -1384,7 +1406,7 @@ function ProviderManagementSection(props: {
               已配置的服务提供方
             </h3>
             <p className="mt-1 text-xs text-[var(--theme-muted)]">
-              API 密钥仅存储在本地 Hermes 配置中，绝不会发送到 Studio。
+              API 密钥仅存储在本地 Ti Work 配置中，绝不会发送到 Studio。
             </p>
           </div>
           <p className="text-xs text-[var(--theme-muted)] tabular-nums">
@@ -1394,7 +1416,7 @@ function ProviderManagementSection(props: {
 
         {modelsQuery.isPending ? (
           <p className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-muted)]">
-            正在从 Hermes 加载服务提供方…
+            正在从 Ti Work 加载服务提供方…
           </p>
         ) : null}
 
@@ -1514,6 +1536,8 @@ export function ProvidersScreen({ embedded = false }: ProvidersScreenProps) {
   const [wizardOpen, setWizardOpen] = useState(false)
   const [editingProvider, setEditingProvider] =
     useState<ProviderSummaryForEdit | null>(null)
+  const [pendingDeleteProvider, setPendingDeleteProvider] =
+    useState<ProviderSummary | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const modelsQuery = useQuery({
@@ -1628,12 +1652,14 @@ export function ProvidersScreen({ embedded = false }: ProvidersScreenProps) {
     setWizardOpen(true)
   }
 
-  async function handleDelete(provider: ProviderSummary) {
-    const confirmed = window.confirm(
-      `确定移除服务提供方 "${provider.name}"？这将从本地配置中删除对应的 API 密钥。`,
-    )
-    if (!confirmed) return
+  function handleDelete(provider: ProviderSummary) {
+    setPendingDeleteProvider(provider)
+  }
 
+  async function confirmDeleteProvider() {
+    const provider = pendingDeleteProvider
+    if (!provider) return
+    setPendingDeleteProvider(null)
     setDeletingId(provider.id)
     try {
       const res = await fetch('/api/hermes-config', {
@@ -1709,7 +1735,7 @@ export function ProvidersScreen({ embedded = false }: ProvidersScreenProps) {
                 设置
               </h1>
               <p className="text-sm text-[var(--theme-muted)]">
-                在一个地方配置服务提供方和 Hermes 智能体默认设置。
+                在一个地方配置服务提供方和 Ti Work 智能体默认设置。
               </p>
             </div>
 
@@ -1847,6 +1873,24 @@ export function ProvidersScreen({ embedded = false }: ProvidersScreenProps) {
         open={wizardOpen}
         onOpenChange={handleWizardOpenChange}
         editProvider={editingProvider}
+      />
+
+      <ConfirmActionDialog
+        open={pendingDeleteProvider !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteProvider(null)
+        }}
+        title="移除服务提供方"
+        description={
+          pendingDeleteProvider
+            ? `确定移除服务提供方 "${pendingDeleteProvider.name}"？这将从本地配置中删除对应的 API 密钥。`
+            : ''
+        }
+        confirmLabel="确认移除"
+        confirmVariant="destructive"
+        onConfirm={() => {
+          void confirmDeleteProvider()
+        }}
       />
     </div>
   )

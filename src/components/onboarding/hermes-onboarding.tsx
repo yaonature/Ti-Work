@@ -5,6 +5,15 @@ import { AnimatePresence, motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { ProviderLogo } from '@/components/provider-logo'
 import { EmojiIcon } from '@/components/emoji-icon'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const KNOWN_PROVIDER_PREFIXES = [
   'openrouter',
@@ -237,7 +246,7 @@ export function HermesOnboarding() {
         setBackendStatus('ready')
         setBackendMessage(
           data.capabilities.sessions
-            ? '后端已连接。基础对话可用，Hermes 执行引擎（网关）增强功能已就绪。'
+            ? '后端已连接。基础对话可用，Ti Work 执行引擎（网关）增强功能已就绪。'
             : '后端已连接。基础对话已就绪。',
         )
         return
@@ -647,12 +656,6 @@ export function HermesOnboarding() {
     color: 'var(--theme-text)',
   }
   const mutedStyle: React.CSSProperties = { color: 'var(--theme-muted)' }
-  const inputStyle: React.CSSProperties = {
-    backgroundColor: 'var(--theme-bg)',
-    border: '1px solid var(--theme-border)',
-    color: 'var(--theme-text)',
-  }
-
   return (
     <div
       className="fixed inset-0 z-[99999] flex items-center justify-center px-4"
@@ -693,7 +696,7 @@ export function HermesOnboarding() {
               />
               <h2 className="text-xl font-bold">欢迎使用 Ti Work</h2>
               <p className="text-sm" style={mutedStyle}>
-                兼容任意 OpenAI 接口的后端。接入 Hermes 执行引擎（网关）后，会话、记忆、技能等增强功能将自动解锁。
+                兼容任意 OpenAI 接口的后端。接入 Ti Work 执行引擎（网关）后，会话、记忆、技能等增强功能将自动解锁。
               </p>
               <button
                 onClick={() => {
@@ -759,10 +762,10 @@ export function HermesOnboarding() {
                     style={{ ...cardStyle, borderColor: 'var(--theme-border)' }}
                   >
                     <p className="font-medium text-white">
-                      Hermes 网关是什么？
+                      Ti Work 网关是什么？
                     </p>
                     <p className="mt-2" style={mutedStyle}>
-                      Ti Work 需要一个「模型后端」才能对话。Hermes 网关是
+                      Ti Work 需要一个「模型后端」才能对话。Ti Work 网关是
                       Ti Work 的执行引擎：连接后，定时任务、会话、记忆等增强功能会自动解锁。
                     </p>
                     <p className="mt-2" style={mutedStyle}>
@@ -846,7 +849,7 @@ export function HermesOnboarding() {
                 <p style={mutedStyle}>后端模式</p>
                 <p className="mt-1">
                   {backendInfo?.capabilities?.sessions
-                    ? '已检测到 Hermes 执行引擎（网关）'
+                    ? '已检测到 Ti Work 执行引擎（网关）'
                     : '便携式 OpenAI 兼容后端'}
                 </p>
                 {configuredModel ? (
@@ -1016,7 +1019,7 @@ export function HermesOnboarding() {
                           ? 'Ollama 地址'
                           : '基础地址'}
                       </label>
-                      <input
+                      <Input
                         type="text"
                         value={baseUrl}
                         onChange={(e) => setBaseUrl(e.target.value)}
@@ -1025,8 +1028,6 @@ export function HermesOnboarding() {
                             ? 'http://localhost:11434'
                             : 'https://api.example.com/v1'
                         }
-                        className="w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-500"
-                        style={inputStyle}
                       />
                     </div>
                   ) : null}
@@ -1038,13 +1039,11 @@ export function HermesOnboarding() {
                       >
                         API 密钥
                       </label>
-                      <input
+                      <Input
                         type="password"
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
                         placeholder="sk-..."
-                        className="w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-500"
-                        style={inputStyle}
                       />
                     </div>
                   ) : null}
@@ -1059,28 +1058,31 @@ export function HermesOnboarding() {
                   模型
                 </label>
                 {availableModels.length > 0 ? (
-                  <select
+                  <Select
                     value={selectedModel}
-                    onChange={(e) =>
-                      setSelectedModel(stripProviderPrefix(e.target.value))
+                    onValueChange={(value) =>
+                      setSelectedModel(stripProviderPrefix(value || ''))
                     }
-                    className="w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-500"
-                    style={inputStyle}
                   >
-                    {availableModels.map((model) => (
-                      <option key={model} value={model}>
-                        {stripProviderPrefix(model)}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择模型" />
+                    </SelectTrigger>
+                    <SelectPopup>
+                      <SelectList>
+                        {availableModels.map((model) => (
+                          <SelectItem key={model} value={model}>
+                            {stripProviderPrefix(model)}
+                          </SelectItem>
+                        ))}
+                      </SelectList>
+                    </SelectPopup>
+                  </Select>
                 ) : (
-                  <input
+                  <Input
                     type="text"
                     value={selectedModel}
                     onChange={(e) => setSelectedModel(e.target.value)}
                     placeholder={configuredModel || 'gpt-4.1'}
-                    className="w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent-500"
-                    style={inputStyle}
                   />
                 )}
                 <p className="mt-2 text-xs" style={mutedStyle}>
@@ -1269,8 +1271,8 @@ export function HermesOnboarding() {
               <p className="text-sm" style={mutedStyle}>
                 基础对话已配置完成。{' '}
                 {enhancedFeatures.length > 0
-                  ? '该后端同时提供 Hermes 执行引擎（网关）增强功能。'
-                  : '后续连接 Hermes 执行引擎（网关）时，增强功能将自动解锁。'}
+                  ? '该后端同时提供 Ti Work 执行引擎（网关）增强功能。'
+                  : '后续连接 Ti Work 执行引擎（网关）时，增强功能将自动解锁。'}
               </p>
               <div
                 className="grid grid-cols-3 gap-2 text-xs"

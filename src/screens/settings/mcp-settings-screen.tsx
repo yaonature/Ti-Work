@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
@@ -300,11 +301,10 @@ function ServerDialog(props: {
                     <span className="text-xs font-medium uppercase tracking-[0.12em] text-primary-600">
                       环境变量
                     </span>
-                    <textarea
+                    <Textarea
                       value={draft.envText}
                       rows={4}
                       placeholder={'API_KEY=${MCP_API_KEY}\nLOG_LEVEL=debug'}
-                      className="min-h-[108px] w-full rounded-lg border border-primary-200 bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-primary-500"
                       onChange={(event) =>
                         setDraft((current) => ({
                           ...current,
@@ -334,13 +334,12 @@ function ServerDialog(props: {
                     <span className="text-xs font-medium uppercase tracking-[0.12em] text-primary-600">
                       请求头
                     </span>
-                    <textarea
+                    <Textarea
                       value={draft.headersText}
                       rows={4}
                       placeholder={
                         'Authorization=Bearer ${GITHUB_TOKEN}\nX-Workspace=hermes'
                       }
-                      className="min-h-[108px] w-full rounded-lg border border-primary-200 bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-primary-500"
                       onChange={(event) =>
                         setDraft((current) => ({
                           ...current,
@@ -413,7 +412,7 @@ export function McpSettingsScreen() {
         setNotice(payload.message ?? null)
       } catch {
         setNotice(
-          '无法从 Hermes 加载 MCP 配置；您仍可在此编辑服务器。',
+          '无法从 Ti Work 加载 MCP 配置；您仍可在此编辑服务器。',
         )
       } finally {
         setLoading(false)

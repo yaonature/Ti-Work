@@ -122,7 +122,7 @@ export function DocsScreen() {
 
           <h3 style={h3Style}>什么是 Ti Work</h3>
           <p style={pStyle}>
-            Ti Work 是一个功能完备的 Web 控制台，用于管理、监控和编排运行在 Hermes 网关上的 AI 智能体。它提供了丰富的图形界面，涵盖会话、多智能体协同、任务跟踪、记忆管理、技能安装、定时任务调度和系统可观测性。该应用被设计为单页渐进式 Web 应用，通过 HTTP 与 Server-Sent Events (SSE) 连接到一个或多个 Hermes 网关实例。
+            Ti Work 是一个功能完备的 Web 控制台，用于管理、监控和编排运行在 Ti Work 网关上的 AI 智能体。它提供了丰富的图形界面，涵盖会话、多智能体协同、任务跟踪、记忆管理、技能安装、定时任务调度和系统可观测性。该应用被设计为单页渐进式 Web 应用，通过 HTTP 与 Server-Sent Events (SSE) 连接到一个或多个 Ti Work 网关实例。
           </p>
 
           <h3 style={h3Style}>架构</h3>
@@ -134,14 +134,14 @@ export function DocsScreen() {
             <li><strong>路由：</strong>TanStack Router（基于文件的路由生成），带类型安全的路径参数和查询参数。</li>
             <li><strong>数据获取：</strong>TanStack Query 用于服务端状态管理，支持自动缓存、重新获取和乐观更新。</li>
             <li><strong>构建系统：</strong>Vite 配合 TanStack Start，支持 SSR 打包、HMR 和生产构建。</li>
-            <li><strong>服务端层：</strong>TanStack Start 服务端函数处理 API 路由。服务进程作为 Node.js HTTP 服务器运行，代理请求至 Hermes 网关。</li>
+            <li><strong>服务端层：</strong>TanStack Start 服务端函数处理 API 路由。服务进程作为 Node.js HTTP 服务器运行，代理请求至 Ti Work 网关。</li>
             <li><strong>状态管理：</strong>Zustand 配合 persist 中间件管理客户端设置。React 状态与 TanStack Query 管理临时/服务端状态。</li>
             <li><strong>样式：</strong>Tailwind CSS 4 配合自定义 CSS 变量主题层。所有颜色均通过 <code style={codeStyle}>var(--theme-*)</code> 令牌感知主题。</li>
           </ul>
 
           <h3 style={h3Style}>网关连接模型</h3>
           <p style={pStyle}>
-            Ti Work 不直接与 LLM 服务提供方通信。相反，它连接到一个 Hermes 网关服务器，由该网关管理智能体会话、工具执行、记忆和服务提供方路由。连接模型如下：
+            Ti Work 不直接与 LLM 服务提供方通信。相反，它连接到一个 Ti Work 网关服务器，由该网关管理智能体会话、工具执行、记忆和服务提供方路由。连接模型如下：
           </p>
           <ol style={olStyle}>
             <li>启动时，Studio 服务器探测配置的网关 URL 以检测可用能力。</li>
@@ -201,7 +201,7 @@ export function DocsScreen() {
               <tr>
                 <td style={tdStyle}><strong>会话</strong></td>
                 <td style={tdCodeStyle}>/chat/:sessionKey</td>
-                <td style={tdStyle}>主要会话界面。包含会话侧边栏、流式消息展示、审批卡片、附件处理、检查器面板、上下文计量器以及多模型选择。同时支持增强型 Hermes 会话和便携式会话补全。</td>
+                <td style={tdStyle}>主要会话界面。包含会话侧边栏、流式消息展示、审批卡片、附件处理、检查器面板、上下文计量器以及多模型选择。同时支持增强型 Ti Work 会话和便携式会话补全。</td>
               </tr>
               <tr>
                 <td style={tdStyle}><strong>文件</strong></td>
@@ -303,7 +303,7 @@ export function DocsScreen() {
 
           <h3 style={h3Style}>会话管理</h3>
           <p style={pStyle}>
-            Ti Work 中的每段对话都存在于一个会话中。会话是服务器管理的实体，在 Hermes 网关上创建。每个会话维护自己的上下文窗口、消息历史、工具权限和记忆状态。
+            Ti Work 中的每段对话都存在于一个会话中。会话是服务器管理的实体，在 Ti Work 网关上创建。每个会话维护自己的上下文窗口、消息历史、工具权限和记忆状态。
           </p>
           <ul style={ulStyle}>
             <li><strong>创建：</strong>会话通过 <code style={codeStyle}>POST /api/sessions</code> 创建，由网关代理执行。每个会话获得一个唯一键（UUID 格式）。</li>
@@ -320,7 +320,7 @@ export function DocsScreen() {
           <ol style={olStyle}>
             <li>用户通过 <code style={codeStyle}>POST /api/sessions/send</code> 发送消息，请求分派到网关。</li>
             <li>客户端以会话键作为查询参数，打开到 <code style={codeStyle}>GET /api/chat-events</code> 的 SSE 连接。</li>
-            <li>服务器代理来自 Hermes 网关的 SSE 事件，逐 Token 转发流式数据。</li>
+            <li>服务器代理来自 Ti Work 网关的 SSE 事件，逐 Token 转发流式数据。</li>
             <li>事件包括：<code style={codeStyle}>message_start</code>、<code style={codeStyle}>content_delta</code>、<code style={codeStyle}>content_end</code>、<code style={codeStyle}>tool_use</code>、<code style={codeStyle}>tool_result</code>、<code style={codeStyle}>approval_required</code>、<code style={codeStyle}>error</code>。</li>
             <li>客户端将增量累积为完整消息，逐步更新 React 状态以实现流畅渲染。</li>
             <li>流结束后（自然结束或通过中止），客户端与网关的完整消息历史进行对账。</li>
@@ -328,7 +328,7 @@ export function DocsScreen() {
 
           <h3 style={h3Style}>消息持久化</h3>
           <p style={pStyle}>
-            消息由 Hermes 网关使用分层存储策略持久化：
+            消息由 Ti Work 网关使用分层存储策略持久化：
           </p>
           <ul style={ulStyle}>
             <li><strong>主存储（Redis）：</strong>配置 <code style={codeStyle}>REDIS_URL</code> 后，消息存储在以会话为键的 Redis 有序集合中。这提供了快速检索并支持基于 TTL 的过期。</li>
@@ -434,7 +434,7 @@ export function DocsScreen() {
 
           <h4 style={h4Style}>网关原生架构</h4>
           <p style={pStyle}>
-            Conductor V2 系统采用网关原生方法，编排由专用的 Hermes 智能体会话执行，而非客户端逻辑。编排智能体接收任务目标和派发技能，然后自主分解工作并派生工作会话。
+            Conductor V2 系统采用网关原生方法，编排由专用的 Ti Work 智能体会话执行，而非客户端逻辑。编排智能体接收任务目标和派发技能，然后自主分解工作并派生工作会话。
           </p>
 
           <h4 style={h4Style}>任务阶段</h4>
@@ -456,7 +456,7 @@ export function DocsScreen() {
             <li>客户端发送 <code style={codeStyle}>POST /api/conductor-spawn</code>，包含目标、编排模型、工作模型、项目目录、最大并行数和监督标志。</li>
             <li>服务器从磁盘加载 workspace-dispatch 技能（搜索多个候选路径）。</li>
             <li>构建编排提示词，将目标与派发技能指令结合。</li>
-            <li>在网关上创建 Hermes 定时任务，将编排器作为一次性任务运行。</li>
+            <li>在网关上创建 Ti Work 定时任务，将编排器作为一次性任务运行。</li>
             <li>编排智能体分解目标，并通过派发技能派生工作会话。</li>
             <li>客户端每 3 秒轮询工作会话状态以跟踪进度。</li>
           </ol>
@@ -691,7 +691,7 @@ export function DocsScreen() {
 
           <h3 style={h3Style}>技能注册表</h3>
           <p style={pStyle}>
-            Ti Work 提供对来自 skillsmp.com（Hermes 技能市场）的 2000+ 技能注册表的访问。技能通过提供结构化指令、工具定义和工作流模式来扩展智能体能力。技能界面显示已安装技能及其状态（启用/禁用）以及来自技能中心的可获取技能。
+            Ti Work 提供对来自 skillsmp.com（Ti Work 技能市场）的 2000+ 技能注册表的访问。技能通过提供结构化指令、工具定义和工作流模式来扩展智能体能力。技能界面显示已安装技能及其状态（启用/禁用）以及来自技能中心的可获取技能。
           </p>
 
           <h3 style={h3Style}>安装流程</h3>
@@ -699,7 +699,7 @@ export function DocsScreen() {
             技能安装采用两级策略：
           </p>
           <ol style={olStyle}>
-            <li><strong>网关安装：</strong>主要路径通过 <code style={codeStyle}>POST /api/skills/install</code> 向 Hermes 网关发送安装请求。网关从注册表下载技能并将其放置在技能目录中。</li>
+            <li><strong>网关安装：</strong>主要路径通过 <code style={codeStyle}>POST /api/skills/install</code> 向 Ti Work 网关发送安装请求。网关从注册表下载技能并将其放置在技能目录中。</li>
             <li><strong>ClawHub 回退：</strong>如果网关安装失败（网关版本过旧、网络问题），系统回退到 ClawHub API 获取技能。</li>
           </ol>
           <p style={pStyle}>
@@ -866,7 +866,7 @@ export function DocsScreen() {
         <section id="api-reference" style={sectionStyle}>
           <h2 style={h2Style}>12. API 参考</h2>
           <p style={pStyle}>
-            所有 API 端点均由 Hermes Studio 服务器进程提供，并在适当时代理到 Hermes 网关。基础路径：<code style={codeStyle}>/api</code>。所有变更端点均要求 <code style={codeStyle}>Content-Type: application/json</code>。认证通过会话 Cookie 或 Bearer Token 完成。
+            所有 API 端点均由 Ti Work 服务器进程提供，并在适当时代理到 Ti Work 网关。基础路径：<code style={codeStyle}>/api</code>。所有变更端点均要求 <code style={codeStyle}>Content-Type: application/json</code>。认证通过会话 Cookie 或 Bearer Token 完成。
           </p>
 
           <h3 style={h3Style}>认证</h3>
@@ -1074,13 +1074,13 @@ export function DocsScreen() {
             <tbody>
               <tr><td style={tdCodeStyle}>GET</td><td style={tdCodeStyle}>/api/ping</td><td style={tdStyle}>健康检查。返回 200 及时间戳。</td></tr>
               <tr><td style={tdCodeStyle}>GET</td><td style={tdCodeStyle}>/api/system-health</td><td style={tdStyle}>详细的系统健康状态，包括网关连通性、Redis 状态和运行时间。</td></tr>
-              <tr><td style={tdCodeStyle}>GET</td><td style={tdCodeStyle}>/api/systemd-status</td><td style={tdStyle}>获取 Hermes 网关进程的 systemd 服务状态。</td></tr>
-              <tr><td style={tdCodeStyle}>POST</td><td style={tdCodeStyle}>/api/systemd-control</td><td style={tdStyle}>控制 Hermes 网关 systemd 服务（启动、停止、重启）。</td></tr>
+              <tr><td style={tdCodeStyle}>GET</td><td style={tdCodeStyle}>/api/systemd-status</td><td style={tdStyle}>获取 Ti Work 网关进程的 systemd 服务状态。</td></tr>
+              <tr><td style={tdCodeStyle}>POST</td><td style={tdCodeStyle}>/api/systemd-control</td><td style={tdStyle}>控制 Ti Work 网关 systemd 服务（启动、停止、重启）。</td></tr>
               <tr><td style={tdCodeStyle}>GET</td><td style={tdCodeStyle}>/api/models</td><td style={tdStyle}>列出网关提供的可用 LLM 模型。</td></tr>
               <tr><td style={tdCodeStyle}>GET</td><td style={tdCodeStyle}>/api/workspace</td><td style={tdStyle}>获取工作区信息（路径、配置档案、网关版本）。</td></tr>
               <tr><td style={tdCodeStyle}>GET</td><td style={tdCodeStyle}>/api/gateway-status</td><td style={tdStyle}>获取网关连接状态和检测到的能力。</td></tr>
               <tr><td style={tdCodeStyle}>GET</td><td style={tdCodeStyle}>/api/connection-status</td><td style={tdStyle}>轻量级连接检查（比完整健康检查更快）。</td></tr>
-              <tr><td style={tdCodeStyle}>POST</td><td style={tdCodeStyle}>/api/start-hermes</td><td style={tdStyle}>启动 Hermes 网关进程（如未运行）。</td></tr>
+              <tr><td style={tdCodeStyle}>POST</td><td style={tdCodeStyle}>/api/start-hermes</td><td style={tdStyle}>启动 Ti Work 网关进程（如未运行）。</td></tr>
               <tr><td style={tdCodeStyle}>POST</td><td style={tdCodeStyle}>/api/start-agent</td><td style={tdStyle}>使用特定配置启动智能体会话。</td></tr>
             </tbody>
           </table>
@@ -1122,7 +1122,7 @@ export function DocsScreen() {
               <tr><th style={thStyle}>方法</th><th style={thStyle}>路径</th><th style={thStyle}>说明</th></tr>
             </thead>
             <tbody>
-              <tr><td style={tdCodeStyle}>ANY</td><td style={tdCodeStyle}>/api/hermes-proxy/*</td><td style={tdStyle}>对 Hermes 网关的透明代理。转发任何请求路径和方法。用于自定义集成对网关的直接访问。</td></tr>
+              <tr><td style={tdCodeStyle}>ANY</td><td style={tdCodeStyle}>/api/hermes-proxy/*</td><td style={tdStyle}>对 Ti Work 网关的透明代理。转发任何请求路径和方法。用于自定义集成对网关的直接访问。</td></tr>
             </tbody>
           </table>
         </section>
@@ -1142,7 +1142,7 @@ export function DocsScreen() {
             <tbody>
               <tr><td style={tdCodeStyle}>hermesUrl</td><td style={tdStyle}>string</td><td style={tdCodeStyle}>""</td><td style={tdStyle}>网关服务器 URL（例如 http://localhost:8642）</td></tr>
               <tr><td style={tdCodeStyle}>hermesToken</td><td style={tdStyle}>string</td><td style={tdCodeStyle}>""</td><td style={tdStyle}>网关认证的 Bearer Token</td></tr>
-              <tr><td style={tdCodeStyle}>hermesApiKey</td><td style={tdStyle}>string</td><td style={tdCodeStyle}>""</td><td style={tdStyle}>用于非回环地址 Hermes 实例的 API 服务器密钥</td></tr>
+              <tr><td style={tdCodeStyle}>hermesApiKey</td><td style={tdStyle}>string</td><td style={tdCodeStyle}>""</td><td style={tdStyle}>用于非回环地址 Ti Work 实例的 API 服务器密钥</td></tr>
               <tr><td style={tdCodeStyle}>theme</td><td style={tdStyle}>"system" | "dark"</td><td style={tdCodeStyle}>"system"</td><td style={tdStyle}>配色方案偏好</td></tr>
               <tr><td style={tdCodeStyle}>accentColor</td><td style={tdStyle}>"orange" | "purple" | "blue" | "green"</td><td style={tdCodeStyle}>"blue"</td><td style={tdStyle}>UI 强调色</td></tr>
               <tr><td style={tdCodeStyle}>editorFontSize</td><td style={tdStyle}>number</td><td style={tdCodeStyle}>13</td><td style={tdStyle}>Monaco 编辑器字体大小（像素）</td></tr>
@@ -1174,7 +1174,7 @@ export function DocsScreen() {
 
           <h3 style={h3Style}>网关配置</h3>
           <p style={pStyle}>
-            Hermes 网关通过 <code style={codeStyle}>~/.hermes/config.yaml</code> 配置。Studio 通过 <code style={codeStyle}>/api/hermes-config</code> 端点读取和写入此配置。关键配置部分：
+            Ti Work 网关通过 <code style={codeStyle}>~/.hermes/config.yaml</code> 配置。Studio 通过 <code style={codeStyle}>/api/hermes-config</code> 端点读取和写入此配置。关键配置部分：
           </p>
           <pre style={preStyle}>{`# ~/.hermes/config.yaml
 server:
@@ -1224,7 +1224,7 @@ jobs:
 
           <h3 style={h3Style}>基于文件的数据存储</h3>
           <p style={pStyle}>
-            多个数据存储使用 Hermes Studio 安装目录内的 <code style={codeStyle}>.runtime/</code> 目录：
+            多个数据存储使用 Ti Work 安装目录内的 <code style={codeStyle}>.runtime/</code> 目录：
           </p>
           <dl style={dlStyle}>
             <dt style={dtStyle}>.runtime/crews.json</dt>
@@ -1243,12 +1243,12 @@ jobs:
               <tr><th style={thStyle}>变量</th><th style={thStyle}>默认值</th><th style={thStyle}>说明</th></tr>
             </thead>
             <tbody>
-              <tr><td style={tdCodeStyle}>HERMES_API_URL</td><td style={tdCodeStyle}>http://127.0.0.1:8642</td><td style={tdStyle}>Hermes 网关服务器的 URL。Studio 服务器在此连接以执行所有网关操作。</td></tr>
+              <tr><td style={tdCodeStyle}>HERMES_API_URL</td><td style={tdCodeStyle}>http://127.0.0.1:8642</td><td style={tdStyle}>Ti Work 网关服务器的 URL。Studio 服务器在此连接以执行所有网关操作。</td></tr>
               <tr><td style={tdCodeStyle}>HERMES_API_TOKEN</td><td style={tdStyle}>(none)</td><td style={tdStyle}>与网关认证的 Bearer Token。在所有代理请求中以 Authorization 头发送。</td></tr>
-              <tr><td style={tdCodeStyle}>HERMES_PASSWORD</td><td style={tdStyle}>(none)</td><td style={tdStyle}>登录 Hermes Studio 所需的密码。设置后，首次访问将显示登录界面。</td></tr>
+              <tr><td style={tdCodeStyle}>HERMES_PASSWORD</td><td style={tdStyle}>(none)</td><td style={tdStyle}>登录 Ti Work 所需的密码。设置后，首次访问将显示登录界面。</td></tr>
               <tr><td style={tdCodeStyle}>REDIS_URL</td><td style={tdStyle}>(none)</td><td style={tdStyle}>会话 Token 持久化的 Redis 连接 URL。示例：redis://localhost:6379。未设置时，Token 仅存储在内存中。</td></tr>
               <tr><td style={tdCodeStyle}>NODE_ENV</td><td style={tdCodeStyle}>development</td><td style={tdStyle}>环境模式。在生产环境中，错误消息被脱敏且调试日志被抑制。</td></tr>
-              <tr><td style={tdCodeStyle}>PORT</td><td style={tdCodeStyle}>3000</td><td style={tdStyle}>Hermes Studio 服务器的端口号。</td></tr>
+              <tr><td style={tdCodeStyle}>PORT</td><td style={tdCodeStyle}>3000</td><td style={tdStyle}>Ti Work 服务器的端口号。</td></tr>
             </tbody>
           </table>
         </section>
@@ -1259,16 +1259,16 @@ jobs:
 
           <h3 style={h3Style}>主题系统</h3>
           <p style={pStyle}>
-            Hermes Studio 使用带 5 个可用主题的 CSS 自定义属性主题系统。主题通过在文档根元素上设置 <code style={codeStyle}>data-theme</code> 属性来应用。所有主题仅以深色模式运行。
+            Ti Work 使用带 5 个可用主题的 CSS 自定义属性主题系统。主题通过在文档根元素上设置 <code style={codeStyle}>data-theme</code> 属性来应用。所有主题仅以深色模式运行。
           </p>
           <table style={tableStyle}>
             <thead>
               <tr><th style={thStyle}>主题 ID</th><th style={thStyle}>标签</th><th style={thStyle}>说明</th></tr>
             </thead>
             <tbody>
-              <tr><td style={tdCodeStyle}>hermes-os</td><td style={tdStyle}>Hermes OS</td><td style={tdStyle}>电光蓝的影院级智能体操作系统主题。默认主题。</td></tr>
-              <tr><td style={tdCodeStyle}>hermes-official</td><td style={tdStyle}>Hermes Official</td><td style={tdStyle}>海军蓝和靛蓝的旗舰主题，具有专业美学。</td></tr>
-              <tr><td style={tdCodeStyle}>hermes-classic</td><td style={tdStyle}>Hermes Classic</td><td style={tdStyle}>深炭色上的青铜点缀，呈现温暖、精致的观感。</td></tr>
+              <tr><td style={tdCodeStyle}>hermes-os</td><td style={tdStyle}>Ti Work OS</td><td style={tdStyle}>电光蓝的影院级智能体操作系统主题。默认主题。</td></tr>
+              <tr><td style={tdCodeStyle}>hermes-official</td><td style={tdStyle}>Ti Work 旗舰</td><td style={tdStyle}>海军蓝和靛蓝的旗舰主题，具有专业美学。</td></tr>
+              <tr><td style={tdCodeStyle}>hermes-classic</td><td style={tdStyle}>Ti Work 经典</td><td style={tdStyle}>深炭色上的青铜点缀，呈现温暖、精致的观感。</td></tr>
               <tr><td style={tdCodeStyle}>hermes-slate</td><td style={tdStyle}>Slate</td><td style={tdStyle}>带微妙渐变的冷色调蓝色开发者主题。</td></tr>
               <tr><td style={tdCodeStyle}>hermes-mono</td><td style={tdStyle}>Mono</td><td style={tdStyle}>干净的纯灰度单色主题，减少干扰。</td></tr>
             </tbody>
@@ -1305,7 +1305,7 @@ jobs:
 
           <h3 style={h3Style}>组件库</h3>
           <p style={pStyle}>
-            Hermes Studio 使用设计系统组件库以实现一致的 UI 模式：
+            Ti Work 使用设计系统组件库以实现一致的 UI 模式：
           </p>
           <dl style={dlStyle}>
             <dt style={dtStyle}>Card</dt>
@@ -1324,7 +1324,7 @@ jobs:
 
           <h3 style={h3Style}>图标库</h3>
           <p style={pStyle}>
-            Hermes Studio 使用 <strong>HugeIcons</strong>（<code style={codeStyle}>@hugeicons/react</code> 配合 <code style={codeStyle}>@hugeicons/core-free-icons</code>）作为主要图标库。图标按名称单独导入，并通过 <code style={codeStyle}>HugeiconsIcon</code> 组件渲染。图标集提供一致的 24px 描边图标，带可调的大小和颜色属性。
+            Ti Work 使用 <strong>HugeIcons</strong>（<code style={codeStyle}>@hugeicons/react</code> 配合 <code style={codeStyle}>@hugeicons/core-free-icons</code>）作为主要图标库。图标按名称单独导入，并通过 <code style={codeStyle}>HugeiconsIcon</code> 组件渲染。图标集提供一致的 24px 描边图标，带可调的大小和颜色属性。
           </p>
 
           <h3 style={h3Style}>排版与间距</h3>
@@ -1348,7 +1348,7 @@ jobs:
 
           <h3 style={h3Style}>能力探测</h3>
           <p style={pStyle}>
-            在服务器启动时以及此后每 120 秒，Hermes Studio 都会探测配置的网关以确定可用的 API 分组。探测过程：
+            在服务器启动时以及此后每 120 秒，Ti Work 都会探测配置的网关以确定可用的 API 分组。探测过程：
           </p>
           <ol style={olStyle}>
             <li>向网关健康端点发送 GET 请求，超时 3 秒。</li>
@@ -1364,7 +1364,7 @@ jobs:
           </p>
           <dl style={dlStyle}>
             <dt style={dtStyle}>enhanced-hermes</dt>
-            <dd style={ddStyle}>完整的 Hermes 网关，包含会话管理、工具、审批、记忆和技能。所有功能均可用。</dd>
+            <dd style={ddStyle}>完整的 Ti Work 网关，包含会话管理、工具、审批、记忆和技能。所有功能均可用。</dd>
             <dt style={dtStyle}>portable</dt>
             <dd style={ddStyle}>基础 OpenAI 兼容会话补全。仅提供流式会话。无会话、工具或审批。</dd>
             <dt style={dtStyle}>disconnected</dt>
@@ -1384,7 +1384,7 @@ jobs:
 
           <h3 style={h3Style}>会话持久化后端</h3>
           <p style={pStyle}>
-            Hermes 网关为会话数据支持两种持久化后端：
+            Ti Work 网关为会话数据支持两种持久化后端：
           </p>
           <dl style={dlStyle}>
             <dt style={dtStyle}>Redis</dt>
@@ -1413,7 +1413,7 @@ jobs:
 
           <h3 style={h3Style}>认证策略</h3>
           <p style={pStyle}>
-            Hermes Studio 支持多种认证方法：
+            Ti Work 支持多种认证方法：
           </p>
           <ul style={ulStyle}>
             <li><strong>密码认证：</strong>设置 <code style={codeStyle}>HERMES_PASSWORD</code> 后，用户必须通过登录表单认证。成功后，生成并存储一个 32 字节的加密随机会话 Token。</li>
@@ -1473,7 +1473,7 @@ jobs:
         <section id="keyboard-shortcuts" style={sectionStyle}>
           <h2 style={h2Style}>17. 键盘快捷键</h2>
           <p style={pStyle}>
-            Hermes Studio 提供键盘快捷键，用于快速导航和常用操作。修饰键：Windows/Linux 上为 Ctrl，macOS 上为 Cmd。
+            Ti Work 提供键盘快捷键，用于快速导航和常用操作。修饰键：Windows/Linux 上为 Ctrl，macOS 上为 Cmd。
           </p>
 
           <h3 style={h3Style}>全局导航</h3>
@@ -1568,7 +1568,7 @@ jobs:
 
         {/* 页脚 */}
         <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--theme-muted)', fontSize: '0.85rem' }}>
-          <p>Hermes Studio Documentation v1.20.0</p>
+          <p>Ti Work Documentation v1.20.0</p>
           <p style={{ marginTop: '0.25rem' }}>基于 React 19、TanStack Router、TanStack Query 与 Vite 构建。</p>
         </div>
       </div>

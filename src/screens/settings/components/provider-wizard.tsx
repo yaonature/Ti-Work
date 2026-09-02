@@ -6,7 +6,7 @@ import {
   Tick02Icon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ProviderIcon } from './provider-icon'
 import type { ProviderAuthType } from '@/lib/provider-catalog'
 import {
@@ -27,11 +27,12 @@ import {
 import { useConnectionRestart } from '@/components/connection-overlay'
 import { cn } from '@/lib/utils'
 import { EmojiIcon } from '@/components/emoji-icon'
+import { Input } from '@/components/ui/input'
 
 type WizardStep = 'provider' | 'auth' | 'instructions' | 'verify'
 type CopyState = 'idle' | 'copied' | 'failed'
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
-type VerifyState = 'checking' | 'success' | 'warning'
+type VerifyState = 'checking' | 'success' | 'warning' | 'error'
 
 type ProviderWizardProps = {
   open: boolean
@@ -73,28 +74,27 @@ function getAuthTypeMeta(authType: ProviderAuthType): AuthTypeMeta {
   if (authType === 'api-key') {
     return {
       title: 'API 密钥',
-      description: '粘贴您的 API 密钥 — 它将直接保存到本地配置',
+      description: '粘贴 API 密钥，保存到本地配置。',
     }
   }
 
   if (authType === 'cli-token') {
     return {
-      title: 'CLI Token',
-      description:
-        '复用您现有的 Claude CLI 认证令牌（来自 Claude Code / claude.ai）',
+      title: 'CLI 令牌',
+      description: '复用现有 Claude CLI 令牌。',
     }
   }
 
   if (authType === 'oauth') {
     return {
       title: 'OAuth',
-      description: '通过浏览器登录 — OAuth 流程将自动开始',
+      description: '浏览器登录，OAuth 自动开始。',
     }
   }
 
   return {
     title: '本地',
-    description: '无需认证（Ollama）',
+    description: '无需认证。',
   }
 }
 
@@ -102,47 +102,6 @@ function getStepIndex(step: WizardStep): number {
   return WIZARD_STEPS.findIndex(function findStep(item) {
     return item.id === step
   })
-}
-
-/**
- * Poll GET /api/models for up to `timeoutMs` (default 10 s).
- * Resolves true if the given providerId appears in the response, false on timeout.
- */
-async function pollForProvider(
-  providerId: string,
-  timeoutMs = 10_000,
-): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs
-  const interval = 1_500
-
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch('/api/models')
-      if (res.ok) {
-        const data = (await res.json()) as {
-          configuredProviders?: Array<string>
-        }
-        const configured = Array.isArray(data.configuredProviders)
-          ? data.configuredProviders
-          : []
-        if (
-          configured.some((p) => p.toLowerCase() === providerId.toLowerCase())
-        ) {
-          return true
-        }
-      }
-    } catch {
-      // network blip — keep polling
-    }
-
-    const remaining = deadline - Date.now()
-    if (remaining <= 0) break
-    await new Promise((r) =>
-      globalThis.setTimeout(r, Math.min(interval, remaining)),
-    )
-  }
-
-  return false
 }
 
 export function ProviderWizard({
@@ -165,7 +124,6 @@ export function ProviderWizard({
   const [showManualSnippet, setShowManualSnippet] = useState(false)
   const [verificationMessage, setVerificationMessage] = useState('')
   const [verifyState, setVerifyState] = useState<VerifyState>('checking')
-  const pollingRef = useRef(false)
 
   const currentStepIndex = getStepIndex(step)
   const selectedProvider = selectedProviderId
@@ -196,7 +154,6 @@ export function ProviderWizard({
     setShowManualSnippet(false)
     setVerificationMessage('')
     setVerifyState('checking')
-    pollingRef.current = false
   }
 
   function handleDialogOpenChange(nextOpen: boolean) {
@@ -278,35 +235,51 @@ export function ProviderWizard({
       setSaveState('saved')
       setVerifyState('checking')
       setVerificationMessage(
-        `${providerName} API 密钥已保存；Hermes 正在重启…`,
+        `${providerName} API 密钥已保存；正在验证连接…`,
       )
       setStep('verify')
 
-      // Shows confirm dialog: user can click "Restart & Apply" or "Cancel"
       await triggerRestart(saveConfigAndRestart)
 
-      // After restart, poll /api/models to confirm provider is visible
-      if (!pollingRef.current) {
-        pollingRef.current = true
+      // 真实测通：用刚输入的 key 直接向服务商鉴权，精确区分有效/无效/不可达
+      const testRes = await fetch('/api/hermes-key-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: providerId,
+          apiKey: apiKeyInput.trim(),
+        }),
+      })
+
+      const test = (await testRes.json()) as {
+        ok: boolean
+        status?: number
+        modelCount?: number
+        error?: string
+      }
+
+      if (test.ok) {
+        setVerifyState('success')
         setVerificationMessage(
-          `正在检查 ${providerName} 的模型是否可用…`,
+          typeof test.modelCount === 'number'
+            ? `${providerName} 已连接，获取到 ${test.modelCount} 个模型。`
+            : `${providerName} 已连接。`,
         )
-
-        const found = await pollForProvider(providerId)
-
-        if (found) {
-          setVerifyState('success')
-          setVerificationMessage(
-            `${providerName} 已连接，其模型可用。`,
-          )
-        } else {
-          setVerifyState('warning')
-          setVerificationMessage(
-            `Hermes 已重启，但 ${providerName} 的模型尚未显示。` +
-              ` 请检查您的 API 密钥，或稍后再刷新。`,
-          )
-        }
-        pollingRef.current = false
+      } else if (test.status === 401 || test.status === 403) {
+        setVerifyState('error')
+        setVerificationMessage(
+          test.error || `${providerName} API 密钥无效，请重新填写。`,
+        )
+      } else if (testRes.status === 400 && (test.error || '').includes('暂不支持')) {
+        setVerifyState('warning')
+        setVerificationMessage(
+          `${providerName} 配置已保存；该服务商暂不支持一键测通，可稍后在设置页查看状态。`,
+        )
+      } else {
+        setVerifyState('warning')
+        setVerificationMessage(
+          test.error || `${providerName} 验证失败，请检查网络或 Base URL。`,
+        )
       }
     } catch (err) {
       setSaveState('error')
@@ -322,23 +295,29 @@ export function ProviderWizard({
   const verifyIconColor =
     verifyState === 'success'
       ? 'text-green-600'
-      : verifyState === 'warning'
-        ? 'text-amber-600'
-        : 'text-primary-600'
+      : verifyState === 'error'
+        ? 'text-red-600'
+        : verifyState === 'warning'
+          ? 'text-amber-600'
+          : 'text-primary-600'
 
   const verifyBorderColor =
     verifyState === 'success'
       ? 'border-green-200 bg-green-50/60'
-      : verifyState === 'warning'
-        ? 'border-amber-200 bg-amber-50/60'
-        : 'border-[var(--theme-border)] bg-[var(--theme-panel)]/70'
+      : verifyState === 'error'
+        ? 'border-red-200 bg-red-50/60'
+        : verifyState === 'warning'
+          ? 'border-amber-200 bg-amber-50/60'
+          : 'border-[var(--theme-border)] bg-[var(--theme-panel)]/70'
 
   const verifyTitle =
     verifyState === 'success'
       ? '连接已验证'
-      : verifyState === 'warning'
-        ? '已连接（模型待确认）'
-        : '正在检查连接…'
+      : verifyState === 'error'
+        ? '连接失败'
+        : verifyState === 'warning'
+          ? '已保存'
+          : '正在检查连接…'
 
   return (
     <DialogRoot open={open} onOpenChange={handleDialogOpenChange}>
@@ -353,7 +332,7 @@ export function ProviderWizard({
                     : '服务提供方设置向导'}
                 </DialogTitle>
                 <DialogDescription className="text-pretty">
-                  安全地添加服务提供方凭据。API 密钥仅存储在本地 Hermes 配置文件中，绝不会发送到 Studio。
+                  安全地添加服务提供方凭据。API 密钥仅存储在本地 Ti Work 配置文件中，绝不会发送到 Studio。
                 </DialogDescription>
               </div>
               <Button
@@ -568,16 +547,16 @@ export function ProviderWizard({
                       <Button
                         size="sm"
                         onClick={function onLaunchOAuth() {
-                          window.open('/terminal', '_blank')
+                          window.open('/files?view=terminal', '_blank')
                           setVerificationMessage(
-                            '在终端中运行 "hermes setup"，出现提示时选择 Google OAuth。' +
-                              ' 浏览器将打开用于登录，完成后 Hermes 会自动重启。',
+                            '在执行中心的终端视图中运行 "hermes setup"，出现提示时选择 Google OAuth。' +
+                              ' 浏览器将打开用于登录，完成后 Ti Work 会自动重启。',
                           )
                           setVerifyState('warning')
                           setStep('verify')
                         }}
                       >
-                        打开终端
+                        打开执行中心
                       </Button>
 
                       <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/70 px-3 py-2">
@@ -602,7 +581,7 @@ export function ProviderWizard({
                             rel="noopener noreferrer"
                             className="text-primary-800 underline decoration-primary-400 hover:text-[var(--theme-text)]"
                           >
-                            查看 Hermes Agent 文档
+                            查看 Ti Work 文档
                           </a>{' '}
                           获取配置说明。
                         </p>
@@ -619,16 +598,16 @@ export function ProviderWizard({
                       <Button
                         size="sm"
                         onClick={function onLaunchCLI() {
-                          window.open('/terminal', '_blank')
+                          window.open('/files?view=terminal', '_blank')
                           setVerificationMessage(
-                            '在终端中运行 "hermes setup"，然后选择 Anthropic → CLI Token。' +
+                            '在执行中心的终端视图中运行 "hermes setup"，然后选择 Anthropic → CLI Token。' +
                               ' 您的 Claude CLI 凭据将被自动检测并导入。',
                           )
                           setVerifyState('warning')
                           setStep('verify')
                         }}
                       >
-                        打开终端
+                        打开执行中心
                       </Button>
 
                       <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/70 px-3 py-2">
@@ -663,7 +642,7 @@ export function ProviderWizard({
                             rel="noopener noreferrer"
                             className="text-primary-800 underline decoration-primary-400 hover:text-[var(--theme-text)]"
                           >
-                            查看 Hermes Agent 文档
+                            查看 Ti Work 文档
                           </a>{' '}
                           获取 CLI Token 配置说明。
                         </p>
@@ -678,14 +657,14 @@ export function ProviderWizard({
 
                     <div className="mt-4 flex flex-col gap-3">
                       <div className="flex gap-2">
-                        <input
+                        <Input
                           type="password"
                           value={apiKeyInput}
                           onChange={function onInputChange(e) {
                             setApiKeyInput(e.target.value)
                           }}
                           placeholder={`sk-... 或您的 ${selectedProvider.name} API 密钥`}
-                          className="flex-1 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-primary-400 focus:border-accent-400 focus:outline-none focus:ring-1 focus:ring-accent-400/50"
+                          className="flex-1"
                           autoFocus
                         />
                         <Button
@@ -721,7 +700,7 @@ export function ProviderWizard({
                             strokeWidth={1.5}
                             className="inline mr-1"
                           />
-                          API 密钥已保存。Hermes 正在重启以应用更改。
+                          API 密钥已保存。Ti Work 正在重启以应用更改。
                         </p>
                       ) : null}
                     </div>
@@ -855,7 +834,7 @@ export function ProviderWizard({
                     ) : null}
                   </p>
                   <p className="mt-1 text-sm text-primary-600 text-pretty">
-                    {verificationMessage || '正在等待 Hermes 响应…'}
+                    {verificationMessage || '正在等待 Ti Work 响应…'}
                   </p>
                 </div>
 

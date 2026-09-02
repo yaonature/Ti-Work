@@ -3,7 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowUp01Icon } from '@hugeicons/core-free-icons'
 import type { FormEvent, KeyboardEvent } from 'react'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Textarea } from '@/components/ui/textarea'
 
 type AgentChatInputProps = {
   disabled?: boolean
@@ -47,7 +47,7 @@ export function AgentChatInput({
       className="border-t border-primary-300/70 bg-primary-100/60 p-3 backdrop-blur-sm"
     >
       <div className="flex items-end gap-2 rounded-2xl border border-primary-300/70 bg-primary-50/80 p-2 shadow-sm">
-        <textarea
+        <Textarea
           value={value}
           rows={1}
           placeholder="向此智能体发送消息…"
@@ -56,10 +56,7 @@ export function AgentChatInput({
             setValue(event.target.value)
           }}
           onKeyDown={handleTextareaKeyDown}
-          className={cn(
-            'max-h-36 min-h-8 flex-1 resize-y bg-transparent px-2 py-1 text-sm text-primary-900 outline-none placeholder:text-primary-600',
-            disabled ? 'cursor-not-allowed opacity-60' : '',
-          )}
+          className="flex-1 max-h-36 min-h-8"
         />
         <Button
           size="icon-sm"

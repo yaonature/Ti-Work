@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 
 const LANGUAGE_MAP: Record<string, string> = {
   ts: 'typescript',
@@ -41,6 +42,8 @@ type FilePreviewDialogProps = {
   onClose: () => void
   onSaved: () => void
   profileName?: string
+  /** When 'authorized', reads/writes within the user's authorized workspace root. */
+  rootScope?: 'authorized'
 }
 
 export default function FilePreviewDialog({
@@ -48,6 +51,7 @@ export default function FilePreviewDialog({
   onClose,
   onSaved,
   profileName,
+  rootScope,
 }: FilePreviewDialogProps) {
   const [loading, setLoading] = useState(false)
   const [content, setContent] = useState('')
@@ -68,6 +72,7 @@ export default function FilePreviewDialog({
     try {
       const params = new URLSearchParams({ action: 'read', path })
       if (profileName) params.set('profile', profileName)
+      if (rootScope) params.set('root', rootScope)
       const res = await fetch(`/api/files?${params.toString()}`)
       if (!res.ok) throw new Error('读取文件失败')
       const data = (await res.json()) as {
@@ -87,7 +92,7 @@ export default function FilePreviewDialog({
     } finally {
       setLoading(false)
     }
-  }, [path, profileName])
+  }, [path, profileName, rootScope])
 
   useEffect(() => {
     if (path) void loadFile()
@@ -103,11 +108,12 @@ export default function FilePreviewDialog({
         path,
         content,
         ...(profileName ? { profile: profileName } : {}),
+        ...(rootScope ? { root: rootScope } : {}),
       }),
     })
     setDirty(false)
     onSaved()
-  }, [content, onSaved, path])
+  }, [content, onSaved, path, rootScope])
 
   return (
     <DialogRoot
@@ -148,8 +154,8 @@ export default function FilePreviewDialog({
             </div>
           ) : (
             <div className="h-[60vh]">
-              <textarea
-                className="h-full w-full resize-none rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 py-2 font-mono text-xs leading-relaxed text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:outline-none focus:ring-2 focus:ring-accent-500/30"
+              <Textarea
+                className="h-full w-full resize-none font-mono text-xs"
                 value={content}
                 onChange={(e) => {
                   setContent(e.target.value)

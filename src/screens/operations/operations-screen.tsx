@@ -5,6 +5,14 @@ import { AgentOutputs } from './components/agent-outputs'
 import type { OperationAgentStatus } from '@/types/operation'
 import { StatusBadge } from '@/components/ds/status-badge'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { fetchOperationsOverview } from '@/lib/operations-api'
 
 type ViewMode = 'grid' | 'outputs'
@@ -70,22 +78,24 @@ export function OperationsScreen() {
           {/* Controls */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Status filter */}
-            <select
+            <Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-              className="rounded-md border px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1"
-              style={{
-                background: 'var(--theme-input)',
-                color: 'var(--theme-text)',
-                borderColor: 'var(--theme-border)',
-              }}
+              onValueChange={(value) => setStatusFilter((value ?? 'all') as StatusFilter)}
+              aria-label="运行状态筛选"
             >
-              <option value="all">全部状态</option>
-              <option value="online">在线</option>
-              <option value="offline">离线</option>
-              <option value="error">错误</option>
-              <option value="unknown">未知</option>
-            </select>
+              <SelectTrigger className="max-w-[10rem]">
+                <SelectValue placeholder="全部状态" />
+              </SelectTrigger>
+              <SelectPopup>
+                <SelectList>
+                  <SelectItem value="all">全部状态</SelectItem>
+                  <SelectItem value="online">在线</SelectItem>
+                  <SelectItem value="offline">离线</SelectItem>
+                  <SelectItem value="error">错误</SelectItem>
+                  <SelectItem value="unknown">未知</SelectItem>
+                </SelectList>
+              </SelectPopup>
+            </Select>
 
             {/* View toggle */}
             <div

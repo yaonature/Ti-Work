@@ -9,6 +9,9 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from '@/components/ui/toast'
+import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/components/ds'
 
@@ -29,6 +32,11 @@ type ListResponse = { files?: Array<MemoryFileMeta> }
 type ReadResponse = { path?: string; content?: string }
 type SearchResponse = { results?: Array<MemorySearchMatch> }
 type WriteResponse = { success?: boolean; path?: string; error?: string }
+type PendingFileSelection = {
+  path: string
+  focusLine?: number
+  closeMobileFiles?: boolean
+}
 
 async function readJson<T>(url: string): Promise<T> {
   const response = await fetch(url)
@@ -114,6 +122,8 @@ export function MemoryBrowserScreen() {
   const [draftContent, setDraftContent] = useState('')
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [pendingSelection, setPendingSelection] =
+    useState<PendingFileSelection | null>(null)
   const lineRefs = useRef<Record<number, HTMLDivElement | null>>({})
   const queryClient = useQueryClient()
   const searchTerm = deferredSearch.trim()
@@ -183,26 +193,44 @@ export function MemoryBrowserScreen() {
 
   const searchResults = searchQuery.data?.results ?? []
 
-  function trySelectFile(nextPath: string, nextFocusLine?: number): boolean {
-    if (nextPath !== selectedPath && isEditing && hasUnsavedChanges) {
-      const confirmed =
-        typeof window === 'undefined'
-          ? true
-          : window.confirm(
-              '您有未保存的更改，放弃更改并切换文件？',
-            )
-      if (!confirmed) return false
-    }
-
-    if (nextPath !== selectedPath && isEditing) {
+  function applyFileSelection(selection: PendingFileSelection): void {
+    if (selection.path !== selectedPath && isEditing) {
       setIsEditing(false)
       setHasUnsavedChanges(false)
       setDraftContent('')
     }
 
-    setSelectedPath(nextPath)
-    setFocusLine(nextFocusLine ?? null)
+    setSelectedPath(selection.path)
+    setFocusLine(selection.focusLine ?? null)
+    if (selection.closeMobileFiles) setMobileFilesOpen(false)
+  }
+
+  function trySelectFile(
+    nextPath: string,
+    nextFocusLine?: number,
+    options?: { closeMobileFiles?: boolean },
+  ): boolean {
+    if (nextPath !== selectedPath && isEditing && hasUnsavedChanges) {
+      setPendingSelection({
+        path: nextPath,
+        focusLine: nextFocusLine,
+        closeMobileFiles: options?.closeMobileFiles,
+      })
+      return false
+    }
+
+    applyFileSelection({
+      path: nextPath,
+      focusLine: nextFocusLine,
+      closeMobileFiles: options?.closeMobileFiles,
+    })
     return true
+  }
+
+  function confirmPendingSelection(): void {
+    if (!pendingSelection) return
+    applyFileSelection(pendingSelection)
+    setPendingSelection(null)
   }
 
   function handleStartEditing() {
@@ -276,16 +304,11 @@ export function MemoryBrowserScreen() {
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
                 style={{ color: 'var(--theme-muted)' }}
               />
-              <input
+              <Input
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
                 placeholder="搜索记忆文件"
-                className="w-full rounded-xl py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-accent-500"
-                style={{
-                  border: '1px solid var(--theme-border)',
-                  backgroundColor: 'var(--theme-card)',
-                  color: 'var(--theme-text)',
-                }}
+                style={{ paddingLeft: '2.25rem' }}
               />
             </div>
           </div>
@@ -331,7 +354,11 @@ export function MemoryBrowserScreen() {
                       key={`${result.path}:${result.line}:${index}`}
                       type="button"
                       onClick={() => {
-                        if (trySelectFile(result.path, result.line)) {
+                        if (
+                          trySelectFile(result.path, result.line, {
+                            closeMobileFiles: true,
+                          })
+                        ) {
                           setMobileFilesOpen(false)
                         }
                       }}
@@ -479,7 +506,7 @@ export function MemoryBrowserScreen() {
               <EmptyState
                 icon={<HugeiconsIcon icon={BrainIcon} size={36} />}
                 title="未找到记忆文件"
-                description="当智能体开始创建记忆文件后，它们将显示在这里。"
+                description="智能体创建的记忆文件将显示在这里。"
               />
             ) : contentQuery.isLoading ? (
               <StateBox label="正在加载文件..." />
@@ -493,19 +520,14 @@ export function MemoryBrowserScreen() {
                   backgroundColor: 'var(--theme-card)',
                 }}
               >
-                <textarea
+                <Textarea
                   value={draftContent}
                   onChange={(event) => {
                     const nextValue = event.target.value
                     setDraftContent(nextValue)
                     setHasUnsavedChanges(nextValue !== content)
                   }}
-                  className="h-full w-full resize-none rounded-lg px-3 py-2 font-mono text-[13px] outline-none ring-0"
-                  style={{
-                    border: '1px solid var(--theme-border)',
-                    backgroundColor: 'var(--theme-bg)',
-                    color: 'var(--theme-text)',
-                  }}
+                  className="h-full w-full resize-none font-mono text-[13px]"
                   spellCheck={false}
                 />
               </div>
@@ -552,6 +574,18 @@ export function MemoryBrowserScreen() {
           </div>
         </section>
       </div>
+
+      <ConfirmActionDialog
+        open={pendingSelection !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingSelection(null)
+        }}
+        title="放弃未保存的更改"
+        description="切换文件将丢弃未保存的修改。"
+        confirmLabel="放弃并切换"
+        confirmVariant="destructive"
+        onConfirm={confirmPendingSelection}
+      />
     </div>
   )
 }

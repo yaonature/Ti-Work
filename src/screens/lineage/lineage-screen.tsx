@@ -24,8 +24,16 @@ import {
   YAxis,
 } from 'recharts'
 import type { LineageChain } from '@/server/lineage-store'
-import { TASK_COLUMN_LABELS } from '@/types/task'
 import type { TaskColumn } from '@/types/task'
+import { TASK_COLUMN_LABELS } from '@/types/task'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 // ── Types (aligned with lineage-analytics.ts) ───────────────────────────────
 
@@ -721,25 +729,23 @@ export function LineageScreen() {
                 <EmptyState message="暂无血缘数据记录。" />
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <select
-                    value={selectedTask}
-                    onChange={(e) => setSelectedTask(e.target.value)}
-                    style={{
-                      background: 'var(--theme-card2, #1a1a24)',
-                      border: '1px solid var(--theme-border)',
-                      color: 'var(--theme-text)',
-                      borderRadius: 8,
-                      padding: '0.4rem 0.6rem',
-                      fontSize: '0.75rem',
-                      fontFamily: 'monospace',
-                    }}
+                  <Select
+                    value={selectedTask || null}
+                    onValueChange={(value) => setSelectedTask(value || '')}
                   >
-                    {ganttData.map((g) => (
-                      <option key={g.taskId} value={g.taskId}>
-                        {g.title} ({shortTaskId(g.taskId)})
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择任务" />
+                    </SelectTrigger>
+                    <SelectPopup>
+                      <SelectList>
+                        {ganttData.map((g) => (
+                          <SelectItem key={g.taskId} value={g.taskId}>
+                            {g.title} ({shortTaskId(g.taskId)})
+                          </SelectItem>
+                        ))}
+                      </SelectList>
+                    </SelectPopup>
+                  </Select>
 
                   {chainQuery.isError && (
                     <div

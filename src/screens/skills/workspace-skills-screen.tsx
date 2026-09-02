@@ -10,6 +10,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ui/button'
+import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 import { Markdown } from '@/components/prompt-kit/markdown'
@@ -115,6 +116,7 @@ export function WorkspaceSkillsScreen() {
   const [selectedSkillId, setSelectedSkillId] = useState<string>('')
   const [memoryFilter, setMemoryFilter] = useState<MemoryFilter>('All')
   const [memorySearch, setMemorySearch] = useState('')
+  const [clearAllConfirmOpen, setClearAllConfirmOpen] = useState(false)
   const deferredSearch = useDeferredValue(memorySearch)
   const [selectedMemoryPath, setSelectedMemoryPath] = useState<string | null>(
     null,
@@ -219,13 +221,11 @@ export function WorkspaceSkillsScreen() {
   }
 
   function handleClearAll() {
-    toast('确定吗？', { type: 'warning' })
-    const confirmed =
-      typeof window === 'undefined'
-        ? true
-        : window.confirm('清除所有记忆？')
+    setClearAllConfirmOpen(true)
+  }
 
-    if (!confirmed) return
+  function confirmClearAll() {
+    setClearAllConfirmOpen(false)
     toast('已清除', { type: 'success' })
   }
 
@@ -572,6 +572,16 @@ export function WorkspaceSkillsScreen() {
           </section>
         </div>
       </section>
+
+      <ConfirmActionDialog
+        open={clearAllConfirmOpen}
+        onOpenChange={setClearAllConfirmOpen}
+        title="清除所有记忆"
+        description="此操作将清空当前记忆列表中的内容，且无法撤销。"
+        confirmLabel="确认清除"
+        confirmVariant="destructive"
+        onConfirm={confirmClearAll}
+      />
     </div>
   )
 }

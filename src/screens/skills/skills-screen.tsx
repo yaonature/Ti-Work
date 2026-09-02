@@ -21,6 +21,15 @@ import { cn } from '@/lib/utils'
 import { EmojiIcon } from '@/components/emoji-icon'
 import { writeTextToClipboard } from '@/lib/clipboard'
 import { toast } from '@/components/ui/toast'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 type SkillsTab = 'installed' | 'marketplace' | 'featured'
 type SkillsSort = 'name' | 'category'
@@ -463,44 +472,54 @@ export function SkillsScreen() {
 
               {tab !== 'marketplace' ? (
                 <div className="flex flex-wrap items-center gap-2">
-                  <input
+                  <Input
                     value={searchInput}
                     onChange={(event) => handleSearchChange(event.target.value)}
                     placeholder="按名称、标签或描述搜索"
-                    className="h-9 w-full min-w-0 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 text-sm text-ink outline-none transition-colors focus:border-[var(--theme-accent)] sm:min-w-[220px]"
+                    className="h-9 w-full min-w-0 sm:min-w-[220px]"
                   />
 
                   {tab === 'installed' ? (
-                    <select
+                    <Select
                       value={category}
-                      onChange={(event) =>
-                        handleCategoryChange(event.target.value)
+                      onValueChange={(value) =>
+                        handleCategoryChange(value || '')
                       }
-                      className="h-9 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 text-sm text-ink outline-none"
                     >
-                      {categories.map((item) => (
-                        <option key={item} value={item}>
-                          {CATEGORY_LABELS[item] ?? item}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="全部" />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        <SelectList>
+                          {categories.map((item) => (
+                            <SelectItem key={item} value={item}>
+                              {CATEGORY_LABELS[item] ?? item}
+                            </SelectItem>
+                          ))}
+                        </SelectList>
+                      </SelectPopup>
+                    </Select>
                   ) : null}
 
                   {tab === 'installed' ? (
-                    <select
+                    <Select
                       value={sort}
-                      onChange={(event) =>
+                      onValueChange={(value) =>
                         handleSortChange(
-                          event.target.value === 'category'
-                            ? 'category'
-                            : 'name',
+                          value === 'category' ? 'category' : 'name',
                         )
                       }
-                      className="h-9 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 text-sm text-ink outline-none"
                     >
-                      <option value="name">名称 A-Z</option>
-                      <option value="category">分类</option>
-                    </select>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        <SelectList>
+                          <SelectItem value="name">名称 A-Z</SelectItem>
+                          <SelectItem value="category">分类</SelectItem>
+                        </SelectList>
+                      </SelectPopup>
+                    </Select>
                   ) : null}
                 </div>
               ) : null}
@@ -536,11 +555,10 @@ export function SkillsScreen() {
 
             <TabsPanel value="marketplace" className="space-y-3 pt-2">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <input
+                <Input
                   value={searchInput}
                   onChange={(event) => handleSearchChange(event.target.value)}
                   placeholder="搜索技能..."
-                  className="h-10 w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 text-sm text-ink outline-none transition-colors focus:border-primary"
                 />
                 <div className="text-xs text-[var(--theme-muted)] sm:text-right">
                   {hubQuery.data?.source === 'skillsmp'

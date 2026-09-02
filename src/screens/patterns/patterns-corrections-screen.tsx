@@ -21,6 +21,8 @@ import {
   parseEntries,
   removeEntry,
 } from '@/lib/memory-parser'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -359,22 +361,12 @@ export function PatternsCorrectionScreen() {
               onClick={() => setTab('corrections')}
               count={corrections.length}
             />
-            <input
+            <Input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="搜索…"
-              style={{
-                marginLeft: 'auto',
-                background: 'var(--theme-card)',
-                border: '1px solid var(--theme-border)',
-                borderRadius: 8,
-                padding: '0.35rem 0.7rem',
-                fontSize: '0.78rem',
-                color: 'var(--theme-text)',
-                outline: 'none',
-                width: 200,
-              }}
+              className="ml-auto w-[200px]"
             />
             <button
               type="button"
@@ -418,22 +410,11 @@ export function PatternsCorrectionScreen() {
               >
                 添加修正
               </div>
-              <textarea
+              <Textarea
                 value={newCorrection}
                 onChange={(e) => setNewCorrection(e.target.value)}
                 placeholder="描述智能体做错了什么以及正确的行为是什么…"
                 rows={3}
-                style={{
-                  background: 'var(--theme-bg)',
-                  border: '1px solid var(--theme-border)',
-                  borderRadius: 8,
-                  padding: '0.5rem 0.75rem',
-                  fontSize: '0.8rem',
-                  color: 'var(--theme-text)',
-                  resize: 'vertical',
-                  outline: 'none',
-                  fontFamily: 'inherit',
-                }}
               />
               {addMsg && (
                 <div

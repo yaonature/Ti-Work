@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import {  useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
@@ -14,9 +14,19 @@ import {
   SparklesIcon,
   UserGroupIcon,
 } from '@hugeicons/core-free-icons'
+import type {ReactNode} from 'react';
 import { Button } from '@/components/ui/button'
+import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
 import { DialogContent, DialogRoot, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 import { EmojiIcon } from '@/components/emoji-icon'
@@ -116,6 +126,7 @@ export function ProfilesScreen() {
   >([])
   const [loadingModels, setLoadingModels] = useState(false)
   const [renameValue, setRenameValue] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<ProfileSummary | null>(null)
   const [busyName, setBusyName] = useState<string | null>(null)
 
   const profilesQuery = useQuery({
@@ -232,12 +243,15 @@ export function ProfilesScreen() {
     }
   }
 
-  async function handleDelete(name: string) {
-    if (
-      typeof window !== 'undefined' &&
-      !window.confirm(`确定删除配置档案 "${name}"？`)
-    )
-      return
+  function handleDelete(profile: ProfileSummary) {
+    setDeleteTarget(profile)
+  }
+
+  async function confirmDelete() {
+    const target = deleteTarget
+    if (!target) return
+    const name = target.name
+    setDeleteTarget(null)
     setBusyName(name)
     try {
       await postJson('/api/profiles/delete', { name })
@@ -288,7 +302,7 @@ export function ProfilesScreen() {
           <p className="mt-1 text-sm text-[var(--theme-muted)]">
             浏览并管理存储在{' '}
             <span className="font-mono">~/.hermes/profiles</span>
-            下的 Hermes 配置档案。
+            下的 Ti Work 配置档案。
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} className="gap-2">
@@ -437,7 +451,7 @@ export function ProfilesScreen() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => void handleDelete(profile.name)}
+                  onClick={() => handleDelete(profile)}
                   disabled={profile.active || busy}
                   className={cn(
                     'flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors',
@@ -575,19 +589,25 @@ export function ProfilesScreen() {
                       从现有配置档案克隆
                     </span>
                   </label>
-                  <select
-                    value={cloneFrom}
-                    onChange={(e) => setCloneFrom(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm text-primary-900 outline-none transition-colors focus:border-accent-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                  <Select
+                    value={cloneFrom || null}
+                    onValueChange={(value) => setCloneFrom(value || '')}
                   >
-                    <option value="">全新开始 — 空配置</option>
-                    {profiles.map((p) => (
-                      <option key={p.name} value={p.name}>
-                        {p.name} {p.model ? `(${p.model})` : ''}{' '}
-                        {p.active ? '• 已启用' : ''}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="h-11 w-full">
+                      <SelectValue placeholder="全新开始 — 空配置" />
+                    </SelectTrigger>
+                    <SelectPopup>
+                      <SelectList>
+                        <SelectItem value={null}>全新开始 — 空配置</SelectItem>
+                        {profiles.map((p) => (
+                          <SelectItem key={p.name} value={p.name}>
+                            {p.name} {p.model ? `(${p.model})` : ''}{' '}
+                            {p.active ? '• 已启用' : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectList>
+                    </SelectPopup>
+                  </Select>
                   <p className="text-xs text-primary-400 dark:text-neutral-500">
                     复制所选配置档案的配置、技能路径和环境变量
                   </p>
@@ -620,24 +640,30 @@ export function ProfilesScreen() {
                       未找到模型。请确保 Project Agent 正在运行且已配置模型。
                     </div>
                   ) : (
-                    <select
-                      value={wizardModel}
-                      onChange={(e) => {
-                        const modelId = e.target.value
+                    <Select
+                      value={wizardModel || null}
+                      onValueChange={(value) => {
+                        const modelId = value || ''
                         setWizardModel(modelId)
                         const matched = allModels.find((m) => m.id === modelId)
                         setWizardProvider(matched?.provider || '')
                       }}
-                      className="h-11 w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm text-primary-900 outline-none transition-colors focus:border-accent-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
                     >
-                      <option value="">跳过 — 稍后配置</option>
-                      {allModels.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name || m.id}
-                          {m.provider ? ` (${m.provider})` : ''}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="h-11 w-full">
+                        <SelectValue placeholder="跳过 — 稍后配置" />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        <SelectList>
+                          <SelectItem value={null}>跳过 — 稍后配置</SelectItem>
+                          {allModels.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.name || m.id}
+                              {m.provider ? ` (${m.provider})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectList>
+                      </SelectPopup>
+                    </Select>
                   )}
                   {wizardModel && (
                     <p className="text-xs text-emerald-600 dark:text-emerald-400">
@@ -930,6 +956,24 @@ export function ProfilesScreen() {
           </div>
         </DialogContent>
       </DialogRoot>
+
+      <ConfirmActionDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+        title="删除配置档案"
+        description={
+          deleteTarget
+            ? `确定删除配置档案 "${deleteTarget.name}"？删除后将无法恢复。`
+            : ''
+        }
+        confirmLabel="确认删除"
+        confirmVariant="destructive"
+        onConfirm={() => {
+          void confirmDelete()
+        }}
+      />
     </div>
   )
 }

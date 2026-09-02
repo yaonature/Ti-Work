@@ -4,6 +4,15 @@ import { useEffect, useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
 import type { Crew } from '@/lib/crews-api'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 
 type Props = {
   open: boolean
@@ -74,14 +83,14 @@ export function DispatchDialog({
             <label className="mb-1.5 block text-xs font-medium text-[var(--theme-muted)]">
               任务提示词
             </label>
-            <textarea
+            <Textarea
               value={task}
               onChange={(e) => setTask(e.target.value)}
               rows={4}
               required
               placeholder="描述智能体应该做什么…"
               autoFocus
-              className="w-full resize-none rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
+              className="w-full resize-none"
             />
           </div>
 
@@ -90,20 +99,26 @@ export function DispatchDialog({
             <label className="mb-1.5 block text-xs font-medium text-[var(--theme-muted)]">
               发送给
             </label>
-            <select
+            <Select
               value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] focus:border-[var(--theme-accent)] focus:outline-none cursor-pointer"
+              onValueChange={(value) => setTarget(value ?? 'all')}
             >
-              <option value="all" className="bg-[var(--theme-bg)]">
-                全部智能体（{crew.members.length}）
-              </option>
-              {crew.members.map((m) => (
-                <option key={m.id} value={m.id} className="bg-[var(--theme-bg)]">
-                  {m.displayName} — {m.roleLabel}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="全部智能体" />
+              </SelectTrigger>
+              <SelectPopup>
+                <SelectList>
+                  <SelectItem value="all">
+                    全部智能体（{crew.members.length}）
+                  </SelectItem>
+                  {crew.members.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.displayName} — {m.roleLabel}
+                    </SelectItem>
+                  ))}
+                </SelectList>
+              </SelectPopup>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-2 pt-1">

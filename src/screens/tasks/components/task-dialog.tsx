@@ -7,6 +7,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { TASK_COLUMNS, TASK_COLUMN_LABELS } from '@/types/task'
 
 const PRIORITY_OPTIONS: Array<TaskPriority> = ['high', 'medium', 'low']
@@ -15,18 +25,6 @@ const PRIORITY_LABELS: Record<TaskPriority, string> = {
   high: '高',
   medium: '中',
   low: '低',
-}
-
-const inputStyle: React.CSSProperties = {
-  background: 'var(--theme-input)',
-  borderColor: 'var(--theme-border)',
-  color: 'var(--theme-text)',
-  border: '1px solid var(--theme-border)',
-  borderRadius: '6px',
-  padding: '6px 10px',
-  fontSize: '13px',
-  width: '100%',
-  outline: 'none',
 }
 
 interface TaskDialogProps {
@@ -105,8 +103,8 @@ export function TaskDialog({ open, onClose, onSave, task }: TaskDialogProps) {
           {/* Title */}
           <div>
             <label style={labelStyle}>标题 *</label>
-            <input
-              style={inputStyle}
+            <Input
+              className="w-full"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="任务标题"
@@ -117,8 +115,8 @@ export function TaskDialog({ open, onClose, onSave, task }: TaskDialogProps) {
           {/* Description */}
           <div>
             <label style={labelStyle}>描述</label>
-            <textarea
-              style={{ ...inputStyle, resize: 'vertical', minHeight: '72px' }}
+            <Textarea
+              className="w-full"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="可选描述…"
@@ -130,39 +128,51 @@ export function TaskDialog({ open, onClose, onSave, task }: TaskDialogProps) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label style={labelStyle}>优先级</label>
-              <select
-                style={inputStyle}
+              <Select
                 value={priority}
-                onChange={(e) => setPriority(e.target.value as TaskPriority)}
+                onValueChange={(value) => setPriority(value as TaskPriority)}
               >
-                {PRIORITY_OPTIONS.map((p) => (
-                  <option key={p} value={p} style={{ background: 'var(--theme-input)', color: 'var(--theme-text)' }}>
-                    {PRIORITY_LABELS[p]}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectPopup>
+                  <SelectList>
+                    {PRIORITY_OPTIONS.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {PRIORITY_LABELS[p]}
+                      </SelectItem>
+                    ))}
+                  </SelectList>
+                </SelectPopup>
+              </Select>
             </div>
             <div>
               <label style={labelStyle}>列</label>
-              <select
-                style={inputStyle}
+              <Select
                 value={column}
-                onChange={(e) => setColumn(e.target.value as TaskColumn)}
+                onValueChange={(value) => setColumn(value as TaskColumn)}
               >
-                {TASK_COLUMNS.map((c) => (
-                  <option key={c} value={c} style={{ background: 'var(--theme-input)', color: 'var(--theme-text)' }}>
-                    {TASK_COLUMN_LABELS[c]}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectPopup>
+                  <SelectList>
+                    {TASK_COLUMNS.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {TASK_COLUMN_LABELS[c]}
+                      </SelectItem>
+                    ))}
+                  </SelectList>
+                </SelectPopup>
+              </Select>
             </div>
           </div>
 
           {/* Assignee */}
           <div>
             <label style={labelStyle}>负责人</label>
-            <input
-              style={inputStyle}
+            <Input
+              className="w-full"
               value={assignee}
               onChange={(e) => setAssignee(e.target.value)}
               placeholder="用户名或姓名"
@@ -172,8 +182,8 @@ export function TaskDialog({ open, onClose, onSave, task }: TaskDialogProps) {
           {/* Tags */}
           <div>
             <label style={labelStyle}>标签（逗号分隔）</label>
-            <input
-              style={inputStyle}
+            <Input
+              className="w-full"
               value={tagsRaw}
               onChange={(e) => setTagsRaw(e.target.value)}
               placeholder="例如：frontend, urgent"

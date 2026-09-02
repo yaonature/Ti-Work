@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
-import { EmojiIcon } from '@/components/emoji-icon'
 import type { AgentDefinition, CreateAgentInput } from '@/types/agent'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 const COLOR_OPTIONS = [
   { value: 'text-blue-400', label: '蓝色', swatch: '#60a5fa' },
@@ -66,13 +68,14 @@ export function AgentEditorDialog({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
 
   useEffect(() => {
-    if (!open) {
-      const defaults = getDefaults(agent)
-      setForm(defaults)
-      setTagsInput((agent?.tags ?? []).join(', '))
-      setShowEmojiPicker(false)
-      return
-    }
+    if (!open) return
+
+    // 每次打开时按当前 agent 回填（新建=null 清空，编辑=回填已有数据）
+    const defaults = getDefaults(agent)
+    setForm(defaults)
+    setTagsInput((agent?.tags ?? []).join(', '))
+    setShowEmojiPicker(false)
+
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const onKey = (e: KeyboardEvent) => {
@@ -167,14 +170,14 @@ export function AgentEditorDialog({
 
             {/* Name */}
             <div className="flex-1">
-              <input
+              <Input
                 type="text"
                 value={form.name}
                 onChange={(e) => set('name', e.target.value)}
                 placeholder="智能体名称"
                 required
                 maxLength={40}
-                className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
+                className="w-full"
               />
             </div>
 
@@ -218,13 +221,13 @@ export function AgentEditorDialog({
             <label className="mb-1.5 block text-xs font-medium text-[var(--theme-muted)]">
               角色 / 头衔
             </label>
-            <input
+            <Input
               type="text"
               value={form.roleLabel}
               onChange={(e) => set('roleLabel', e.target.value)}
               placeholder="例如：数据科学家、法务分析师"
               maxLength={60}
-              className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
+              className="w-full"
             />
           </div>
 
@@ -234,12 +237,12 @@ export function AgentEditorDialog({
               系统提示词
               <span className="ml-1.5 font-normal opacity-60">（定义行为方式）</span>
             </label>
-            <textarea
+            <Textarea
               value={form.systemPrompt}
               onChange={(e) => set('systemPrompt', e.target.value)}
               rows={6}
               placeholder={`你是${form.name || '一名专家智能体'}。你的职责是……`}
-              className="w-full resize-y rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none font-mono"
+              className="w-full font-mono"
             />
           </div>
 
@@ -249,12 +252,12 @@ export function AgentEditorDialog({
               模型覆盖
               <span className="ml-1.5 font-normal opacity-60">（可选，留空则使用会话默认模型）</span>
             </label>
-            <input
+            <Input
               type="text"
               value={form.model ?? ''}
               onChange={(e) => set('model', e.target.value.trim() || null)}
               placeholder="例如：claude-opus-4-5"
-              className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none font-mono"
+              className="w-full font-mono"
             />
           </div>
 
@@ -264,12 +267,12 @@ export function AgentEditorDialog({
               标签
               <span className="ml-1.5 font-normal opacity-60">（使用逗号分隔）</span>
             </label>
-            <input
+            <Input
               type="text"
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
               placeholder="例如：分析、法务、研究"
-              className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-2 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
+              className="w-full"
             />
           </div>
 
