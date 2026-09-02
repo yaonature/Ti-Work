@@ -13,6 +13,11 @@ import {
   resolveRiskApproval
 } from '@/server/risk-approval'
 import { configureHabitProfile } from '@/server/habit-profile'
+import {
+  clearHabitSequencesCache,
+  configureHabitSequences,
+  flushManualWindow,
+} from '@/server/habit-sequences'
 
 const publishChatEvent = vi.fn()
 
@@ -29,6 +34,8 @@ beforeEach(() => {
   // 审计/画像落盘走临时目录，避免污染真实 ~/.hermes
   habitTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'risk-approval-habits-'))
   configureHabitProfile({ storeDir: habitTempDir })
+  // 序列存储与画像同为 default -> profile.json，用独立子目录避免互踩
+  configureHabitSequences({ storeDir: path.join(habitTempDir, 'sequences') })
   // 审批「始终允许」写回的目标 config.yaml 指向临时目录
   configTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'risk-approval-config-'))
   vi.stubEnv('HERMES_HOME', configTempDir)
@@ -37,6 +44,8 @@ beforeEach(() => {
 afterEach(() => {
   clearRiskApprovalRequests()
   vi.unstubAllEnvs()
+  flushManualWindow()
+  clearHabitSequencesCache()
   fs.rmSync(habitTempDir, { recursive: true, force: true })
   fs.rmSync(configTempDir, { recursive: true, force: true })
 })

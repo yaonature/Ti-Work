@@ -13,6 +13,11 @@ import {
   normalizeDomain,
 } from '@/server/authorization-guard'
 import { configureHabitProfile } from '@/server/habit-profile'
+import {
+  clearHabitSequencesCache,
+  configureHabitSequences,
+  flushManualWindow,
+} from '@/server/habit-sequences'
 
 vi.mock('@/server/chat-event-bus', () => ({
   publishChatEvent: vi.fn(),
@@ -25,9 +30,13 @@ beforeEach(() => {
   // keep that sink out of the real ~/.hermes during tests.
   habitTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-habits-'))
   configureHabitProfile({ storeDir: habitTempDir })
+  // 序列存储与画像同为 default -> profile.json，用独立子目录避免互踩
+  configureHabitSequences({ storeDir: path.join(habitTempDir, 'sequences') })
 })
 
 afterEach(() => {
+  flushManualWindow()
+  clearHabitSequencesCache()
   fs.rmSync(habitTempDir, { recursive: true, force: true })
 })
 

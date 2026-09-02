@@ -1,98 +1,18 @@
+// 意图分类（类别 / 动作动词 / 文本清理）已收敛至共享模块 intent-classification.ts，
+// 供标题生成与行为序列沉淀（P1-A）两侧复用，杜绝双份维护。
+import {
+  CATEGORY_SUBJECT_FALLBACK,
+  cleanIntentText,
+  detectIntentAction,
+  detectIntentCategory,
+  type IntentCategory,
+} from './intent-classification'
+
 const DEFAULT_MAX_LENGTH = 40
 const DEFAULT_MAX_WORDS = 6
 
-type SessionCategory =
-  | 'coding'
-  | 'research'
-  | 'config'
-  | 'creative'
-  | 'analysis'
-  | 'chat'
-
-const CATEGORY_KEYWORDS: Record<
-  Exclude<SessionCategory, 'chat'>,
-  Array<string>
-> = {
-  coding: [
-    'code',
-    'coding',
-    'debug',
-    'bug',
-    'error',
-    'stack trace',
-    'typescript',
-    'javascript',
-    'react',
-    'test',
-    'build',
-    'lint',
-    'function',
-    'api',
-    'query',
-  ],
-  research: [
-    'research',
-    'source',
-    'citation',
-    'paper',
-    'study',
-    'docs',
-    'documentation',
-    'compare',
-    'find',
-    'search',
-    'look up',
-    'latest',
-    'news',
-  ],
-  config: [
-    'config',
-    'configuration',
-    'setting',
-    'settings',
-    'setup',
-    'install',
-    'environment',
-    '.env',
-    'deploy',
-    'docker',
-    'pipeline',
-    'ci',
-    'workflow',
-    'permission',
-  ],
-  creative: [
-    'creative',
-    'brainstorm',
-    'idea',
-    'name',
-    'naming',
-    'story',
-    'poem',
-    'script',
-    'copy',
-    'rewrite',
-    'draft',
-  ],
-  analysis: [
-    'analyze',
-    'analysis',
-    'evaluate',
-    'tradeoff',
-    'trade-off',
-    'pros',
-    'cons',
-    'performance',
-    'metrics',
-    'data',
-    'summary',
-    'summarize',
-    'report',
-  ],
-}
-
-const NOISE_PREFIXES =
-  /^(?:hey|hi|hello|ok(?:ay)?|so|well|please|kindly|um|uh|can you|could you|would you|will you|i want(?: to)?|i need(?: to)?|help me(?: with)?|let'?s|lets|also|just)\b[\s,:-]*/i
+// 与共享意图分类模块类型保持一致（历史导出名）。
+type SessionCategory = IntentCategory
 
 const STOP_WORDS = new Set([
   'a',
@@ -178,111 +98,10 @@ const TOKEN_OVERRIDES: Record<string, string> = {
   tailwind: 'Tailwind',
 }
 
-const ACTION_PATTERNS: Array<{ pattern: RegExp; verb: string }> = [
-  {
-    pattern:
-      /\b(?:fix|fixing|fixed|bug|bugs|error|errors|resolve|resolved|resolving)\b/,
-    verb: 'Fix',
-  },
-  {
-    pattern: /\b(?:debug|debugging|debugged|diagnose|diagnosing|diagnosed)\b/,
-    verb: 'Debug',
-  },
-  {
-    pattern: /\b(?:refactor|refactoring|refactored|cleanup|cleaning|cleaned)\b/,
-    verb: 'Refactor',
-  },
-  {
-    pattern:
-      /\b(?:optimize|optimizing|optimized|optimise|optimising|performance)\b/,
-    verb: 'Optimize',
-  },
-  {
-    pattern:
-      /\b(?:implement|implementing|implemented|build|building|create|creating|add|adding|write|writing)\b/,
-    verb: 'Build',
-  },
-  {
-    pattern: /\b(?:update|updating|updated|upgrade|upgrading|upgraded)\b/,
-    verb: 'Update',
-  },
-  {
-    pattern:
-      /\b(?:test|testing|tested|verify|verifying|validate|validating|validated)\b/,
-    verb: 'Test',
-  },
-  {
-    pattern:
-      /\b(?:analyze|analyzing|analyzed|analyse|analysing|analysis|evaluate|evaluating|investigate|investigating|review|reviewing)\b/,
-    verb: 'Analyze',
-  },
-  { pattern: /\b(?:compare|comparing|comparison)\b/, verb: 'Compare' },
-  {
-    pattern:
-      /\b(?:research|researching|search|searching|find|finding|lookup|look up)\b/,
-    verb: 'Research',
-  },
-  {
-    pattern:
-      /\b(?:configure|config|configuration|setup|set up|install|deploy|deploying|deployed)\b/,
-    verb: 'Configure',
-  },
-  {
-    pattern:
-      /\b(?:summarize|summarizing|summarized|summarise|summarising|summarised|summary)\b/,
-    verb: 'Summarize',
-  },
-  {
-    pattern:
-      /\b(?:draft|drafting|drafted|brainstorm|brainstorming|rewrite|rewriting|name|naming)\b/,
-    verb: 'Draft',
-  },
-  { pattern: /\b(?:explain|explaining|walkthrough)\b/, verb: 'Explain' },
-]
-
-const CATEGORY_DEFAULT_ACTION: Record<SessionCategory, string> = {
-  coding: 'Fix',
-  research: 'Research',
-  config: 'Configure',
-  creative: 'Draft',
-  analysis: 'Analyze',
-  chat: 'Discuss',
-}
-
-const CATEGORY_SUBJECT_FALLBACK: Record<SessionCategory, string> = {
-  coding: 'Issue',
-  research: 'Topic',
-  config: 'Setup',
-  creative: 'Idea',
-  analysis: 'Results',
-  chat: 'Chat',
-}
-
 export type SessionTitleSnippet = Array<{ role: string; text: string }>
 
-function stripNoisePrefixes(text: string): string {
-  let stripped = text.trim()
-  let previous = ''
-  while (stripped && stripped !== previous) {
-    previous = stripped
-    stripped = stripped.replace(NOISE_PREFIXES, '').trim()
-  }
-  return stripped
-}
-
-function cleanText(raw: string): string {
-  let text = raw
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/`[^`]*`/g, ' ')
-    .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
-    .replace(/https?:\/\/\S+/g, ' ')
-    .replace(/[#*`_~[\]()]/g, ' ')
-    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  text = stripNoisePrefixes(text)
-  return text
-}
+// 文本清理复用共享意图分类模块实现，保持单份维护。
+const cleanText = cleanIntentText
 
 function normalizeToken(rawToken: string): string {
   return rawToken
@@ -318,34 +137,8 @@ function formatToken(token: string): string {
 }
 
 function detectCategory(snippet: SessionTitleSnippet): SessionCategory {
-  const combined = snippet
-    .map((message) => cleanText(message.text).toLowerCase())
-    .join(' ')
-  if (!combined) return 'chat'
-
-  let bestCategory: SessionCategory = 'chat'
-  let bestScore = 0
-  const orderedCategories = [
-    'coding',
-    'research',
-    'config',
-    'analysis',
-    'creative',
-  ] as const
-
-  for (const category of orderedCategories) {
-    const keywords = CATEGORY_KEYWORDS[category]
-    let score = 0
-    for (const keyword of keywords) {
-      if (combined.includes(keyword)) score += 1
-    }
-    if (score > bestScore) {
-      bestScore = score
-      bestCategory = category
-    }
-  }
-
-  return bestScore > 0 ? bestCategory : 'chat'
+  const combined = snippet.map((message) => message.text).join(' ')
+  return detectIntentCategory(combined)
 }
 
 function primaryCandidate(snippet: SessionTitleSnippet): string {
@@ -382,25 +175,19 @@ function detectAction(
   category: SessionCategory,
 ): string {
   const firstUser = snippet.find((message) => message.role === 'user')
-  const firstUserText = firstUser ? cleanText(firstUser.text).toLowerCase() : ''
-  const userText = snippet
-    .filter((message) => message.role === 'user')
-    .map((message) => cleanText(message.text).toLowerCase())
-    .join(' ')
-  const allText = snippet
-    .map((message) => cleanText(message.text).toLowerCase())
-    .join(' ')
-  const candidates = [firstUserText, userText, allText].filter(Boolean)
+  const userMessages = snippet.filter((message) => message.role === 'user')
+  const userTexts = userMessages.length > 0
+    ? userMessages.map((message) => message.text)
+    : []
+  const firstUserText = firstUser ? firstUser.text : ''
+  const allText = snippet.map((message) => message.text).join(' ')
+  const candidates = [
+    firstUserText,
+    ...userTexts,
+    allText,
+  ].filter((text) => Boolean(text.trim()))
 
-  for (const text of candidates) {
-    for (const actionPattern of ACTION_PATTERNS) {
-      if (actionPattern.pattern.test(text)) {
-        return actionPattern.verb
-      }
-    }
-  }
-
-  return CATEGORY_DEFAULT_ACTION[category]
+  return detectIntentAction(candidates, category)
 }
 
 function selectFocusTokens(

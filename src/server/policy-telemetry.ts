@@ -1,5 +1,6 @@
 import { publishChatEvent } from './chat-event-bus'
 import { updateHabitProfile } from './habit-profile'
+import { ingestManualDecision } from './habit-sequences'
 
 export type PolicySource = 'directory' | 'website' | 'terminal' | 'approval'
 
@@ -81,6 +82,11 @@ export function publishPolicyDecision(input: {
   // 在广播前将决策并入本地画像（画像提炼），即使活跃 run 期间总线丢弃了广播，
   // 审计事件与画像仍保持一致。
   updateHabitProfile(decision)
+
+  // P1-A 辅助线：将手动守卫（目录/网站/终端）的落地决策并入时间窗动作组，
+  // 供会话任务序列沉淀（habit-sequences，sessionKey 可空契约）。审批来源与
+  // needs_confirmation 中间态在 ingestManualDecision 内部过滤，不进序列。
+  ingestManualDecision(decision)
 
   publishChatEvent('desktop.policy_decision', {
     sessionKey: 'all',

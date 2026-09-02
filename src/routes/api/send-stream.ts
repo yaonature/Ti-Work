@@ -10,6 +10,16 @@ import {
 import { requireJsonContentType } from '../../server/rate-limit'
 import { publishChatEvent } from '../../server/chat-event-bus'
 import { publishPolicyDecision } from '../../server/policy-telemetry'
+import { classifyUserIntent } from '../../utils/intent-classification'
+import {
+  discardRun,
+  noteApprovalRequired,
+  noteArtifactCreated,
+  noteRunEnded,
+  noteRunStarted,
+  noteToolCompleted,
+  noteToolFailed,
+} from '../../server/agent-run-sediment'
 import {
   registerActiveSendRun,
   unregisterActiveSendRun,
@@ -622,6 +632,10 @@ export const Route = createFileRoute('/api/send-stream')({
               // directly to useStreamingMessage. Skip publishChatEvent to prevent
               // useRealtimeChatHistory from creating duplicate message bubbles.
               const skipPublish = true
+              // P1-A 行为沉淀：本次用户指令的意图标签（同一请求内所有 run 复用）。
+              const requestIntent = classifyUserIntent(
+                getChatMessage(message, attachments),
+              )
               await streamChat(
                 sessionKey,
                 {
@@ -643,6 +657,15 @@ export const Route = createFileRoute('/api/send-stream')({
                       typeof data.run_id === 'string' && data.run_id.trim()
                         ? data.run_id
                         : (activeRunId ?? undefined)
+
+                    // P1-A 行为沉淀：首个携带 run_id 的事件即开启本次 run 的链路追踪
+                    if (runId) {
+                      noteRunStarted({
+                        runId,
+                        sessionKey: sessionKeyFromEvent,
+                        intent: requestIntent,
+                      })
+                    }
 
                     if (runId && !activeRunId) {
                       activeRunId = runId
@@ -813,6 +836,14 @@ export const Route = createFileRoute('/api/send-stream')({
                         sessionKey: sessionKeyFromEvent,
                         runId,
                       }
+                      if (runId) {
+                        noteToolCompleted(runId, {
+                          toolName,
+                          toolCallId: translated.toolCallId,
+                          args: translated.args,
+                          summary: resultPreview,
+                        })
+                      }
                       sendEvent('tool', translated)
                       skipPublish || publishChatEvent('tool', translated)
                       return
@@ -834,6 +865,16 @@ export const Route = createFileRoute('/api/send-stream')({
                           'Artifact created',
                         sessionKey: sessionKeyFromEvent,
                         runId,
+                      }
+                      if (runId) {
+                        noteArtifactCreated(runId, {
+                          toolName: translated.name,
+                          subject:
+                            readString(data.path) ||
+                            readString(artifact.path) ||
+                            translated.result,
+                          summary: translated.result,
+                        })
                       }
                       sendEvent('tool', translated)
                       skipPublish || publishChatEvent('tool', translated)
@@ -891,6 +932,14 @@ export const Route = createFileRoute('/api/send-stream')({
                         result: errorMessage,
                         sessionKey: sessionKeyFromEvent,
                         runId,
+                      }
+                      if (runId) {
+                        noteToolFailed(runId, {
+                          toolName,
+                          toolCallId: translated.toolCallId,
+                          args: getToolArgs(data),
+                          summary: errorMessage,
+                        })
                       }
                       sendEvent('tool', translated)
                       skipPublish || publishChatEvent('tool', translated)
@@ -954,6 +1003,12 @@ export const Route = createFileRoute('/api/send-stream')({
                           context: translated.context,
                         },
                       })
+                      if (runId) {
+                        noteApprovalRequired(runId, {
+                          action: translated.action,
+                          context: translated.context,
+                        })
+                      }
                       return
                     }
 
@@ -970,6 +1025,9 @@ export const Route = createFileRoute('/api/send-stream')({
                         sessionKey: sessionKeyFromEvent,
                         runId,
                       })
+                      if (runId) {
+                        discardRun(runId)
+                      }
                       closeStream()
                       return
                     }
@@ -979,6 +1037,9 @@ export const Route = createFileRoute('/api/send-stream')({
                         state: 'complete',
                         sessionKey: sessionKeyFromEvent,
                         runId,
+                      }
+                      if (runId) {
+                        noteRunEnded(runId)
                       }
                       sendEvent('done', translated)
                       skipPublish || publishChatEvent('done', translated)
@@ -992,6 +1053,9 @@ export const Route = createFileRoute('/api/send-stream')({
               setTimeout(() => {
                 if (!streamClosed) {
                   sendEvent('error', { message: '流式响应超时' })
+                  if (activeRunId) {
+                    discardRun(activeRunId)
+                  }
                   closeStream()
                 }
               }, SEND_STREAM_RUN_TIMEOUT_MS)

@@ -10,6 +10,12 @@ import {
   recordAuthorizationDecision,
 } from '@/server/policy-telemetry'
 import { configureHabitProfile } from '@/server/habit-profile'
+import {
+  clearHabitSequencesCache,
+  configureHabitSequences,
+  flushManualWindow,
+  getHabitSequences,
+} from '@/server/habit-sequences'
 
 const publishChatEvent = vi.fn()
 
@@ -25,10 +31,14 @@ beforeEach(() => {
   // Route the habit-profile sink away from the real ~/.hermes during tests.
   habitTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'policy-telemetry-habits-'))
   configureHabitProfile({ storeDir: habitTempDir })
+  // 序列存储与画像同为 default -> profile.json，测试用独立子目录避免互踩
+  configureHabitSequences({ storeDir: path.join(habitTempDir, 'sequences') })
 })
 
 afterEach(() => {
   clearPolicyTelemetry()
+  flushManualWindow()
+  clearHabitSequencesCache()
   fs.rmSync(habitTempDir, { recursive: true, force: true })
 })
 
@@ -161,6 +171,33 @@ describe('policy-telemetry', () => {
 
     clearPolicyTelemetry()
     expect(getPolicyTelemetry()).toHaveLength(0)
+  })
+
+  it('feeds manual guard decisions into habit-sequence window aggregation', () => {
+    publishPolicyDecision({
+      source: 'terminal',
+      result: 'allowed',
+      action: 'execute_shell',
+      subject: 'pnpm build',
+      reason: 'no_risk_control',
+    })
+    // 审批响应虽也经统一漏斗，但不应进入手动窗口序列
+    publishPolicyDecision({
+      source: 'approval',
+      result: 'allowed',
+      action: 'execute_shell',
+      subject: 'main:abc',
+      reason: 'confirmed',
+    })
+
+    flushManualWindow()
+    const sequences = getHabitSequences()
+    expect(sequences).toHaveLength(1)
+    expect(sequences[0].kind).toBe('manual-window')
+    expect(sequences[0].actions).toHaveLength(1)
+    expect(sequences[0].actions[0].tool).toBe('terminal')
+    expect(sequences[0].actions[0].outcome).toBe('ok')
+    expect(sequences[0].actions[0].subject).toBe('pnpm build')
   })
 })
 
