@@ -9,10 +9,10 @@
  * 后端是控制层（Node），两者独立生命周期。
  */
 import { spawn } from 'node:child_process'
-import type { ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { errorLine, logLine } from './safe-log'
+import type { ChildProcess } from 'node:child_process'
 
 const ENGINE_STOP_TIMEOUT_MS = 5_000
 
@@ -67,6 +67,11 @@ export interface EngineManagerOptions {
   /** 重启退避基数毫秒（默认 2000，之后 ×2） */
   restartBackoffBaseMs?: number
   onStatusChange?: (info: EngineStatusInfo) => void
+  /** 引擎启动命令解析器（注入便于单测隔离 PATH 环境；默认 resolveEngineLauncher） */
+  resolveLauncher?: (
+    projectRoot: string,
+    env: NodeJS.ProcessEnv,
+  ) => HermesLauncher | null
 }
 
 interface HermesLauncher {
@@ -223,6 +228,10 @@ export class EngineManager {
   private readonly maxRestartAttempts: number
   private readonly restartBackoffBaseMs: number
   private readonly onStatusChange: (info: EngineStatusInfo) => void
+  private readonly resolveLauncher: (
+    projectRoot: string,
+    env: NodeJS.ProcessEnv,
+  ) => HermesLauncher | null
 
   private status: EngineStatus = 'idle'
   private errorMessage = ''
@@ -241,6 +250,7 @@ export class EngineManager {
     this.maxRestartAttempts = opts.maxRestartAttempts ?? 3
     this.restartBackoffBaseMs = opts.restartBackoffBaseMs ?? 2_000
     this.onStatusChange = opts.onStatusChange ?? (() => {})
+    this.resolveLauncher = opts.resolveLauncher ?? resolveEngineLauncher
   }
 
   get info(): EngineStatusInfo {
@@ -291,10 +301,7 @@ export class EngineManager {
   private async start(): Promise<void> {
     if (this.child !== null) return
     // resolveEngineLauncher 需要 projectRoot —— 通过环境变量注入
-    this.launcher = resolveEngineLauncher(
-      this.projectRoot(),
-      process.env,
-    )
+    this.launcher = this.resolveLauncher(this.projectRoot(), process.env)
     if (this.launcher === null) {
       this.setStatus('error', '未找到 Hermes 引擎可执行文件，且网关未运行')
       return
@@ -373,13 +380,13 @@ export class EngineManager {
     setTimeout(() => {
       if (this.stopping) return
       if (this.launcher === null) {
-        this.launcher = resolveEngineLauncher(this.projectRoot(), process.env)
+        this.launcher = this.resolveLauncher(this.projectRoot(), process.env)
       }
       if (this.launcher === null) {
         this.setStatus('error', '未找到 Hermes 引擎可执行文件，且网关未运行')
         return
       }
-      this.spawnAndWait(this.launcher as HermesLauncher)
+      this.spawnAndWait(this.launcher)
     }, backoff)
   }
 

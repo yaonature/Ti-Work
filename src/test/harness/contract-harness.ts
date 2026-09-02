@@ -1,6 +1,6 @@
-import type { Redis } from 'ioredis'
 import { expect } from 'vitest'
 import { createRedisHarness } from './redis-harness'
+import type { Redis } from 'ioredis'
 import type {
   CreateUserInput,
   UserRole,

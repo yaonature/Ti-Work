@@ -1,7 +1,5 @@
 //  @ts-check
 
-import tseslint from 'typescript-eslint'
-import importPlugin from 'eslint-plugin-import-x'
 import { tanstackConfig } from '@tanstack/eslint-config'
 import { tiWorkRules } from './eslint/ti-work-rules.mjs'
 
@@ -22,11 +20,27 @@ export default [
       '.playwright-browsers/**',
       // 构建产物 / 打包缓存 / 打包输出：由构建链生成，不参与静态门禁
       'dist/**',
+      'build/**',
+      'release/**',
+      'dist-electron/**',
+      'dist-elec/**',
+      // Hermes 引擎源码 staging/镜像产物（含上游 ESLint 共享配置，依赖未纳入本工程，不参与静态门禁）
+      '.bootstrap-stage/**',
+      '.research/**',
       '.electron-stage/**',
       '.electron-cache/**',
       '.electron-builder-cache/**',
-      'release/**',
-      'dist-electron/**',
+      // 仓库内外部/历史项目：非 Hermes-Studio 本体代码，各有独立工具链与规范，不参与本工程静态门禁
+      'Ti-Work-WebSite/**',
+      // 其他框架构建产物与测试运行残留
+      '.next/**',
+      '.test-hermes-home/**',
+      '.e2e-hermes/**',
+      '.e2e-electron-data/**',
+      '.e2e-electron-userdata/**',
+      'test-results/**',
+      'playwright-report/**',
+      'coverage/**',
     ],
   },
   {
@@ -49,10 +63,7 @@ export default [
   // 保持 warn 提示，G1-G6 各工作流改造相关模块时同步恢复 error。
   {
     files: ['**/*.{js,ts,tsx}'],
-    plugins: {
-      '@typescript-eslint': tseslint.plugin,
-      import: importPlugin,
-    },
+    // 插件已由 tanstackConfig 统一声明，此处仅追加规则覆盖，避免重复定义插件
     rules: {
       '@typescript-eslint/no-unnecessary-condition': 'warn',
       'no-shadow': 'warn',

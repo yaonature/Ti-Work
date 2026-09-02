@@ -33,13 +33,25 @@ test.describe('Ti Work Electron shell', () => {
   )
 
   async function launchApp() {
+    // 将 Electron 用户数据隔离到项目内可写目录：
+    //  - --user-data-dir 让 Chromium 自启动起就使用项目内 profile（规避沙箱对
+    //    %APPDATA%\hermes-studio\DevToolsActivePort 与 %LOCALAPPDATA%\Ti Work\lockfile
+    //    等真实用户目录写路径的拦截，否则应用启动即退出）
+    //  - 覆盖 LOCALAPPDATA/APPDATA，保证主进程 userData/后端 Hermes 目录同步落在项目内
     return electron.launch({
       // --disable-features=msTextServiceOnDesktop：禁用 Windows 桌面文本服务，
       // 避免搜狗 IME 在退出时写 %LocalAppData%\LocalLow\SogouPY 日志（沙箱拦截噪音）
-      args: ['.', '--no-sandbox', '--disable-features=msTextServiceOnDesktop'],
+      args: [
+        '.',
+        '--no-sandbox',
+        '--disable-features=msTextServiceOnDesktop',
+        `--user-data-dir=${join(root, '.e2e-electron-userdata')}`,
+      ],
       cwd: root,
       env: {
         ...process.env,
+        LOCALAPPDATA: join(root, '.e2e-electron-data'),
+        APPDATA: join(root, '.e2e-electron-data', 'roaming'),
         NODE_OPTIONS: '--experimental-require-module',
       },
     })

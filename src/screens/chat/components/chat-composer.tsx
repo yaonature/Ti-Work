@@ -10,7 +10,6 @@ import {
   StopIcon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { EmojiIcon } from '@/components/emoji-icon'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   memo,
@@ -29,6 +28,7 @@ import type {
   SlashCommandDefinition,
   SlashCommandMenuHandle,
 } from '@/components/slash-command-menu'
+import { EmojiIcon } from '@/components/emoji-icon'
 import {
   PromptInput,
   PromptInputAction,
@@ -46,6 +46,14 @@ import { cn } from '@/lib/utils'
 import { useVoiceInput } from '@/hooks/use-voice-input'
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder'
 import { toast } from '@/components/ui/toast'
+import { getProviderDisplayName } from '@/lib/provider-catalog'
+
+// 模型下拉分组头：把服务商 id（如 local / deepseek）转成友好中文名
+function getLocalizedProviderLabel(provider: string): string {
+  if (!provider) return '其他'
+  if (provider.trim().toLowerCase() === 'local') return '本地'
+  return getProviderDisplayName(provider)
+}
 
 type ChatComposerAttachment = {
   id: string
@@ -975,7 +983,7 @@ function ChatComposerComponent({
     return typeof first === 'string' ? first : first.id || first.name || ''
   }, [modelsQuery.data])
   const modelButtonLabel =
-    currentSelectedModel || currentModel || configuredModel || '⚕ Hermes Agent'
+    currentSelectedModel || currentModel || configuredModel || '⚕ Ti Work'
   const modelButtonText = modelButtonLabel.startsWith('⚕')
     ? modelButtonLabel.slice(2)
     : modelButtonLabel
@@ -1071,7 +1079,6 @@ function ChatComposerComponent({
     if (isMobileViewport) return
     // Only focus on focusKey change (session switch), not on every disabled toggle
     focusPrompt()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusKey, isMobileViewport])
 
   useLayoutEffect(() => {
@@ -1444,7 +1451,7 @@ function ChatComposerComponent({
   const hasDraft = value.trim().length > 0 || attachments.length > 0
   const promptPlaceholder = isMobileViewport
     ? '输入消息…'
-    : '想聊什么都可以…（↵ 发送 · ⇧↵ 换行 · ⌘⇧M 切换模型）'
+    : '给智能体发消息'
   const slashCommandQuery = useMemo(() => readSlashCommandQuery(value), [value])
   const isSlashMenuOpen =
     slashCommandQuery !== null && !disabled && !isSlashMenuDismissed
@@ -1786,7 +1793,9 @@ function ChatComposerComponent({
                   ].join(' '),
             ].join(' ')
           : [
-              'relative z-40 shrink-0 w-full mx-auto px-3 pt-2 sm:px-5',
+              'relative z-40 shrink-0 w-full mx-auto px-3 sm:px-5',
+              // 整体下移：让输入框卡片与上方内容之间留出间距，避免圆角紧贴上边界
+              'pt-5',
               'bg-[var(--theme-card)]',
             ].join(' '),
         // Mobile: pin above tab bar + safe-area inset. Desktop: normal bottom padding.
@@ -1814,10 +1823,10 @@ function ChatComposerComponent({
         disabled={disabled}
         maxHeight={isMobileViewport ? 120 : 240}
         className={cn(
-          'relative z-50 transition-all duration-300',
-          // On mobile: remove PromptInput's built-in rounded/bg/padding — outer wrapper owns the container
-          isMobileViewport &&
-            'py-0 gap-0 !rounded-none !bg-transparent shadow-none outline-none',
+            'relative z-50 transition-all duration-300',
+            // On mobile: remove PromptInput's built-in rounded/bg/padding — outer wrapper owns the container
+            isMobileViewport &&
+              'py-0 gap-0 !rounded-none !bg-transparent shadow-none outline-none',
           isDraggingOver &&
             'outline-[var(--theme-accent)] ring-2 ring-[var(--theme-accent)] bg-[var(--theme-panel)]',
           isLoading &&
@@ -2185,7 +2194,7 @@ function ChatComposerComponent({
                     >
                       <div className="mx-auto mt-3 mb-4 h-1 w-10 rounded-full bg-[var(--theme-border)]" />
                       <div className="px-4 pb-2 text-sm font-semibold text-neutral-500 dark:text-neutral-400">
-                        Model
+                        选择模型
                       </div>
                       <div className="pb-4 max-h-[60dvh] overflow-y-auto overflow-x-hidden">
                         {(() => {
@@ -2374,7 +2383,7 @@ function ChatComposerComponent({
                                 .map(([provider, models]) => (
                                   <div key={provider}>
                                     <div className="px-4 pb-1 pt-3 text-[10px] font-medium uppercase tracking-wider text-neutral-400">
-                                      {provider}
+                                      {getLocalizedProviderLabel(provider)}
                                     </div>
                                     {models.map(renderEntry)}
                                   </div>
@@ -2660,7 +2669,7 @@ function ChatComposerComponent({
                                   .map(([provider, models]) => (
                                     <div key={provider}>
                                       <div className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wider text-neutral-400">
-                                        {provider}
+                                        {getLocalizedProviderLabel(provider)}
                                       </div>
                                       {models.map(renderEntry)}
                                     </div>

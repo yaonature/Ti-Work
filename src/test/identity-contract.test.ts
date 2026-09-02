@@ -9,10 +9,10 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
+  IDENTITY_USERS_KEY,
   createContractAuthHarness,
   deleteIdentityUser,
   identityUserKey,
-  IDENTITY_USERS_KEY,
   readStoredIdentityUser,
 } from './harness/contract-harness'
 import { getTestRedisUrl } from './harness/redis-harness'

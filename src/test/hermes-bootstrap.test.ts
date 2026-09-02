@@ -2,10 +2,10 @@
  * Hermes bootstrap 纯逻辑测试 —— resolveHermesHome / resolveInstalledHermes /
  * resolveInstallerPath / ensureApiServerKey。不触发真实安装，直接跑在 node。
  */
-import { describe, expect, it } from 'vitest'
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { describe, expect, it } from 'vitest'
 import {
   defaultHermesHome,
   ensureApiServerKey,

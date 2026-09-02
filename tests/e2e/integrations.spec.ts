@@ -28,9 +28,9 @@ const CONFIG_PATH = path.join(E2E_HERMES_HOME, 'config.yaml')
 
 /** 与 settings 页 RELOAD_MESSAGES 一致的三种三态消息（网关离线时展示最后一条） */
 const RELOAD_MESSAGES = [
-  'Saved. Gateway reloaded — settings are live.',
-  'Saved, but gateway reload failed. Restart the gateway to apply.',
-  'Saved. Gateway is offline — settings load when it starts.',
+  '已保存。网关已重载，设置已即时生效。',
+  '已保存，但网关重载失败。请重启网关后生效。',
+  '已保存。网关当前离线，启动后会自动加载这些设置。',
 ]
 
 type SinkRequest = {
@@ -45,8 +45,11 @@ type SinkRequest = {
  *  - onboarding 弹窗：localStorage 标记完成
  *  - 连接 splash：e2e 无 gateway，/api/auth-check 返回 503 会永久遮罩 →
  *    mock 成功响应使其在首次轮询后关闭
+ *  - 深链定位：section 为低频项（如 integrations）时，设置页会自动展开
+ *    「更多设置」并切到对应 Tab。相比模拟点击「更多设置」，深链在首帧即
+ *    确定 activeSection，可规避 SSR 首载水合/遮罩关闭竞态导致的偶发点击失效
  */
-async function prepareSettingsPage(page: Page) {
+async function prepareSettingsPage(page: Page, section?: string) {
   await page.addInitScript(() => {
     localStorage.setItem('hermes-onboarding-complete', 'true')
   })
@@ -62,7 +65,8 @@ async function prepareSettingsPage(page: Page) {
       }),
     }),
   )
-  await page.goto('/settings')
+  const target = section ? `/settings?section=${section}` : '/settings'
+  await page.goto(target)
   await expect(page.locator('body')).toBeVisible()
 }
 
@@ -262,34 +266,32 @@ test.describe('Integration webhooks (G6)', () => {
     })
     expect(put.ok()).toBe(true)
 
-    await prepareSettingsPage(page)
+    await prepareSettingsPage(page, 'integrations')
 
-    // 切换到 Integrations tab（默认展示 Model & Provider）
-    await page.getByRole('button', { name: 'Integrations' }).first().click()
-
+    // 深链已直接定位「集成」Tab（低频项自动展开「更多设置」），无需模拟点击
     const dingCard = page
       .locator('div.rounded-xl', { hasText: 'DingTalk (钉钉)' })
       .first()
     await expect(dingCard).toBeVisible()
 
-    // 已配置 → 走 Edit 进入编辑态
-    await dingCard.getByRole('button', { name: 'Edit' }).click()
+    // 已配置 → 走「编辑」进入编辑态
+    await dingCard.getByRole('button', { name: '编辑' }).click()
 
     // Webhook URL + Sign secret
     await dingCard.locator('input').first().fill(`${sinkUrl}/dingtalk-ui`)
     await dingCard.locator('input').nth(1).fill('ding-secret-xyz789')
-    await dingCard.getByRole('button', { name: 'Save' }).click()
+    await dingCard.getByRole('button', { name: '保存' }).click()
 
     // 等待保存完成：msg 出现（reload 三态消息之一），避免读取编辑态 hint 的竞态
-    await expect(dingCard.getByText(/^Saved/)).toBeVisible()
+    await expect(dingCard.getByText(/^已保存/)).toBeVisible()
     const msg = (await dingCard.locator('p').last().textContent())?.trim()
     expect(RELOAD_MESSAGES, `reload message was: ${msg}`).toContain(msg)
 
-    // 已配置展示：掩码行 + enabled 徽标 + Test 按钮
+    // 已配置展示：掩码行 + 「已启用」徽标 + 「测试」按钮
     await expect(dingCard.getByText('Webhook', { exact: true })).toBeVisible()
-    await expect(dingCard.getByText('Secret', { exact: true })).toBeVisible()
-    await expect(dingCard.getByText('enabled')).toBeVisible()
-    await expect(dingCard.getByRole('button', { name: 'Test' })).toBeVisible()
+    await expect(dingCard.getByText('密钥', { exact: true })).toBeVisible()
+    await expect(dingCard.getByText('已启用')).toBeVisible()
+    await expect(dingCard.getByRole('button', { name: '测试' })).toBeVisible()
   })
 
   test('settings page: feishu card reflects saved state without crashing', async ({
@@ -309,22 +311,20 @@ test.describe('Integration webhooks (G6)', () => {
     })
     expect(put.ok()).toBe(true)
 
-    await prepareSettingsPage(page)
+    await prepareSettingsPage(page, 'integrations')
 
-    // 切换到 Integrations tab
-    await page.getByRole('button', { name: 'Integrations' }).first().click()
-
+    // 深链已直接定位「集成」Tab，无需模拟点击
     const feishuCard = page
       .locator('div.rounded-xl', { hasText: 'Feishu (飞书)' })
       .first()
     await expect(feishuCard).toBeVisible()
 
-    // 已保存 feishu → 掩码 Webhook / Secret 行 + Test / Edit / Remove
+    // 已保存 feishu → 掩码 Webhook / 密钥 行 + 测试 / 编辑 / 移除
     await expect(feishuCard.getByText('Webhook', { exact: true })).toBeVisible()
-    await expect(feishuCard.getByText('Secret', { exact: true })).toBeVisible()
-    await expect(feishuCard.getByRole('button', { name: 'Test' })).toBeVisible()
-    await expect(feishuCard.getByRole('button', { name: 'Edit' })).toBeVisible()
-    await expect(feishuCard.getByRole('button', { name: 'Remove' })).toBeVisible()
+    await expect(feishuCard.getByText('密钥', { exact: true })).toBeVisible()
+    await expect(feishuCard.getByRole('button', { name: '测试' })).toBeVisible()
+    await expect(feishuCard.getByRole('button', { name: '编辑' })).toBeVisible()
+    await expect(feishuCard.getByRole('button', { name: '移除' })).toBeVisible()
 
     const errorBoundary = page.locator('text=Something went wrong')
     await expect(errorBoundary).not.toBeVisible()

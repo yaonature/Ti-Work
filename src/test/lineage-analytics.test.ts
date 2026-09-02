@@ -37,7 +37,7 @@ const PREFIX = `test:analytics:${TS}-${Math.random().toString(36).slice(2, 8)}`
 // 5 departments × 10 users; 3 tasks per user:
 //   tA created only (backlog) → active
 //   tB created → backlog → in_progress → done (30 min) → done
-//   tC created (todo column) → deleted after 5 minutes → deleted
+//   tC created (待办列) → deleted after 5 minutes → deleted
 //   plus 1 run.started + 1 run.completed
 const DEPT_COUNT = 5
 const USERS_PER_DEPT = 10

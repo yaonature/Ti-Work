@@ -1,7 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDown01Icon, Idea01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { EmojiIcon } from '@/components/emoji-icon'
 import {
   getMessageTimestamp,
   getToolCallsFromMessage,
@@ -10,6 +9,7 @@ import {
 import { MessageActionsBar } from './message-actions-bar'
 import type { ChatAttachment, ChatMessage, ToolCallContent } from '../types'
 import type { ToolPart } from '@/components/prompt-kit/tool'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { AssistantAvatar, UserAvatar } from '@/components/avatars'
 import { CodeBlock } from '@/components/prompt-kit/code-block'
 import { Markdown } from '@/components/prompt-kit/markdown'
@@ -391,7 +391,7 @@ function splitLabelPrefix(label: string): { icon: string | null; text: string } 
   if (KEEP_LABEL_TEXT_ICONS.has(firstChar)) {
     return { icon: null, text: label }
   }
-  // eslint-disable-next-line no-misleading-character-class
+   
   if (/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{25A0}-\u{25FF}]/u.test(firstChar)) {
     return {
       icon: firstChar,
@@ -2130,7 +2130,7 @@ function MessageItemComponent({
                   emoji={thinkingStatusLabel.startsWith('⚡') ? '⚡' : '💭'}
                   size={14}
                 />
-                {thinkingStatusLabel.replace(/^[⚡💭]\s*/, '')}
+                {thinkingStatusLabel.replace(/^[⚡💭]\s*/u, '')}
               </span>
               {thinkingElapsedSeconds > 0 ? (
                 <span className="text-xs tabular-nums text-primary-400">

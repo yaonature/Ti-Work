@@ -2,17 +2,18 @@
  * EngineManager pure logic tests — resolveEngineLauncher / waitForEngine / status states.
  * No electron runtime needed; runs directly in node.
  */
-import { describe, expect, it } from 'vitest'
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { describe, expect, it } from 'vitest'
 import {
+  
   EngineManager,
   resolveEngineLauncher,
   resolveFromPath,
-  waitForEngine,
-  type EngineHealthProbe,
+  waitForEngine
 } from '../../electron/hermes-engine'
+import type {EngineHealthProbe} from '../../electron/hermes-engine';
 
 describe('resolveEngineLauncher', () => {
   it('prefers explicit HERMES_ENGINE_BIN env', () => {
@@ -121,6 +122,9 @@ describe('EngineManager ensure()', () => {
     const manager = new EngineManager({
       probe: async () => ({ ok: false }),
       readyTimeoutMs: 100,
+      // 隔离真实环境：无论开发机 PATH 是否装有 hermes，都视为无引擎可启动，
+      // 保证「无引擎二进制 → error」断言不依赖外部环境
+      resolveLauncher: () => null,
     })
     const info = await manager.ensure()
     // No engine binary exists in the test env → error with a descriptive message
