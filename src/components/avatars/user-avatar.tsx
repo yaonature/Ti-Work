@@ -9,8 +9,9 @@ type AvatarProps = {
 }
 
 /**
- * User avatar — same logo family as assistant.
- * Dark slate rounded square with orange person silhouette + accent.
+ * User avatar — same brand family as assistant (扶桑树 · 日轮).
+ * Dark charcoal base + brand-blue person silhouette + golden sun halo,
+ * keeping the "current user" semantics distinct from the assistant logo.
  */
 function UserAvatarComponent({
   size = 28,
@@ -42,38 +43,52 @@ function UserAvatarComponent({
       style={{ width: size, height: size }}
     >
       <defs>
-        <linearGradient id="avu-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#1A2340" />
-          <stop offset="100%" stopColor="#24304A" />
+        {/* 深炭底 —— 与 ti-work-logo 品牌底色一致 */}
+        <linearGradient id="uav-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#26262B" />
+          <stop offset="1" stopColor="#151518" />
         </linearGradient>
+        {/* 品牌蓝人像 —— 对应扶桑树 fs-tree */}
+        <linearGradient id="uav-person" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor="#0E5BD1" />
+          <stop offset="1" stopColor="#5CADFF" />
+        </linearGradient>
+        {/* 日轮金 —— 对应金乌之日 fs-sun */}
+        <linearGradient id="uav-sun" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor="#FF9F1C" />
+          <stop offset="1" stopColor="#FFE38F" />
+        </linearGradient>
+        {/* 日轮辉光 */}
+        <radialGradient id="uav-glow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="#FFC964" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#FFC964" stopOpacity="0" />
+        </radialGradient>
       </defs>
-      {/* Dark navy background */}
-      <rect x="5" y="5" width="90" height="90" rx="20" fill="url(#avu-bg)" />
-      {/* Anime-style user silhouette */}
-      {/* Head with spiky hair */}
-      <circle cx="50" cy="36" r="13" fill="#E6EAF2" />
-      {/* Hair spikes */}
-      <path d="M 37 33 L 33 22 L 40 30 Z" fill="#E6EAF2" />
-      <path d="M 44 28 L 42 18 L 48 26 Z" fill="#E6EAF2" />
-      <path d="M 52 27 L 52 16 L 56 25 Z" fill="#E6EAF2" />
-      <path d="M 58 28 L 60 19 L 62 28 Z" fill="#E6EAF2" />
-      <path d="M 63 33 L 67 23 L 62 31 Z" fill="#E6EAF2" />
-      {/* Eyes */}
-      <ellipse cx="44" cy="37" rx="3" ry="3.5" fill="#1A2340" />
-      <ellipse cx="56" cy="37" rx="3" ry="3.5" fill="#1A2340" />
-      <circle cx="45" cy="36" r="1" fill="#fff" />
-      <circle cx="57" cy="36" r="1" fill="#fff" />
-      {/* Body/shoulders */}
-      <path
-        d="M 30 78 C 30 62 38 55 50 55 C 62 55 70 62 70 78"
-        fill="#E6EAF2"
-      />
-      {/* Collar detail */}
-      <path
-        d="M 44 55 L 50 62 L 56 55"
-        stroke="#1A2340"
+
+      {/* 深炭底 */}
+      <rect x="5" y="5" width="90" height="90" rx="20" fill="url(#uav-bg)" />
+
+      {/* 日轮辉光（环绕人物头顶） */}
+      <circle cx="50" cy="22" r="20" fill="url(#uav-glow)" />
+
+      {/* 金乌之日 —— 悬于人物头顶，呼应「日出扶桑」 */}
+      <circle cx="50" cy="22" r="10" fill="url(#uav-sun)" />
+      <circle
+        cx="50"
+        cy="22"
+        r="8"
+        stroke="#FFD97A"
+        strokeOpacity="0.4"
         strokeWidth="1.5"
-        fill="none"
+      />
+
+      {/* 头部 */}
+      <circle cx="50" cy="48" r="15" fill="url(#uav-person)" />
+
+      {/* 肩部 / 身躯 */}
+      <path
+        d="M 26 90 C 26 66 38 58 50 58 C 62 58 74 66 74 90 Z"
+        fill="url(#uav-person)"
       />
     </svg>
   )

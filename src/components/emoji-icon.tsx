@@ -1,7 +1,6 @@
 'use client'
 
 import { HugeiconsIcon } from '@hugeicons/react'
-import type { IconSvgElement } from '@hugeicons/react'
 import {
   AiBeautifyIcon,
   AiBrain01Icon,
@@ -12,8 +11,8 @@ import {
   AiMicIcon,
   AiSearchIcon,
   AiSecurity01Icon,
-  AiViewIcon,
   AiVideoIcon,
+  AiViewIcon,
   Alert01Icon,
   Analytics01Icon,
   ArrowDown01Icon,
@@ -79,8 +78,8 @@ import {
   Leaf01Icon,
   Link01Icon,
   LockIcon,
-  Mail01Icon,
   MagicWand01Icon,
+  Mail01Icon,
   Medal01Icon,
   Megaphone01Icon,
   Menu01Icon,
@@ -122,8 +121,8 @@ import {
   SquareIcon,
   StarCircleIcon,
   StarIcon,
-  Target01Icon,
   Tag01Icon,
+  Target01Icon,
   TestTube01Icon,
   ThumbsUpIcon,
   ToolsIcon,
@@ -140,6 +139,7 @@ import {
   Wifi01Icon,
   Wrench01Icon,
 } from '@hugeicons/core-free-icons'
+import type { IconSvgElement } from '@hugeicons/react'
 
 /**
  * 品牌龙虾图标（Hugeicons 无龙虾，手绘风格化轮廓，随 currentColor 变色）。

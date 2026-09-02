@@ -9,7 +9,7 @@ import type * as React from 'react'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 select-none duration-150',
+  'relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 select-none duration-150',
   {
     defaultVariants: {
       size: 'default',
@@ -27,13 +27,15 @@ const buttonVariants = cva(
       },
       variant: {
         default:
-          'bg-accent-500 text-white hover:bg-accent-600 shadow-sm outline outline-accent-500/20 shadow-2xs',
+          'bg-[var(--theme-accent)] text-white hover:bg-[var(--theme-accent-secondary)] active:bg-[var(--theme-accent-secondary)] shadow-2xs outline outline-[var(--theme-accent)]/20',
         secondary:
-          'bg-accent-50 text-accent-700 hover:bg-accent-100 outline outline-accent-500/10 shadow-2xs',
+          'bg-[var(--theme-accent)]/10 text-[var(--theme-accent)] hover:bg-[var(--theme-accent)]/20 active:bg-[var(--theme-accent)]/20 shadow-2xs outline outline-[var(--theme-accent)]/10',
         outline:
-          'border-accent-200 bg-transparent text-accent-800 hover:bg-accent-50 shadow-2xs outline outline-accent-500/10',
-        ghost: 'text-primary-900 hover:bg-primary-200 hover:text-primary-950',
-        destructive: 'bg-red-600 text-white hover:bg-red-700 shadow-sm',
+          'border-[var(--theme-border)] bg-transparent text-[var(--theme-text)] hover:border-[var(--theme-accent)] hover:text-[var(--theme-accent)] hover:bg-[var(--theme-accent)]/10 shadow-2xs outline outline-transparent',
+        ghost:
+          'text-[var(--theme-text)] hover:bg-[var(--theme-hover)] active:bg-[var(--theme-hover)]',
+        destructive:
+          'bg-[var(--theme-danger)] text-white hover:bg-[color-mix(in_srgb,var(--theme-danger)_85%,#000)] active:bg-[color-mix(in_srgb,var(--theme-danger)_85%,#000)] shadow-2xs',
       },
     },
   },

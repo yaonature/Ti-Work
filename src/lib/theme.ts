@@ -20,19 +20,19 @@ export const THEMES: Array<{
   },
   {
     id: 'hermes-os',
-    label: 'Hermes OS',
+    label: 'Ti Work OS',
     description: '电光蓝风格的智能体操作系统主题',
     icon: '◈',
   },
   {
     id: 'hermes-official',
-    label: 'Hermes Official',
+    label: 'Ti Work 旗舰',
     description: '海军蓝与靛蓝组合的旗舰主题',
     icon: '⚕',
   },
   {
     id: 'hermes-classic',
-    label: 'Hermes Classic',
+    label: 'Ti Work 经典',
     description: '深炭黑底配铜色点缀',
     icon: '🔶',
   },
