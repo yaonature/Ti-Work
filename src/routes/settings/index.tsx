@@ -1,5 +1,7 @@
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
+  ArrowDown01Icon,
+  ArrowUp01Icon,
   CheckmarkCircle02Icon,
   CloudIcon,
   LockIcon,
@@ -19,6 +21,7 @@ import type * as React from 'react'
 import type { LoaderStyle } from '@/hooks/use-chat-settings'
 import type { BrailleSpinnerPreset } from '@/components/ui/braille-spinner'
 import type { ThemeId } from '@/lib/theme'
+import type {PlanId} from '@/lib/feature-set';
 import { usePageTitle } from '@/hooks/use-page-title'
 import { Button } from '@/components/ui/button'
 import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
@@ -30,16 +33,26 @@ import { cn } from '@/lib/utils'
 import {
   FEATURE_LABELS,
   PLAN_META,
-  derivePlanFromFeatureSet,
-  type PlanId,
+  
+  derivePlanFromFeatureSet
 } from '@/lib/feature-set'
 import { EmojiIcon, LobsterIcon } from '@/components/emoji-icon'
+import { toast } from '@/components/ui/toast'
 import {
   getChatProfileDisplayName,
   useChatSettingsStore,
 } from '@/hooks/use-chat-settings'
 import { UserAvatar } from '@/components/avatars'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { LogoLoader } from '@/components/logo-loader'
 import { BrailleSpinner } from '@/components/ui/braille-spinner'
 import { ThreeDotsSpinner } from '@/components/ui/three-dots-spinner'
@@ -48,6 +61,79 @@ import { ThreeDotsSpinner } from '@/components/ui/three-dots-spinner'
 export const Route = createFileRoute('/settings/')({
   component: SettingsRoute,
 })
+
+// ── 目录授权：辅助类型与工具 ──────────────────────────────────────────
+
+type DirectoryLevel = 'full' | 'readonly' | 'blocked'
+
+const DIRECTORY_LEVEL_OPTIONS: Array<{ value: DirectoryLevel; label: string }> = [
+  { value: 'full', label: '可读写' },
+  { value: 'readonly', label: '只读' },
+  { value: 'blocked', label: '禁止' },
+]
+
+/** Electron 预加载桥（window.tiwork）的最小类型声明。 */
+type TiWorkPicker = {
+  tiwork?: { selectDirectory?: () => Promise<string | null> }
+}
+
+/** 打开系统目录选择对话框；非 Electron 环境返回 null。 */
+async function pickLocalDirectory(): Promise<string | null> {
+  const bridge = (window as unknown as TiWorkPicker).tiwork
+  if (!bridge?.selectDirectory) return null
+  try {
+    return await bridge.selectDirectory()
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 目录授权级别的三段式选择控件：点选即得，无需下拉思考。
+ * testIdPrefix 用于区分「规则行」与「新增区」，避免同一 testid 在页面重复。
+ */
+function DirectoryLevelSegment({
+  value,
+  onChange,
+  disabled = false,
+  compact = false,
+  testIdPrefix = 'permissions_directory_level',
+}: {
+  value: DirectoryLevel
+  onChange: (level: DirectoryLevel) => void
+  disabled?: boolean
+  compact?: boolean
+  testIdPrefix?: string
+}) {
+  const itemClass = compact ? 'px-2 py-1 text-xs' : 'px-2.5 py-1.5 text-sm'
+  return (
+    <div className="inline-flex items-center gap-0.5 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] p-0.5">
+      {DIRECTORY_LEVEL_OPTIONS.map((lvl) => {
+        const active = value === lvl.value
+        return (
+          <button
+            key={lvl.value}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(lvl.value)}
+            aria-pressed={active}
+            className={cn(
+              'rounded-md font-medium transition-colors',
+              itemClass,
+              active
+                ? 'bg-[var(--theme-accent)] text-white'
+                : 'text-[var(--theme-muted)] hover:text-[var(--theme-text)]',
+              disabled && 'cursor-not-allowed opacity-50',
+            )}
+            data-testid={`${testIdPrefix}_${lvl.value}`}
+          >
+            {lvl.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 function PageThemeSwatch({
   colors,
@@ -232,11 +318,16 @@ type SectionProps = {
   description: string
   icon: React.ComponentProps<typeof HugeiconsIcon>['icon']
   children: React.ReactNode
+  /** 锚点 id：供「权限与安全」总览“去配置”跳转定位到具体区块。 */
+  anchorId?: string
 }
 
-function SettingsSection({ title, description, icon, children }: SectionProps) {
+function SettingsSection({ title, description, icon, children, anchorId }: SectionProps) {
   return (
-    <section className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-panel)] p-4 shadow-sm backdrop-blur-xl md:p-5">
+    <section
+      id={anchorId}
+      className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-panel)] p-4 shadow-sm backdrop-blur-xl md:p-5"
+    >
       <div className="mb-4 flex items-start gap-3">
         <span className="inline-flex size-9 items-center justify-center rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/70">
           <HugeiconsIcon icon={icon} size={20} strokeWidth={1.5} />
@@ -320,6 +411,36 @@ const SETTINGS_NAV_ITEMS: Array<SettingsNavItem> = [
   { id: 'mcp', label: 'MCP 服务器', to: '/settings/mcp' },
 ]
 
+// ── 高频 / 低频分层 ────────────────────────────────────────────────────
+// 高频项默认在侧边栏直接展示；低频项收进「更多设置」折叠区，降低小白用户的认知负载。
+const MORE_SETTINGS_IDS = new Set<SettingsNavItem['id']>([
+  'permissions',
+  'agent',
+  'routing',
+  'display',
+  'integrations',
+  'identity',
+  'account',
+  'autostart',
+  'hub',
+  'users',
+  'mcp',
+])
+
+function isPrimarySettingItem(id: SettingsNavItem['id']): boolean {
+  return !MORE_SETTINGS_IDS.has(id)
+}
+
+// ── 安全能力收口 ──────────────────────────────────────────────────────────
+// 「权限与工具集 / 账号中心 / 企业中枢」已由 /audit 安全中心统一承载。
+// 从 /settings 导航中隐藏，但保留在 SETTINGS_NAV_ITEMS 里以支持升级引导深链
+// （?section=account|hub 经 openUpgradeGuide / openUpgradeGuideToHub 定位）。
+const HIDDEN_FROM_NAV_IDS = new Set<SettingsNavItem['id']>([
+  'permissions',
+  'account',
+  'hub',
+])
+
 function SettingsRoute() {
   usePageTitle('设置')
   const { settings, updateSettings } = useSettings()
@@ -355,9 +476,7 @@ function SettingsRoute() {
   }, [])
 
   // 支持外部升级 CTA 跳转：/settings?section=account|hub → 定位对应板块
-  const search = useSearch({ strict: false }) as {
-    section?: string
-  }
+  const search = useSearch({ strict: false })
   const requestedSection = search?.section
 
   const [activeSection, setActiveSection] = useState<SettingsSectionId>(() => {
@@ -369,15 +488,59 @@ function SettingsRoute() {
     }
     return 'hermes'
   })
+  const [moreExpanded, setMoreExpanded] = useState(false)
 
   useEffect(() => {
-    if (
-      typeof requestedSection === 'string' &&
-      SETTINGS_NAV_ITEMS.some((item) => item.id === requestedSection)
-    ) {
-      setActiveSection(requestedSection as SettingsSectionId)
+    if (typeof requestedSection !== 'string') return
+    const matchedNavItem = SETTINGS_NAV_ITEMS.find(
+      (item) => item.id === requestedSection,
+    )
+    if (matchedNavItem) {
+      setActiveSection(matchedNavItem.id as SettingsSectionId)
+      // 深链命中低频项时自动展开「更多设置」，避免定位后被折叠遮挡
+      if (!isPrimarySettingItem(matchedNavItem.id)) setMoreExpanded(true)
     }
   }, [requestedSection])
+
+  function renderNavItem(item: SettingsNavItem, variant: 'sidebar' | 'pill') {
+    const isSidebar = variant === 'sidebar'
+    if (item.to) {
+      return (
+        <Link
+          key={item.id}
+          to={item.to}
+          className={cn(
+            isSidebar
+              ? 'rounded-lg px-3 py-2 text-left text-sm text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-panel)] hover:text-[var(--theme-text)]'
+              : 'shrink-0 rounded-full bg-[var(--theme-panel)] px-3 py-1.5 text-xs font-medium text-[var(--theme-muted)] transition-colors',
+          )}
+        >
+          {item.label}
+        </Link>
+      )
+    }
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => setActiveSection(item.id as SettingsSectionId)}
+        className={cn(
+          isSidebar
+            ? 'rounded-lg px-3 py-2 text-left text-sm transition-colors'
+            : 'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+          activeSection === item.id
+            ? isSidebar
+              ? 'bg-[var(--theme-accent)]/10 text-accent-600 font-medium'
+              : 'bg-[var(--theme-accent)] text-white'
+            : isSidebar
+              ? 'text-[var(--theme-muted)] hover:bg-[var(--theme-panel)] hover:text-[var(--theme-text)]'
+              : 'bg-[var(--theme-panel)] text-[var(--theme-muted)]',
+        )}
+      >
+        {item.label}
+      </button>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
@@ -392,33 +555,32 @@ function SettingsRoute() {
               设置
             </h1>
             <div className="flex flex-col gap-0.5">
-              {SETTINGS_NAV_ITEMS.map((item) =>
-                item.to ? (
-                  <Link
-                    key={item.id}
-                    to={item.to}
-                    className="rounded-lg px-3 py-2 text-left text-sm text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-panel)] hover:text-[var(--theme-text)]"
-                  >
-                    {item.label}
-                  </Link>
-                ) : (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() =>
-                      setActiveSection(item.id as SettingsSectionId)
-                    }
-                    className={cn(
-                      'rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                      activeSection === item.id
-                        ? 'bg-[var(--theme-accent)]/10 text-accent-600 font-medium'
-                        : 'text-[var(--theme-muted)] hover:bg-[var(--theme-panel)] hover:text-[var(--theme-text)]',
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                ),
-              )}
+              {SETTINGS_NAV_ITEMS.filter(
+                (item) =>
+                  isPrimarySettingItem(item.id) &&
+                  !HIDDEN_FROM_NAV_IDS.has(item.id),
+              ).map((item) => renderNavItem(item, 'sidebar'))}
+
+              <button
+                type="button"
+                onClick={() => setMoreExpanded((v) => !v)}
+                aria-expanded={moreExpanded}
+                className="mt-1 flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-panel)] hover:text-[var(--theme-text)]"
+              >
+                更多设置
+                <HugeiconsIcon
+                  icon={moreExpanded ? ArrowUp01Icon : ArrowDown01Icon}
+                  size={16}
+                  strokeWidth={1.5}
+                />
+              </button>
+
+              {moreExpanded &&
+                SETTINGS_NAV_ITEMS.filter(
+                  (item) =>
+                    !isPrimarySettingItem(item.id) &&
+                    !HIDDEN_FROM_NAV_IDS.has(item.id),
+                ).map((item) => renderNavItem(item, 'sidebar'))}
             </div>
           </div>
         </nav>
@@ -427,31 +589,32 @@ function SettingsRoute() {
 
         {/* Mobile section pills */}
         <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none md:hidden">
-          {SETTINGS_NAV_ITEMS.map((item) =>
-            item.to ? (
-              <Link
-                key={item.id}
-                to={item.to}
-                className="shrink-0 rounded-full bg-[var(--theme-panel)] px-3 py-1.5 text-xs font-medium text-[var(--theme-muted)] transition-colors"
-              >
-                {item.label}
-              </Link>
-            ) : (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveSection(item.id as SettingsSectionId)}
-                className={cn(
-                  'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
-                  activeSection === item.id
-                    ? 'bg-[var(--theme-accent)] text-white'
-                    : 'bg-[var(--theme-panel)] text-[var(--theme-muted)]',
-                )}
-              >
-                {item.label}
-              </button>
-            ),
-          )}
+          {SETTINGS_NAV_ITEMS.filter(
+            (item) =>
+              isPrimarySettingItem(item.id) &&
+              !HIDDEN_FROM_NAV_IDS.has(item.id),
+          ).map((item) => renderNavItem(item, 'pill'))}
+
+          <button
+            type="button"
+            onClick={() => setMoreExpanded((v) => !v)}
+            aria-expanded={moreExpanded}
+            className="flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium text-[var(--theme-muted)] transition-colors"
+          >
+            更多设置
+            <HugeiconsIcon
+              icon={moreExpanded ? ArrowUp01Icon : ArrowDown01Icon}
+              size={14}
+              strokeWidth={1.5}
+            />
+          </button>
+
+          {moreExpanded &&
+            SETTINGS_NAV_ITEMS.filter(
+              (item) =>
+                !isPrimarySettingItem(item.id) &&
+                !HIDDEN_FROM_NAV_IDS.has(item.id),
+            ).map((item) => renderNavItem(item, 'pill'))}
         </div>
 
         {/* Content area */}
@@ -481,18 +644,18 @@ function SettingsRoute() {
             <>
               <SettingsSection
                 title="外观"
-                description="选择界面明暗与工作区主题。"
+                description="界面明暗与主题。"
                 icon={PaintBoardIcon}
               >
                 <SettingsRow
                   label="明暗模式"
-                  description="切换浅色 / 深色，或跟随系统。"
+                  description="浅色 / 深色 / 跟随系统。"
                 >
                   <ThemeToggle />
                 </SettingsRow>
                 <SettingsRow
                   label="主题"
-                  description="工作区主题。Ti Work 支持浅色与深色，其余主题为深色设计。"
+                  description="浅色与深色，其余为深色设计。"
                 >
                   <div className="w-full">
                     <WorkspaceThemePicker />
@@ -512,12 +675,12 @@ function SettingsRoute() {
           {activeSection === ('editor' as SettingsSectionId) && (
             <SettingsSection
               title="编辑器"
-              description="配置文件工作区中的 Monaco 默认设置。"
+              description="工作区中的 Monaco 默认设置。"
               icon={SourceCodeSquareIcon}
             >
               <SettingsRow
                 label="字号"
-                description="在 12 到 20 之间调整编辑器字号。"
+                description="12 到 20 之间调整。"
               >
                 <div className="flex w-full items-center gap-2 md:max-w-xs">
                   <input
@@ -528,7 +691,7 @@ function SettingsRoute() {
                     onChange={(e) =>
                       updateSettings({ editorFontSize: Number(e.target.value) })
                     }
-                    className="w-full accent-primary-900 dark:accent-primary-400"
+                    className="w-full accent-[var(--theme-accent)]"
                     aria-label={`编辑器字号：${settings.editorFontSize} 像素`}
                     aria-valuemin={12}
                     aria-valuemax={20}
@@ -541,7 +704,7 @@ function SettingsRoute() {
               </SettingsRow>
               <SettingsRow
                 label="自动换行"
-                description="默认在编辑器中自动换行。"
+                description="在编辑器中自动换行。"
               >
                 <Switch
                   checked={settings.editorWordWrap}
@@ -553,7 +716,7 @@ function SettingsRoute() {
               </SettingsRow>
               <SettingsRow
                 label="缩略图"
-                description="在 Monaco 编辑器中显示代码缩略图。"
+                description="显示代码缩略图。"
               >
                 <Switch
                   checked={settings.editorMinimap}
@@ -571,12 +734,12 @@ function SettingsRoute() {
             <>
               <SettingsSection
                 title="通知"
-                description="控制提醒通知的发送与用量预警阈值。"
+                description="提醒通知与用量阈值。"
                 icon={Notification03Icon}
               >
                 <SettingsRow
                   label="启用提醒"
-                  description="显示用量和系统提醒通知。"
+                  description="显示用量与系统提醒。"
                 >
                   <Switch
                     checked={settings.notificationsEnabled}
@@ -588,7 +751,7 @@ function SettingsRoute() {
                 </SettingsRow>
                 <SettingsRow
                   label="用量阈值"
-                  description="设置 50% 到 100% 之间的用量预警触发值。"
+                  description="50% 到 100% 之间触发。"
                 >
                   <div className="flex w-full items-center gap-2 md:max-w-xs">
                     <input
@@ -601,7 +764,7 @@ function SettingsRoute() {
                           usageThreshold: Number(e.target.value),
                         })
                       }
-                      className="w-full accent-primary-900 dark:accent-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full accent-[var(--theme-accent)] disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled={!settings.notificationsEnabled}
                       aria-label={`用量阈值：${settings.usageThreshold}%`}
                       aria-valuemin={50}
@@ -617,12 +780,12 @@ function SettingsRoute() {
 
               <SettingsSection
                 title="智能建议"
-                description="主动获取模型建议，以优化成本与质量。"
+                description="主动建议模型，优化成本与质量。"
                 icon={Settings02Icon}
               >
                 <SettingsRow
                   label="启用智能建议"
-                  description="为简单任务推荐更便宜的模型，为复杂工作推荐更好的模型。"
+                  description="简单任务推荐便宜模型，复杂工作推荐更好模型。"
                 >
                   <Switch
                     checked={settings.smartSuggestionsEnabled}
@@ -634,53 +797,69 @@ function SettingsRoute() {
                 </SettingsRow>
                 <SettingsRow
                   label="首选经济型模型"
-                  description="更便宜建议的默认模型（留空则自动检测）。"
+                  description="更便宜建议的默认模型。"
                 >
-                  <select
-                    value={settings.preferredBudgetModel}
-                    onChange={(e) =>
-                      updateSettings({ preferredBudgetModel: e.target.value })
+                  <Select
+                    value={settings.preferredBudgetModel || null}
+                    onValueChange={(value) =>
+                      updateSettings({ preferredBudgetModel: value || '' })
                     }
-                    className="h-9 w-full rounded-lg border border-[var(--theme-border)] dark:border-gray-600 bg-[var(--theme-bg)] dark:bg-gray-800 px-3 text-sm text-[var(--theme-text)] dark:text-gray-100 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-primary-500 md:max-w-xs"
                     aria-label="首选经济型模型"
                   >
-                    <option value="">自动检测</option>
-                    {modelsError && (
-                      <option disabled>加载模型失败</option>
-                    )}
-                    {availableModels.map((model) => (
-                      <option key={model.id} value={model.id}>
-                        {model.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="md:max-w-xs">
+                      <SelectValue placeholder="自动检测" />
+                    </SelectTrigger>
+                    <SelectPopup>
+                      <SelectList>
+                        <SelectItem value={null}>自动检测</SelectItem>
+                        {modelsError && (
+                          <SelectItem value="__error__" disabled>
+                            加载模型失败
+                          </SelectItem>
+                        )}
+                        {availableModels.map((model) => (
+                          <SelectItem key={model.id} value={model.id}>
+                            {model.label}
+                          </SelectItem>
+                        ))}
+                      </SelectList>
+                    </SelectPopup>
+                  </Select>
                 </SettingsRow>
                 <SettingsRow
                   label="首选高端模型"
-                  description="升级建议的默认模型（留空则自动检测）。"
+                  description="升级建议的默认模型。"
                 >
-                  <select
-                    value={settings.preferredPremiumModel}
-                    onChange={(e) =>
-                      updateSettings({ preferredPremiumModel: e.target.value })
+                  <Select
+                    value={settings.preferredPremiumModel || null}
+                    onValueChange={(value) =>
+                      updateSettings({ preferredPremiumModel: value || '' })
                     }
-                    className="h-9 w-full rounded-lg border border-[var(--theme-border)] dark:border-gray-600 bg-[var(--theme-bg)] dark:bg-gray-800 px-3 text-sm text-[var(--theme-text)] dark:text-gray-100 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-primary-500 md:max-w-xs"
                     aria-label="首选高端模型"
                   >
-                    <option value="">自动检测</option>
-                    {modelsError && (
-                      <option disabled>加载模型失败</option>
-                    )}
-                    {availableModels.map((model) => (
-                      <option key={model.id} value={model.id}>
-                        {model.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="md:max-w-xs">
+                      <SelectValue placeholder="自动检测" />
+                    </SelectTrigger>
+                    <SelectPopup>
+                      <SelectList>
+                        <SelectItem value={null}>自动检测</SelectItem>
+                        {modelsError && (
+                          <SelectItem value="__error__" disabled>
+                            加载模型失败
+                          </SelectItem>
+                        )}
+                        {availableModels.map((model) => (
+                          <SelectItem key={model.id} value={model.id}>
+                            {model.label}
+                          </SelectItem>
+                        ))}
+                      </SelectList>
+                    </SelectPopup>
+                  </Select>
                 </SettingsRow>
                 <SettingsRow
                   label="仅建议更便宜的模型"
-                  description="从不建议升级，只建议更便宜的替代方案。"
+                  description="只建议更便宜方案。"
                 >
                   <Switch
                     checked={settings.onlySuggestCheaper}
@@ -715,7 +894,7 @@ function SettingsRoute() {
                 strokeWidth={1.5}
               />
               <span className="text-pretty">
-                更改会自动保存到本地存储。
+                更改自动保存。
               </span>
             </div>
           </footer>
@@ -740,7 +919,7 @@ const IDENTITY_FILES = [
     path: 'SOUL.md',
     label: 'Soul（人格）',
     description:
-      '定义智能体的人格与语气。每条消息都会重新加载，修改后无需重启 Hermes 即可生效。',
+      '定义智能体的人格与语气。每条消息都会重新加载，修改后无需重启 Ti Work 即可生效。',
   },
   {
     path: 'persona.md',
@@ -855,7 +1034,7 @@ function IdentityFileEditor() {
   return (
     <SettingsSection
       title="身份文件"
-      description="编辑定义你的 Hermes 智能体人格、启动行为与编码规范的文件。更改会直接保存到 ~/.hermes。"
+      description="编辑人格、启动行为与编码规范的文件。保存到 ~/.hermes。"
       icon={UserIcon}
     >
       {/* File picker */}
@@ -888,13 +1067,13 @@ function IdentityFileEditor() {
           加载中…
         </div>
       ) : (
-        <textarea
+        <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           spellCheck={false}
           rows={18}
           placeholder={`# ${selectedPath}\n\n开始编写…`}
-          className="w-full resize-y rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 font-mono text-xs leading-relaxed text-[var(--theme-text)] outline-none focus:border-[var(--theme-accent)] transition-colors"
+          className="font-mono"
           style={{ minHeight: '12rem' }}
         />
       )}
@@ -1061,7 +1240,7 @@ function ModelAllowlistSelector({ models }: { models: Array<string> }) {
   )
 }
 
-function HubSection() {
+export function HubSection() {
   const [status, setStatus] = useState<HubStatusPayload | null>(null)
   const [baseUrl, setBaseUrl] = useState('')
   const [tenantId, setTenantId] = useState('')
@@ -1144,7 +1323,7 @@ function HubSection() {
     <>
       <SettingsSection
         title="企业中枢"
-        description="接入 Ti Work 企业中枢：登录/席位/有效期受中枢控制，血缘与审计事件自动上报（离线暂存、联网补报）。"
+        description="登录/席位/有效期受中枢控制，血缘与审计事件自动上报。"
         icon={CloudIcon}
       >
         {status?.configured ? (
@@ -1229,7 +1408,7 @@ function HubSection() {
           </div>
         ) : (
           <p className="text-sm text-[var(--theme-muted)]">
-            尚未接入企业中枢。输入中枢地址与账号即可接入（专业版 / 私有化版功能）。
+            尚未接入。输入中枢地址与账号即可接入。
           </p>
         )}
       </SettingsSection>
@@ -1237,7 +1416,7 @@ function HubSection() {
       {!status?.configured && (
         <SettingsSection
           title="连接中枢"
-          description="使用中枢下发的企业账号接入。凭证仅用于本次登录，不落盘；会话令牌由桌面端本地保管（0600）。"
+          description="使用中枢账号接入，凭证仅用于本次登录。"
           icon={CloudIcon}
         >
           <div className="flex w-full flex-col gap-3 md:max-w-md">
@@ -1316,7 +1495,7 @@ function HubSection() {
  *  - 升级 CTA（FeatureLockedCard 的入口之一，批次 3 门禁落地后复用）
  *  - 云同步 / 遥测开关（本地持久化，云同步为订阅增值能力占位）
  */
-function AccountCenterSection() {
+export function AccountCenterSection() {
   const { settings, updateSettings } = useSettings()
   const [hubPlan, setHubPlan] = useState<PlanId | null>(null)
   const [showUpgrade, setShowUpgrade] = useState(false)
@@ -1336,10 +1515,10 @@ function AccountCenterSection() {
   const meta = PLAN_META[currentPlan]
 
   return (
-    <>
+    <div className="flex flex-col gap-4">
       <SettingsSection
         title="账号中心"
-        description="登录可选：不登录也能使用全部本地功能。登录后解锁订阅升级 / 云同步 / 遥测能力。"
+        description="可选登录：不登录也可使用全部本地功能。"
         icon={UserIcon}
       >
         <div className="flex flex-col gap-3">
@@ -1394,12 +1573,12 @@ function AccountCenterSection() {
 
       <SettingsSection
         title="云同步"
-        description="登录后跨设备同步会话与设置。当前为单机版本地存储，该开关预留增值入口。"
+        description="登录后跨设备同步会话与设置。"
         icon={CloudIcon}
       >
         <SettingsRow
           label="开启云同步"
-          description="登录账号后自动备份会话与偏好设置。"
+          description="登录后自动备份会话与偏好。"
         >
           <Switch
             checked={settings.cloudSyncEnabled}
@@ -1413,12 +1592,12 @@ function AccountCenterSection() {
 
       <SettingsSection
         title="遥测"
-        description="帮助改进产品：匿名上报崩溃与使用情况，不含任何对话内容。"
+        description="匿名上报崩溃与使用情况，不含对话内容。"
         icon={Notification03Icon}
       >
         <SettingsRow
           label="开启遥测"
-          description="匿名技术数据（启动耗时/崩溃/版本），可随时关闭。"
+          description="启动耗时/崩溃/版本等匿名数据。"
         >
           <Switch
             checked={settings.telemetryEnabled}
@@ -1429,7 +1608,7 @@ function AccountCenterSection() {
           />
         </SettingsRow>
       </SettingsSection>
-    </>
+    </div>
   )
 }
 
@@ -1669,7 +1848,7 @@ function IntegrationsSection() {
     <>
     <SettingsSection
       title="集成"
-      description="连接 Ti Work 功能所依赖的外部服务。"
+      description="依赖的外部服务。"
       icon={SparklesIcon}
     >
       <SettingsRow
@@ -1747,6 +1926,17 @@ function IntegrationsSection() {
         </div>
       </SettingsRow>
 
+      {/* Feishu self-built app authorization → /api/integrations/feishu */}
+      <div className="flex flex-col gap-1 border-t border-[var(--theme-border)] pt-4">
+        <p className="text-sm font-medium text-[var(--theme-text)]">
+          飞书自建应用授权
+        </p>
+        <p className="mb-3 text-xs text-[var(--theme-muted)]">
+          将 Agent 接入飞书开放平台生态，用于在飞书中调用机器人 / 连接器能力。
+        </p>
+        <FeishuAuthCard />
+      </div>
+
       {/* Feishu / DingTalk webhook channels → ~/.hermes/config.yaml `integrations` */}
       <div className="border-t border-[var(--theme-border)] pt-4">
         <p className="text-sm font-medium text-[var(--theme-text)]">
@@ -1793,6 +1983,15 @@ type IntegrationChannelState = {
   secretSet: boolean
   secretMasked: string
   webhookUrlMasked: string
+}
+
+/** 飞书自建应用授权状态 —— 对应后端 FeishuAppState（见 server/integrations.ts） */
+type FeishuAppState = {
+  configured: boolean
+  verified: boolean
+  appId: string
+  appSecretSet: boolean
+  appSecretMasked: string
 }
 
 type IntegrationReloadStatus = 'reloaded' | 'reload-failed' | 'gateway-offline'
@@ -2108,6 +2307,299 @@ function IntegrationChannelCard({ channel }: { channel: IntegrationChannelKey })
   )
 }
 
+// ── Feishu self-built app authorization card ─────────────────────────────────
+
+const FEISHU_GUIDE_STEPS = [
+  {
+    title: '创建自建应用',
+    text: '前往飞书开放平台 open.feishu.cn，创建企业自建应用。',
+  },
+  {
+    title: '复制 App ID / App Secret',
+    text: '在应用「凭证与基础信息」页复制这两项凭据。',
+  },
+  {
+    title: '填写并连接',
+    text: '把凭据粘到下方，点击「连接并验证」，系统会校验并保存授权。',
+  },
+] as const
+
+function FeishuAuthCard() {
+  const [state, setState] = useState<FeishuAppState | null>(null)
+  const [appId, setAppId] = useState('')
+  const [appSecret, setAppSecret] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [connecting, setConnecting] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState(false)
+  const [showGuide, setShowGuide] = useState(true)
+  const [msg, setMsg] = useState<{
+    kind: 'ok' | 'err' | 'info'
+    text: string
+  } | null>(null)
+
+  const connected = Boolean(state?.configured)
+
+  useEffect(() => {
+    let alive = true
+    fetch('/api/integrations/feishu')
+      .then((r) => r.json())
+      .then((d: { state?: FeishuAppState }) => {
+        if (!alive) return
+        const s = d.state ?? null
+        setState(s)
+        setShowGuide(!s?.configured)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  function startReconnect() {
+    setAppId(state?.appId ?? '')
+    setAppSecret('')
+    setEditing(true)
+    setShowGuide(true)
+    setMsg(null)
+  }
+
+  function cancelEdit() {
+    setEditing(false)
+    setMsg(null)
+  }
+
+  async function connect() {
+    const id = appId.trim()
+    const secret = appSecret.trim()
+    if (!id || !secret) {
+      setMsg({ kind: 'err', text: '请填写 App ID 和 App Secret。' })
+      return
+    }
+    setConnecting(true)
+    setMsg(null)
+    try {
+      const res = await fetch('/api/integrations/feishu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appId: id, appSecret: secret }),
+      })
+      const d = (await res.json()) as {
+        ok?: boolean
+        message?: string
+        code?: number
+        state?: FeishuAppState
+      }
+      if (!res.ok || !d.ok) {
+        setMsg({
+          kind: 'err',
+          text: d.message || (d.code ? `飞书返回错误码 ${d.code}` : '连接失败'),
+        })
+        return
+      }
+      if (d.state) setState(d.state)
+      setEditing(false)
+      setShowGuide(false)
+      setAppSecret('')
+      setMsg({ kind: 'ok', text: d.message || '连接成功，授权已保存。' })
+    } catch (err) {
+      setMsg({
+        kind: 'err',
+        text: err instanceof Error ? err.message : '连接失败',
+      })
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+  async function remove() {
+    setRemoving(true)
+    setMsg(null)
+    try {
+      const res = await fetch('/api/integrations/feishu', { method: 'DELETE' })
+      const d = (await res.json()) as { ok?: boolean; state?: FeishuAppState }
+      if (!res.ok || !d.ok) throw new Error('移除失败')
+      setState(d.state ?? null)
+      setAppId('')
+      setAppSecret('')
+      setEditing(false)
+      setShowGuide(true)
+      setMsg({ kind: 'info', text: '已移除授权。' })
+    } catch (err) {
+      setMsg({
+        kind: 'err',
+        text: err instanceof Error ? err.message : '移除失败',
+      })
+    } finally {
+      setRemoving(false)
+    }
+  }
+
+  const inputCls =
+    'flex-1 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-input)] px-3 py-1.5 font-mono text-xs text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-accent)]'
+
+  const showForm = !connected || editing
+
+  return (
+    <div className="flex flex-col gap-3">
+      {showGuide && (
+        <ol className="flex flex-col gap-2 rounded-lg border border-dashed border-[var(--theme-border)] bg-[var(--theme-panel)]/40 p-3">
+          {FEISHU_GUIDE_STEPS.map((step, i) => (
+            <li key={step.title} className="flex items-start gap-2 text-xs">
+              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--theme-accent)] text-[10px] font-semibold text-[var(--theme-bg)]">
+                {i + 1}
+              </span>
+              <span className="text-[var(--theme-text)]">
+                <span className="font-medium">{step.title}</span>
+                <span className="text-[var(--theme-muted)]"> —— {step.text}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {connected && !editing && (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)]/60 px-3 py-1.5">
+            <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--theme-muted)]">
+              App ID
+            </span>
+            <code className="min-w-0 flex-1 truncate font-mono text-xs text-[var(--theme-text)]">
+              {state?.appId}
+            </code>
+            {state?.verified && (
+              <HugeiconsIcon
+                icon={CheckmarkCircle02Icon}
+                size={16}
+                className="shrink-0 text-green-600"
+              />
+            )}
+          </div>
+          {state?.appSecretSet && (
+            <div className="flex items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-panel)]/60 px-3 py-1.5">
+              <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--theme-muted)]">
+                App Secret
+              </span>
+              <code className="min-w-0 flex-1 truncate font-mono text-xs text-[var(--theme-text)]">
+                {state?.appSecretMasked}
+              </code>
+            </div>
+          )}
+          <div className="mt-1 flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={startReconnect}>
+              重新连接
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowGuide((v) => !v)}
+            >
+              {showGuide ? '收起指南' : '查看指南'}
+            </Button>
+            <button
+              type="button"
+              onClick={() => setConfirmRemove(true)}
+              disabled={removing}
+              className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:border-red-800/50 dark:text-red-400 dark:hover:bg-red-900/20"
+            >
+              {removing ? '移除中…' : '移除'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showForm && (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--theme-text)]">
+              App ID
+            </label>
+            <input
+              type="text"
+              value={appId}
+              onChange={(e) => setAppId(e.target.value)}
+              placeholder="cli_xxxxxxxxxxxxxxxx"
+              className={inputCls}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--theme-text)]">
+              App Secret
+            </label>
+            <input
+              type="password"
+              value={appSecret}
+              onChange={(e) => setAppSecret(e.target.value)}
+              placeholder="xxxxxxxxxxxxxxxx"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void connect()
+              }}
+              className={inputCls}
+            />
+            <p className="text-[11px] text-[var(--theme-muted)]">
+              {connected
+                ? '重新连接将替换现有凭据。'
+                : '凭据仅保存在本地 ~/.hermes/config.yaml。'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => void connect()}
+              disabled={connecting || !appId.trim() || !appSecret.trim()}
+            >
+              {connecting ? '连接中…' : connected ? '重新连接' : '连接并验证'}
+            </Button>
+            {!connected && (
+              <Button size="sm" variant="outline" onClick={() => setShowGuide((v) => !v)}>
+                {showGuide ? '收起指南' : '查看指南'}
+              </Button>
+            )}
+            {connected && editing && (
+              <Button size="sm" variant="outline" onClick={cancelEdit}>
+                取消
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {msg && (
+        <p
+          className={`text-xs ${
+            msg.kind === 'err'
+              ? 'text-red-600 dark:text-red-400'
+              : msg.kind === 'info'
+                ? 'text-[var(--theme-muted)]'
+                : 'text-emerald-600 dark:text-emerald-400'
+          }`}
+        >
+          {msg.text}
+        </p>
+      )}
+
+      <ConfirmActionDialog
+        open={confirmRemove}
+        onOpenChange={(open) => {
+          if (!open) setConfirmRemove(false)
+        }}
+        title="移除飞书授权"
+        description={
+          <>
+            确定要移除飞书自建应用授权吗？App ID / App Secret 将被清除，
+            其它飞书配置（如 Webhook）不受影响。
+          </>
+        }
+        confirmLabel="移除"
+        onConfirm={() => {
+          setConfirmRemove(false)
+          void remove()
+        }}
+      />
+    </div>
+  )
+}
+
 // ── Platforms Section (chat platform tokens → ~/.hermes/.env) ────────────────
 
 const CHAT_PLATFORMS = [
@@ -2266,7 +2758,7 @@ function PlatformsSection() {
   return (
     <SettingsSection
       title="消息平台"
-      description="将 Hermes 连接到聊天平台。令牌保存到 ~/.hermes/.env，使用 hermes --gateway 重启网关后生效。"
+      description="令牌保存到 ~/.hermes/.env，重启网关后生效。"
       icon={MessageMultiple01Icon}
     >
       {CHAT_PLATFORMS.map((platform) => (
@@ -2436,7 +2928,7 @@ function _ProfileSection() {
   return (
     <SettingsSection
       title="个人资料"
-      description="你在会话中使用的显示名称与头像。"
+      description="会话中使用的昵称与头像。"
       icon={UserIcon}
     >
       <div className="flex items-center gap-4">
@@ -2522,12 +3014,12 @@ function ChatDisplaySection() {
     <>
       <SettingsSection
         title="会话显示"
-        description="控制会话消息中显示的内容。"
+        description="会话消息显示内容。"
         icon={MessageMultiple01Icon}
       >
         <SettingsRow
           label="显示工具消息"
-          description="当智能体使用工具时，显示工具调用详情。"
+          description="显示工具调用详情。"
         >
           <Switch
             checked={chatSettings.showToolMessages}
@@ -2539,7 +3031,7 @@ function ChatDisplaySection() {
         </SettingsRow>
         <SettingsRow
           label="显示推理块"
-          description="展示模型的思考与推理过程。"
+          description="展示模型思考过程。"
         >
           <Switch
             checked={chatSettings.showReasoningBlocks}
@@ -2561,7 +3053,7 @@ type LoaderStyleOption = { value: LoaderStyle; label: string }
 
 const LOADER_STYLES: Array<LoaderStyleOption> = [
   { value: 'dots', label: '圆点' },
-  { value: 'braille-hermes', label: 'Hermes' },
+  { value: 'braille-hermes', label: 'Ti Work' },
   { value: 'braille-orbit', label: '轨道' },
   { value: 'braille-breathe', label: '呼吸' },
   { value: 'braille-pulse', label: '脉冲' },
@@ -2605,7 +3097,7 @@ function _LoaderStyleSection() {
   return (
     <SettingsSection
       title="加载动画"
-      description="选择助手流式输出时显示的动画样式。"
+      description="流式输出时的动画样式。"
       icon={Settings02Icon}
     >
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -2683,16 +3175,23 @@ function AddPlatformOverride({
   if (available.length === 0) return null
   return (
     <div className="flex items-center gap-2">
-      <select
-        value={selected}
-        onChange={(e) => setSelected(e.target.value)}
-        className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-input)] px-2 py-1 text-xs text-[var(--theme-text)] focus:outline-none"
+      <Select
+        value={selected || null}
+        onValueChange={(value) => setSelected(value || '')}
+        aria-label="添加平台"
       >
-        <option value="">添加平台…</option>
-        {available.map((p) => (
-          <option key={p} value={p}>{p}</option>
-        ))}
-      </select>
+        <SelectTrigger className="text-xs">
+          <SelectValue placeholder="添加平台…" />
+        </SelectTrigger>
+        <SelectPopup>
+          <SelectList>
+            <SelectItem value={null}>添加平台…</SelectItem>
+            {available.map((p) => (
+              <SelectItem key={p} value={p}>{p}</SelectItem>
+            ))}
+          </SelectList>
+        </SelectPopup>
+      </Select>
       {selected && (
         <button
           onClick={() => { onAdd(selected); setSelected('') }}
@@ -2706,7 +3205,7 @@ function AddPlatformOverride({
   )
 }
 
-function HermesConfigSection({
+export function HermesConfigSection({
   activeView = 'hermes',
 }: {
   activeView?: 'hermes' | 'agent' | 'permissions' | 'routing' | 'voice' | 'display'
@@ -2714,15 +3213,26 @@ function HermesConfigSection({
   const [data, setData] = useState<HermesConfigData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [editingKey, setEditingKey] = useState<string | null>(null)
   const [keyInput, setKeyInput] = useState('')
+  const [testingEnvKey, setTestingEnvKey] = useState<string | null>(null)
+  const [keyTestResults, setKeyTestResults] = useState<
+    Record<string, { state: 'success' | 'error'; message: string }>
+  >({})
   const [modelInput, setModelInput] = useState('')
   const [providerInput, setProviderInput] = useState('')
   const [baseUrlInput, setBaseUrlInput] = useState('')
   const [newToolset, setNewToolset] = useState('')
   const [newAllowlistCmd, setNewAllowlistCmd] = useState('')
   const [newBlocklistDomain, setNewBlocklistDomain] = useState('')
+  const [newAllowedDomain, setNewAllowedDomain] = useState('')
+  const [newBlockedDomain, setNewBlockedDomain] = useState('')
+  const [newDirectoryPath, setNewDirectoryPath] = useState('')
+  const [newDirectoryLevel, setNewDirectoryLevel] = useState<'full' | 'readonly' | 'blocked'>('full')
+  const [securityTab, setSecurityTab] = useState<'directory' | 'website' | 'risk' | 'tools'>('directory')
+  const [securityStep, setSecurityStep] = useState<'directory' | 'preset' | 'done'>('directory')
+  const [pendPreset, setPendPreset] = useState<'standard' | 'strict' | 'loose' | null>(null)
+  const [showSecurityAdvanced, setShowSecurityAdvanced] = useState(false)
   const [newQcKey, setNewQcKey] = useState('')
   const [newQcVal, setNewQcVal] = useState('')
 
@@ -2780,12 +3290,43 @@ function HermesConfigSection({
       .catch(() => setLoading(false))
   }, [fetchConfig, fetchModelsForProvider])
 
+  // 从「权限与安全」总览的“去配置”跳转时，切换到对应授权子页签并定位。
+  // 同时监听 hashchange，便于已在授权配置页时再次跳转定位。
+  const SECURITY_HASH_TAB: Record<
+    string,
+    'directory' | 'website' | 'risk'
+  > = {
+    'security-directory': 'directory',
+    'security-website': 'website',
+    'security-risk': 'risk',
+  }
+  useEffect(() => {
+    const handleHash = () => {
+      if (activeView !== 'permissions') return
+      const match = window.location.hash.match(
+        /^#(security-directory|security-website|security-risk)$/,
+      )
+      if (!match) return
+      setSecurityTab(SECURITY_HASH_TAB[match[1]] ?? 'directory')
+      setShowSecurityAdvanced(true)
+      // 定位到授权配置面板顶部
+      window.setTimeout(() => {
+        const target = document.getElementById('security-config-scroll')
+        if (!target) return
+        target.style.scrollMarginTop = '16px'
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 120)
+    }
+    handleHash()
+    window.addEventListener('hashchange', handleHash)
+    return () => window.removeEventListener('hashchange', handleHash)
+  }, [data, activeView])
+
   const saveConfig = async (updates: {
     config?: Record<string, unknown>
     env?: Record<string, string>
   }) => {
     setSaving(true)
-    setSaveMessage(null)
     try {
       const res = await fetch('/api/hermes-config', {
         method: 'PATCH',
@@ -2793,20 +3334,76 @@ function HermesConfigSection({
         body: JSON.stringify(updates),
       })
       const result = (await res.json()) as { message?: string }
-      setSaveMessage(result.message || '已保存')
+      const message = result.message || '已保存'
+      const failed = res.ok === false || /失败|Failed/.test(message)
+      toast(message, { type: failed ? 'error' : 'success' })
       const refreshData = await fetchConfig()
       if (refreshData.activeProvider) {
         void fetchModelsForProvider(refreshData.activeProvider)
       }
-      setTimeout(() => setSaveMessage(null), 3000)
     } catch {
-      setSaveMessage('保存失败')
+      toast('保存失败', { type: 'error' })
     }
     setSaving(false)
   }
 
-  const selectClassName =
-    'h-9 w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm text-[var(--theme-text)] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary-400 md:max-w-sm'
+  const handleTestKey = async (providerId: string, envKey: string) => {
+    setTestingEnvKey(envKey)
+    setKeyTestResults((prev) => {
+      const next = { ...prev }
+      delete next[envKey]
+      return next
+    })
+    try {
+      const res = await fetch('/api/hermes-key-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: providerId }),
+      })
+      const result = (await res.json()) as {
+        ok: boolean
+        source?: 'request' | 'env'
+        status?: number
+        modelCount?: number
+        error?: string
+      }
+      if (res.ok && result.ok) {
+        setKeyTestResults((prev) => ({
+          ...prev,
+          [envKey]: {
+            state: 'success',
+            message:
+              typeof result.modelCount === 'number'
+                ? `连接正常，获取到 ${result.modelCount} 个模型`
+                : '连接正常',
+          },
+        }))
+      } else {
+        setKeyTestResults((prev) => ({
+          ...prev,
+          [envKey]: {
+            state: 'error',
+            message: result.error || '测通失败，请检查 API 密钥。',
+          },
+        }))
+      }
+    } catch {
+      setKeyTestResults((prev) => ({
+        ...prev,
+        [envKey]: { state: 'error', message: '网络错误，无法测通。' },
+      }))
+    }
+    setTestingEnvKey(null)
+  }
+
+  const handleDeleteKey = (envKey: string) => {
+    void saveConfig({ env: { [envKey]: '' } })
+    setKeyTestResults((prev) => {
+      const next = { ...prev }
+      delete next[envKey]
+      return next
+    })
+  }
 
   const readNumber = (value: unknown, fallback: number) => {
     if (typeof value === 'number' && Number.isFinite(value)) return value
@@ -2818,6 +3415,18 @@ function HermesConfigSection({
     if (typeof value === 'boolean') return value
     if (typeof value === 'string') return value === 'true'
     return fallback
+  }
+
+  const readStringArray = (
+    value: unknown,
+    options?: { lowercase?: boolean },
+  ) => {
+    const items = Array.isArray(value) ? value : []
+    const normalized = items
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+      .map((item) => (options?.lowercase ? item.toLowerCase() : item))
+    return Array.from(new Set(normalized))
   }
 
   const saveNumberField = (
@@ -2834,7 +3443,7 @@ function HermesConfigSection({
   if (loading) {
     return (
       <SettingsSection
-        title="Hermes 智能体"
+        title="Ti Work 智能体"
         description="正在加载配置..."
         icon={Settings02Icon}
       >
@@ -2849,12 +3458,12 @@ function HermesConfigSection({
   if (!data) {
     return (
       <SettingsSection
-        title="Hermes 智能体"
-        description="无法加载 Hermes 配置。"
+        title="Ti Work 智能体"
+        description="无法加载 Ti Work 配置。"
         icon={Settings02Icon}
       >
         <p className="text-sm" style={{ color: 'var(--theme-muted)' }}>
-          请确保 Hermes 智能体运行在 localhost:8642
+          请确保 Ti Work 智能体运行在 localhost:8642
         </p>
       </SettingsSection>
     )
@@ -2914,32 +3523,41 @@ function HermesConfigSection({
     <>
       <SettingsSection
         title="模型与服务提供方"
-        description="为 Hermes 智能体配置默认 AI 模型。"
+        description="配置默认 AI 模型。"
         icon={SourceCodeSquareIcon}
       >
         <SettingsRow
           label="服务提供方"
-          description="选择推理服务提供方。"
+          description="提供方。"
         >
           <div className="flex w-full max-w-sm gap-2">
             {availableProviders.length > 0 ? (
-              <select
+              <Select
                 value={providerInput}
-                onChange={(e) => {
-                  const newProvider = e.target.value
+                onValueChange={(value) => {
+                  const newProvider = value || ''
                   setProviderInput(newProvider)
                   setModelInput('')
                   void fetchModelsForProvider(newProvider)
                 }}
-                className={selectClassName}
+                aria-label="服务提供方"
               >
-                {availableProviders.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}{' '}
-                    {p.authenticated ? <EmojiIcon emoji="✓" size={12} /> : null}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择服务提供方" />
+                </SelectTrigger>
+                <SelectPopup>
+                  <SelectList>
+                    {availableProviders.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.label}{' '}
+                        {p.authenticated ? (
+                          <EmojiIcon emoji="✓" size={12} />
+                        ) : null}
+                      </SelectItem>
+                    ))}
+                  </SelectList>
+                </SelectPopup>
+              </Select>
             ) : (
               <Input
                 value={providerInput}
@@ -2954,26 +3572,35 @@ function HermesConfigSection({
         </SettingsRow>
         <SettingsRow
           label="模型"
-          description="Hermes 用于会话的模型。"
+          description="会话所用模型。"
         >
           <div className="flex w-full max-w-sm gap-2">
             {availableModels.length > 0 ? (
-              <select
+              <Select
                 value={modelInput}
-                onChange={(e) => setModelInput(e.target.value)}
-                className={`${selectClassName} font-mono`}
+                onValueChange={(value) => setModelInput(value || '')}
+                aria-label="模型"
               >
-                {!availableModels.some((m) => m.id === modelInput) &&
-                  modelInput && (
-                    <option value={modelInput}>{modelInput}（当前）</option>
-                  )}
-                {availableModels.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.id}
-                    {m.description ? ` — ${m.description}` : ''}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="font-mono">
+                  <SelectValue placeholder="选择模型" />
+                </SelectTrigger>
+                <SelectPopup>
+                  <SelectList>
+                    {!availableModels.some((m) => m.id === modelInput) &&
+                      modelInput && (
+                        <SelectItem className="font-mono" value={modelInput}>
+                          {modelInput}（当前）
+                        </SelectItem>
+                      )}
+                    {availableModels.map((m) => (
+                      <SelectItem className="font-mono" key={m.id} value={m.id}>
+                        {m.id}
+                        {m.description ? ` — ${m.description}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectList>
+                </SelectPopup>
+              </Select>
             ) : (
               <Input
                 value={modelInput}
@@ -2990,7 +3617,7 @@ function HermesConfigSection({
         </SettingsRow>
         <SettingsRow
           label="Base URL"
-          description="用于本地服务提供方（Ollama、LM Studio、MLX）。云端留空。"
+          description="本地提供方（Ollama、LM Studio、MLX）。云端留空。"
         >
           <div className="flex w-full max-w-sm gap-2">
             <Input
@@ -3023,7 +3650,7 @@ function HermesConfigSection({
 
       <SettingsSection
         title="API 密钥"
-        description="管理保存在 ~/.hermes/.env 中的服务提供方 API 密钥"
+        description="管理 ~/.hermes/.env 中的 API 密钥。"
         icon={CloudIcon}
       >
         {data.providers
@@ -3033,74 +3660,108 @@ function HermesConfigSection({
               key={provider.id}
               label={provider.name}
               description={
-                provider.configured ? (
-                  <>
-                    <EmojiIcon emoji="✅" size={12} /> 已配置
-                  </>
-                ) : (
-                  <>
-                    <EmojiIcon emoji="❌" size={12} /> 未配置
-                  </>
-                )
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{
+                      backgroundColor: provider.configured
+                        ? 'var(--theme-success)'
+                        : 'var(--theme-muted)',
+                    }}
+                  />
+                  {provider.configured ? '已配置' : '未配置'}
+                </span>
               }
             >
-              <div className="flex w-full max-w-sm items-center gap-2">
-                {provider.envKeys.map((envKey) => (
-                  <div key={envKey} className="flex-1">
-                    {editingKey === envKey ? (
-                      <div className="flex gap-2">
-                        <Input
-                          type="password"
-                          value={keyInput}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setKeyInput(e.target.value)
-                          }
-                          placeholder={`输入 ${envKey}`}
-                          className="flex-1"
-                        />
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            void saveConfig({ env: { [envKey]: keyInput } })
-                            setEditingKey(null)
-                            setKeyInput('')
-                          }}
-                        >
-                          保存
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingKey(null)
-                            setKeyInput('')
-                          }}
-                        >
-                          <EmojiIcon emoji="✕" size={14} />
-                        </Button>
+              <div className="flex w-full max-w-sm flex-col gap-2">
+                {provider.envKeys.map((envKey) => {
+                  const result = keyTestResults[envKey]
+                  const isTesting = testingEnvKey === envKey
+                  const masked = provider.maskedKeys[envKey]
+                  return (
+                    <div key={envKey} className="flex flex-col gap-1">
+                      <div className="flex w-full flex-wrap items-center gap-2">
+                        {editingKey === envKey ? (
+                          <>
+                            <Input
+                              type="password"
+                              value={keyInput}
+                              onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>,
+                              ) => setKeyInput(e.target.value)}
+                              placeholder={`输入 ${envKey}`}
+                              className="min-w-0 flex-1"
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                void saveConfig({ env: { [envKey]: keyInput } })
+                                setEditingKey(null)
+                                setKeyInput('')
+                              }}
+                            >
+                              保存
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <span
+                              className="min-w-0 flex-1 truncate text-xs font-mono"
+                              style={{ color: 'var(--theme-muted)' }}
+                            >
+                              {masked || '未设置'}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingKey(envKey)
+                                setKeyInput('')
+                              }}
+                            >
+                              {masked ? '更改' : '添加'}
+                            </Button>
+                          </>
+                        )}
+                        {masked && editingKey !== envKey && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={isTesting}
+                              onClick={() =>
+                                void handleTestKey(provider.id, envKey)
+                              }
+                            >
+                              {isTesting ? '测通…' : '测通'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={isTesting}
+                              onClick={() => handleDeleteKey(envKey)}
+                            >
+                              删除
+                            </Button>
+                          </>
+                        )}
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="text-xs font-mono"
-                          style={{ color: 'var(--theme-muted)' }}
-                        >
-                          {provider.maskedKeys[envKey] || '未设置'}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingKey(envKey)
-                            setKeyInput('')
+                      {result && (
+                        <div
+                          className="text-xs"
+                          style={{
+                            color:
+                              result.state === 'success'
+                                ? 'var(--theme-success)'
+                                : 'var(--theme-danger)',
                           }}
                         >
-                          {provider.configured ? '更改' : '添加'}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                          {result.message}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </SettingsRow>
           ))}
@@ -3108,12 +3769,12 @@ function HermesConfigSection({
 
       <SettingsSection
         title="记忆"
-        description="配置 Hermes 智能体的记忆与用户资料。"
+        description="记忆与用户资料。"
         icon={UserIcon}
       >
         <SettingsRow
           label="启用记忆"
-          description="跨会话存储与回忆记忆。"
+          description="跨会话存储记忆。"
         >
           <Switch
             checked={memoryConfig.memory_enabled !== false}
@@ -3126,7 +3787,7 @@ function HermesConfigSection({
         </SettingsRow>
         <SettingsRow
           label="用户资料"
-          description="记住用户偏好与上下文。"
+          description="记住偏好与上下文。"
         >
           <Switch
             checked={memoryConfig.user_profile_enabled !== false}
@@ -3170,7 +3831,7 @@ function HermesConfigSection({
 
       <SettingsSection
         title="自定义服务提供方"
-        description="从 config.yaml 读取的只读提供方详情。"
+        description="config.yaml 只读详情。"
         icon={CloudIcon}
       >
         <div className="space-y-3">
@@ -3232,12 +3893,12 @@ function HermesConfigSection({
 
       <SettingsSection
         title="关于"
-        description="Hermes 智能体运行时信息。"
+        description="智能体运行时信息。"
         icon={Notification03Icon}
       >
         <SettingsRow
           label="配置位置"
-          description="Hermes 存储配置的位置。"
+          description="配置存储位置。"
         >
           <span
             className="text-xs font-mono"
@@ -3248,7 +3909,7 @@ function HermesConfigSection({
         </SettingsRow>
         <SettingsRow
           label="当前服务提供方"
-          description="当前推理服务提供方。"
+          description="当前提供方。"
         >
           <span
             className="text-sm font-medium"
@@ -3265,12 +3926,12 @@ function HermesConfigSection({
   const renderAgentBehavior = () => (
     <SettingsSection
       title="智能体行为"
-      description="控制智能体的执行限制与工具访问。"
+      description="执行限制与工具访问。"
       icon={Settings02Icon}
     >
       <SettingsRow
         label="最大轮数"
-        description="每个请求的最大智能体轮数（1-100）。"
+        description="最大轮数（1-100）。"
       >
         <Input
           type="number"
@@ -3285,7 +3946,7 @@ function HermesConfigSection({
       </SettingsRow>
       <SettingsRow
         label="网关超时"
-        description="网关判定请求超时前等待的秒数。"
+        description="请求超时前等待秒数。"
       >
         <Input
           type="number"
@@ -3300,47 +3961,61 @@ function HermesConfigSection({
       </SettingsRow>
       <SettingsRow
         label="强制使用工具"
-        description="智能体在可用时是否必须使用工具。"
+        description="可用时是否强制使用工具。"
       >
-        <select
+        <Select
           value={(agentConfig.tool_use_enforcement as string) || 'auto'}
-          onChange={(e) =>
+          onValueChange={(value) =>
             void saveConfig({
-              config: { agent: { tool_use_enforcement: e.target.value } },
+              config: { agent: { tool_use_enforcement: value || 'auto' } },
             })
           }
-          className={selectClassName}
+          aria-label="强制使用工具"
         >
-          <option value="auto">自动</option>
-          <option value="required">必需</option>
-          <option value="none">无</option>
-        </select>
+          <SelectTrigger className="md:max-w-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectPopup>
+            <SelectList>
+              <SelectItem value="auto">自动</SelectItem>
+              <SelectItem value="required">必需</SelectItem>
+              <SelectItem value="none">无</SelectItem>
+            </SelectList>
+          </SelectPopup>
+        </Select>
       </SettingsRow>
       <SettingsRow
         label="会话重置模式"
         description="何时自动清除会话上下文。"
       >
-        <select
+        <Select
           value={(sessionResetConfig.mode as string) || 'both'}
-          onChange={(e) =>
+          onValueChange={(value) =>
             void saveConfig({
-              config: { session_reset: { mode: e.target.value } },
+              config: { session_reset: { mode: value || 'both' } },
             })
           }
-          className={selectClassName}
+          aria-label="会话重置模式"
         >
-          <option value="none">从不</option>
-          <option value="daily">每天（按小时）</option>
-          <option value="idle">空闲超时</option>
-          <option value="both">两者</option>
-        </select>
+          <SelectTrigger className="md:max-w-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectPopup>
+            <SelectList>
+              <SelectItem value="none">从不</SelectItem>
+              <SelectItem value="daily">每天（按小时）</SelectItem>
+              <SelectItem value="idle">空闲超时</SelectItem>
+              <SelectItem value="both">两者</SelectItem>
+            </SelectList>
+          </SelectPopup>
+        </Select>
       </SettingsRow>
       {['daily', 'both'].includes(
         (sessionResetConfig.mode as string) || 'both',
       ) && (
         <SettingsRow
           label="重置时间点"
-          description="每日会话重置的小时（0–23，本地时间）。"
+          description="每日重置小时（0–23，本地）。"
         >
           <Input
             type="number"
@@ -3359,7 +4034,7 @@ function HermesConfigSection({
       ) && (
         <SettingsRow
           label="空闲超时"
-          description="会话重置前的空闲分钟数。"
+          description="重置前空闲分钟数。"
         >
           <Input
             type="number"
@@ -3381,6 +4056,400 @@ function HermesConfigSection({
   )
 
   const renderPermissions = () => {
+    const directoryAccessConfig =
+      (securityConfig.directory_access as Record<string, unknown>) || {}
+    const websiteAccessConfig =
+      (securityConfig.website_access as Record<string, unknown>) || {}
+    const riskControlsConfig =
+      (securityConfig.risk_controls as Record<string, unknown>) || {}
+    const confirmationRules =
+      (riskControlsConfig.require_confirmation as Record<string, unknown>) || {}
+    const approvalRules =
+      (riskControlsConfig.require_approval as Record<string, unknown>) || {}
+    // 安全档位：根据当前配置的目录/网站模式推断所属档位用于高亮选中态。
+    // strict 的唯一标志是网站模式 ask；loose 唯一标志是目录模式 observe；否则归为标准。
+    const activeSecurityPreset: 'standard' | 'strict' | 'loose' | null =
+      (websiteAccessConfig.mode as string) === 'ask'
+        ? 'strict'
+        : (directoryAccessConfig.mode as string) === 'observe'
+          ? 'loose'
+          : (directoryAccessConfig.mode as string) === 'scoped' &&
+              (websiteAccessConfig.mode as string) === 'balanced'
+            ? 'standard'
+            : null
+    const fullDirectories = readStringArray(directoryAccessConfig.allowed_paths)
+    const readonlyDirectories = readStringArray(directoryAccessConfig.readonly_paths)
+    const blockedDirectories = readStringArray(directoryAccessConfig.blocked_paths)
+    const allowedDomains = readStringArray(websiteAccessConfig.allowed_domains, {
+      lowercase: true,
+    })
+    const blockedDomains = Array.from(
+      new Set([
+        ...readStringArray(websiteAccessConfig.blocked_domains, {
+          lowercase: true,
+        }),
+        ...blocklistDomains.map((domain) => domain.toLowerCase()),
+      ]),
+    )
+    // 目录授权规则：完全操控 / 只读 / 禁止访问 三类统一为一条规则列表。
+    const directoryRules: Array<{
+      path: string
+      level: 'full' | 'readonly' | 'blocked'
+    }> = [
+      ...fullDirectories.map((p) => ({ path: p, level: 'full' as const })),
+      ...readonlyDirectories.map((p) => ({ path: p, level: 'readonly' as const })),
+      ...blockedDirectories.map((p) => ({ path: p, level: 'blocked' as const })),
+    ]
+    const dangerActions = [
+      {
+        key: 'delete',
+        label: '删除文件',
+        description: '删除、清空回收站或批量移除文件。',
+      },
+      {
+        key: 'overwrite',
+        label: '覆盖写入',
+        description: '覆盖原文件、批量重命名或替换内容。',
+      },
+      {
+        key: 'move',
+        label: '批量移动',
+        description: '跨目录搬运、归档或批量整理操作。',
+      },
+      {
+        key: 'external_send',
+        label: '对外发送',
+        description: '发送邮件、消息、工单或其他外部系统提交。',
+      },
+      {
+        key: 'upload',
+        label: '上传文件',
+        description: '向网页或第三方系统上传本地文件。',
+      },
+      {
+        key: 'download',
+        label: '下载文件',
+        description: '从网页或外部系统下载到本机。',
+      },
+      {
+        key: 'execute_shell',
+        label: '执行终端命令',
+        description: '调用终端、脚本或其他本地执行器。',
+      },
+    ] as const
+
+    const securityTabs = [
+      { id: 'directory', label: '目录' },
+      { id: 'website', label: '网站' },
+      { id: 'risk', label: '风险动作' },
+      { id: 'tools', label: '安全与工具' },
+    ] as const
+
+    // 三步式向导：授权预设卡片的展示文案（选择+预览共用）。
+    const presetCards = [
+      {
+        id: 'standard',
+        name: '标准',
+        desc: '推荐 · 适合多数场景',
+        bullets: [
+          '目录：仅允许在已登记的受控工作区内执行',
+          '网站：平衡模式，常用站点自动沉淀',
+          '动作：删除、覆盖、移动、上传等操作执行前确认',
+          '审批：默认手动，不强制审批',
+        ],
+      },
+      {
+        id: 'strict',
+        name: '严格',
+        desc: '最高安全 · 站点每次询问',
+        bullets: [
+          '目录：仅允许在已登记的受控工作区内执行',
+          '网站：访问新站点每次先确认',
+          '动作：删除、覆盖、上传、终端等高风险操作需确认',
+          '审批：删除、上传、对外发送、终端需上级审批',
+        ],
+      },
+      {
+        id: 'loose',
+        name: '宽松',
+        desc: '最低打扰 · 目录仅提醒',
+        bullets: [
+          '目录：仅在已登记目录内提醒，不拦截',
+          '网站：平衡模式，常用站点自动沉淀',
+          '动作：删除、对外发送、终端等少数操作需确认',
+          '审批：默认手动，不强制审批',
+        ],
+      },
+    ] as const
+
+    // 向导中当前期待的档位：优先取用户点选，其次取已生效档位。
+    const workingPreset: 'standard' | 'strict' | 'loose' | null =
+      pendPreset ?? activeSecurityPreset
+
+    const persistDirectoryRules = (
+      rules: Array<{ path: string; level: 'full' | 'readonly' | 'blocked' }>,
+    ) => {
+      void saveConfig({
+        config: {
+          security: {
+            directory_access: {
+              allowed_paths: rules
+                .filter((r) => r.level === 'full')
+                .map((r) => r.path),
+              readonly_paths: rules
+                .filter((r) => r.level === 'readonly')
+                .map((r) => r.path),
+              blocked_paths: rules
+                .filter((r) => r.level === 'blocked')
+                .map((r) => r.path),
+            },
+          },
+        },
+      })
+    }
+
+    const upsertDirectoryRule = (
+      targetPath: string,
+      level: 'full' | 'readonly' | 'blocked',
+    ) => {
+      persistDirectoryRules([
+        ...directoryRules.filter((r) => r.path !== targetPath),
+        { path: targetPath, level },
+      ])
+    }
+
+    const addDirectoryRule = (
+      level: 'full' | 'readonly' | 'blocked',
+      rawValue: string,
+    ) => {
+      const trimmed = rawValue.trim()
+      if (!trimmed || directoryRules.some((r) => r.path === trimmed)) return
+      upsertDirectoryRule(trimmed, level)
+      setNewDirectoryPath('')
+    }
+
+    const removeDirectoryRule = (targetPath: string) => {
+      persistDirectoryRules(directoryRules.filter((r) => r.path !== targetPath))
+    }
+
+    // 工作区根目录：通过系统对话框选择，回显选中路径，无需手动输入。
+    const pickWorkspaceRoot = async () => {
+      const picked = await pickLocalDirectory()
+      if (!picked) return
+      void saveConfig({
+        config: {
+          security: { directory_access: { workspace_root: picked } },
+        },
+      })
+    }
+
+    // 新增目录规则：可通过系统对话框选择路径并回填输入框。
+    const pickNewDirectory = async () => {
+      const picked = await pickLocalDirectory()
+      if (picked) setNewDirectoryPath(picked)
+    }
+
+    // 目录授权核心：工作区根目录 + 规则列表 + 新增规则。
+    // 三步式向导第一步与高级设置「目录」分页共用，避免两处维护同一份逻辑。
+    const renderDirectoryCore = () => (
+      <>
+        <SettingsRow
+          label="工作区根目录"
+          description="工作区与中间结果的默认落点。"
+        >
+          <div className="flex w-full items-center gap-2 md:max-w-xl">
+            <Input
+              value={(directoryAccessConfig.workspace_root as string) || ''}
+              readOnly
+              placeholder="尚未选择目录"
+              className="flex-1"
+              data-testid="permissions_directory_workspace_root"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void pickWorkspaceRoot()}
+              data-testid="permissions_directory_workspace_pick"
+            >
+              选择目录
+            </Button>
+          </div>
+        </SettingsRow>
+        {/* 目录规则列表：可读写 / 只读 / 禁止 */}
+        <div
+          className="flex flex-col gap-2"
+          data-testid="permissions_directory_rules"
+        >
+          {directoryRules.length === 0 ? (
+            <span className="text-xs text-[var(--theme-muted)]">
+              尚未添加目录规则
+            </span>
+          ) : (
+            directoryRules.map((rule, index) => (
+              <div
+                key={rule.path}
+                className="flex items-center gap-2 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/50 px-3 py-2"
+                data-testid={`permissions_directory_rule_${index}`}
+              >
+                <span className="min-w-0 flex-1 truncate font-mono text-xs text-[var(--theme-text)]">
+                  {rule.path}
+                </span>
+                <DirectoryLevelSegment
+                  compact
+                  value={rule.level}
+                  onChange={(level) => upsertDirectoryRule(rule.path, level)}
+                  testIdPrefix={`permissions_directory_rule_${index}_level`}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeDirectoryRule(rule.path)}
+                  className="shrink-0 text-[var(--theme-muted)] transition-colors hover:text-[var(--theme-danger)]"
+                  aria-label={`移除目录规则 ${rule.path}`}
+                >
+                  ×
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+        {/* 新增目录规则 */}
+        <div
+          className="mt-3 flex flex-wrap items-center gap-2"
+          data-testid="permissions_directory_add"
+        >
+          <Input
+            value={newDirectoryPath}
+            onChange={(e) => setNewDirectoryPath(e.target.value)}
+            placeholder="输入或选择目录路径"
+            className="flex-1"
+            data-testid="permissions_directory_add_path"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => void pickNewDirectory()}
+            data-testid="permissions_directory_add_pick"
+          >
+            选择
+          </Button>
+          <DirectoryLevelSegment
+            value={newDirectoryLevel}
+            onChange={setNewDirectoryLevel}
+            testIdPrefix="permissions_directory_add_level"
+          />
+          <Button
+            size="sm"
+            onClick={() =>
+              addDirectoryRule(newDirectoryLevel, newDirectoryPath)
+            }
+            disabled={!newDirectoryPath.trim()}
+            data-testid="permissions_directory_add_btn"
+          >
+            添加
+          </Button>
+        </div>
+      </>
+    )
+
+    const applySecurityPreset = (
+      preset: 'standard' | 'strict' | 'loose',
+    ) => {
+      const confirmBase = {
+        delete: true,
+        overwrite: true,
+        move: true,
+        external_send: true,
+        upload: true,
+        download: false,
+        execute_shell: true,
+      }
+      const approvalBase = {
+        delete: false,
+        overwrite: false,
+        move: false,
+        external_send: false,
+        upload: false,
+        download: false,
+        execute_shell: false,
+      }
+      const presets = {
+        standard: {
+          directoryMode: 'scoped',
+          websiteMode: 'balanced',
+          confirm: confirmBase,
+          approval: approvalBase,
+          approvalsMode: 'manual',
+        },
+        strict: {
+          directoryMode: 'scoped',
+          websiteMode: 'ask',
+          confirm: { ...confirmBase, download: true },
+          approval: {
+            ...approvalBase,
+            delete: true,
+            overwrite: true,
+            external_send: true,
+            upload: true,
+            execute_shell: true,
+          },
+          approvalsMode: 'manual',
+        },
+        loose: {
+          directoryMode: 'observe',
+          websiteMode: 'balanced',
+          confirm: { ...confirmBase, overwrite: false, move: false, upload: false },
+          approval: approvalBase,
+          approvalsMode: 'manual',
+        },
+      }[preset]
+      void saveConfig({
+        config: {
+          security: {
+            directory_access: { enabled: true, mode: presets.directoryMode },
+            website_access: { enabled: true, mode: presets.websiteMode },
+            risk_controls: {
+              require_confirmation: presets.confirm,
+              require_approval: presets.approval,
+            },
+          },
+          approvals: { mode: presets.approvalsMode },
+        },
+      })
+    }
+
+    const addWebsiteRule = (
+      listKey: 'allowed_domains' | 'blocked_domains',
+      rawValue: string,
+      setter: React.Dispatch<React.SetStateAction<string>>,
+    ) => {
+      const trimmed = rawValue.trim().toLowerCase()
+      if (!trimmed) return
+      const currentItems =
+        listKey === 'allowed_domains' ? allowedDomains : blockedDomains
+      if (currentItems.includes(trimmed)) return
+      const nextItems = [...currentItems, trimmed]
+      void saveConfig({
+        config: {
+          security: {
+            website_access: {
+              [listKey]: nextItems,
+            },
+            ...(listKey === 'blocked_domains'
+              ? {
+                  website_blocklist: {
+                    enabled:
+                      readBoolean(websiteAccessConfig.enabled, true) ||
+                      readBoolean(websiteBlocklist.enabled, false),
+                    domains: nextItems,
+                  },
+                }
+              : {}),
+          },
+        },
+      })
+      setter('')
+    }
+
     const removeToolset = (ts: string) => {
       void saveConfig({ config: { toolsets: toolsets.filter((t) => t !== ts) } })
     }
@@ -3394,32 +4463,677 @@ function HermesConfigSection({
 
     return (
       <>
+        {/* 权限与安全：三步式向导 + 高级设置折叠 */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold text-[var(--theme-text)]">
+              权限与安全
+            </h3>
+            <p className="mt-1 text-xs text-[var(--theme-muted)]">
+              选一个安全档位，轻松三步完成；想要细调随时进高级设置。
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowSecurityAdvanced((v) => !v)}
+            data-testid="security_advanced_toggle"
+          >
+            {showSecurityAdvanced ? '返回向导' : '高级设置'}
+          </Button>
+        </div>
+
+        {showSecurityAdvanced ? null : securityStep === 'directory' ? (
+          <SettingsSection
+            title="第一步 · 定义目录授权"
+            description="告诉桌面应用哪些目录允许操作。可完全操控、只读或禁止访问，后期随时可在高级设置调整。"
+            icon={LockIcon}
+          >
+            {renderDirectoryCore()}
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <Button
+                size="sm"
+                onClick={() => setSecurityStep('preset')}
+                data-testid="security_wizard_next"
+              >
+                下一步
+              </Button>
+              {directoryRules.length === 0 && (
+                <span className="text-xs text-[var(--theme-muted)]">
+                  建议至少登记一个工作目录，才能启用「受控工作区」。
+                </span>
+              )}
+            </div>
+          </SettingsSection>
+        ) : securityStep === 'preset' ? (
+          <SettingsSection
+            title="第二步 · 选择安全档位"
+            description="选定后决定网站访问与风险操作的确认程度，一键生效。"
+            icon={LockIcon}
+          >
+            <div role="radiogroup" className="flex flex-wrap gap-3">
+              {presetCards.map((preset) => {
+                const selected = workingPreset === preset.id
+                const current = activeSecurityPreset === preset.id
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setPendPreset(preset.id)}
+                    className={cn(
+                      'flex min-w-[200px] flex-col gap-1 rounded-2xl border px-4 py-3 text-left transition-all',
+                      selected
+                        ? 'border-[var(--theme-accent)] bg-[var(--theme-accent)]/5 ring-1 ring-[var(--theme-accent)]/40'
+                        : 'border-[var(--theme-border)] bg-[var(--theme-panel)]/60 hover:border-[var(--theme-accent)] hover:bg-[var(--theme-accent)]/5',
+                    )}
+                    data-testid={`security_preset_${preset.id}`}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-[var(--theme-text)]">
+                        {preset.name}
+                      </span>
+                      <span
+                        aria-hidden
+                        className={cn(
+                          'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors',
+                          selected
+                            ? 'border-[var(--theme-accent)]'
+                            : 'border-[var(--theme-border)]',
+                        )}
+                      >
+                        {selected && (
+                          <span className="h-2 w-2 rounded-full bg-[var(--theme-accent)]" />
+                        )}
+                      </span>
+                    </span>
+                    <span className="text-xs text-[var(--theme-muted)]">
+                      {preset.desc}
+                    </span>
+                    {current && (
+                      <span className="text-[10px] font-medium text-[var(--theme-accent)]">
+                        当前使用中
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            {workingPreset && (
+              <ul className="mt-4 flex flex-col gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/50 p-4">
+                {presetCards
+                  .find((p) => p.id === workingPreset)
+                  ?.bullets.map((bullet) => (
+                    <li
+                      key={bullet}
+                      className="flex items-start gap-2 text-sm text-[var(--theme-text)]"
+                    >
+                      <HugeiconsIcon
+                        icon={CheckmarkCircle02Icon}
+                        size={16}
+                        className="mt-0.5 shrink-0 text-[var(--theme-accent)]"
+                      />
+                      {bullet}
+                    </li>
+                  ))}
+              </ul>
+            )}
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (!workingPreset) return
+                  applySecurityPreset(workingPreset)
+                  setPendPreset(workingPreset)
+                  setSecurityStep('done')
+                }}
+                data-testid="security_wizard_apply"
+              >
+                完成配置
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setSecurityStep('directory')}
+                data-testid="security_wizard_back"
+              >
+                上一步
+              </Button>
+            </div>
+          </SettingsSection>
+        ) : (
+          <SettingsSection
+            title="配置完成"
+            description="安全策略已生效，可继续使用，也随时可进高级设置微调。"
+            icon={LockIcon}
+          >
+            <div className="flex items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/50 p-4">
+              <HugeiconsIcon
+                icon={CheckmarkCircle02Icon}
+                size={24}
+                className="shrink-0 text-[var(--theme-accent)]"
+              />
+              <div>
+                <p className="text-sm font-semibold text-[var(--theme-text)]">
+                  已应用「{workingPreset ? presetCards.find((p) => p.id === workingPreset)?.name : ''}」安全档位
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--theme-muted)]">
+                  已登记 {directoryRules.length} 个目录，当前为「{workingPreset ? presetCards.find((p) => p.id === workingPreset)?.name : ''}」档位。
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Button
+                size="sm"
+                onClick={() => setShowSecurityAdvanced(true)}
+                data-testid="security_enter_advanced"
+              >
+                进入高级设置
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setSecurityStep('directory')}
+                data-testid="security_wizard_reselect"
+              >
+                重新配置
+              </Button>
+            </div>
+          </SettingsSection>
+        )}
+
+        {showSecurityAdvanced && (
+          <div id="security-config-scroll" className="scroll-mt-4">
+            <div className="mb-4 flex flex-wrap gap-1.5 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-panel)] p-1">
+              {securityTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSecurityTab(tab.id)}
+                  className={cn(
+                    'rounded-xl px-4 py-2 text-sm font-medium transition-colors',
+                    securityTab === tab.id
+                      ? 'bg-[var(--theme-accent)] text-white'
+                      : 'text-[var(--theme-muted)] hover:text-[var(--theme-text)]',
+                  )}
+                  data-testid={`permissions_tab_${tab.id}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+          {securityTab === 'directory' && (
+            <>
+              <SettingsSection
+                title="目录授权"
+                description="每个目录单独指定授权级别。"
+                icon={LockIcon}
+                anchorId="security-directory"
+              >
+          <SettingsRow
+            label="目录治理开关"
+            description="关闭后只保留已配置规则。"
+          >
+            <Switch
+              checked={readBoolean(directoryAccessConfig.enabled, true)}
+              onCheckedChange={(checked) =>
+                void saveConfig({
+                  config: {
+                    security: { directory_access: { enabled: checked } },
+                  },
+                })
+              }
+            />
+          </SettingsRow>
+          <SettingsRow
+            label="默认策略"
+            description="推荐“受控工作区”，仅允许在已登记目录内执行。"
+          >
+            <Select
+              value={(directoryAccessConfig.mode as string) || 'scoped'}
+              onValueChange={(value) =>
+                void saveConfig({
+                  config: {
+                    security: { directory_access: { mode: value || 'scoped' } },
+                  },
+                })
+              }
+              aria-label="默认策略"
+            >
+              <SelectTrigger
+                className="md:max-w-sm"
+                data-testid="permissions_directory_mode"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectPopup>
+                <SelectList>
+                  <SelectItem value="scoped">受控工作区</SelectItem>
+                  <SelectItem value="allowlist">仅允许白名单</SelectItem>
+                  <SelectItem value="observe">仅提醒不拦截</SelectItem>
+                </SelectList>
+              </SelectPopup>
+            </Select>
+          </SettingsRow>
+          {renderDirectoryCore()}
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/50 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-semibold text-[var(--theme-text)]">
+                    写入前确认
+                  </h4>
+                  <p className="mt-1 text-xs text-[var(--theme-muted)]">
+                    对目录内文件新增、覆盖或批量改写时先让用户确认。
+                  </p>
+                </div>
+                <Switch
+                  checked={readBoolean(
+                    directoryAccessConfig.require_confirmation_for_write,
+                    true,
+                  )}
+                  onCheckedChange={(checked) =>
+                    void saveConfig({
+                      config: {
+                        security: {
+                          directory_access: {
+                            require_confirmation_for_write: checked,
+                          },
+                        },
+                      },
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/50 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-semibold text-[var(--theme-text)]">
+                    删除前确认
+                  </h4>
+                  <p className="mt-1 text-xs text-[var(--theme-muted)]">
+                    删除、清空或不可恢复操作前必须二次确认。
+                  </p>
+                </div>
+                <Switch
+                  checked={readBoolean(
+                    directoryAccessConfig.require_confirmation_for_delete,
+                    true,
+                  )}
+                  onCheckedChange={(checked) =>
+                    void saveConfig({
+                      config: {
+                        security: {
+                          directory_access: {
+                            require_confirmation_for_delete: checked,
+                          },
+                        },
+                      },
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        </SettingsSection>
+            </>
+          )}
+
+          {securityTab === 'website' && (
+            <>
+              <SettingsSection
+                title="网站权限"
+                description="仅需登记允许与禁止的站点。"
+                icon={LockIcon}
+                anchorId="security-website"
+              >
+          <SettingsRow
+            label="站点治理开关"
+            description="关闭后只保留已配置策略。"
+          >
+            <Switch
+              checked={readBoolean(websiteAccessConfig.enabled, true)}
+              onCheckedChange={(checked) =>
+                void saveConfig({
+                  config: {
+                    security: {
+                      website_access: { enabled: checked },
+                      website_blocklist: { enabled: checked },
+                    },
+                  },
+                })
+              }
+            />
+          </SettingsRow>
+          <SettingsRow
+            label="默认策略"
+            description="推荐“平衡模式”，逐步沉淀常用站点。"
+          >
+            <Select
+              value={(websiteAccessConfig.mode as string) || 'balanced'}
+              onValueChange={(value) =>
+                void saveConfig({
+                  config: {
+                    security: { website_access: { mode: value || 'balanced' } },
+                  },
+                })
+              }
+              aria-label="默认策略"
+            >
+              <SelectTrigger
+                className="md:max-w-sm"
+                data-testid="permissions_website_mode"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectPopup>
+                <SelectList>
+                  <SelectItem value="balanced">平衡模式</SelectItem>
+                  <SelectItem value="allowlist">仅允许已登记站点</SelectItem>
+                  <SelectItem value="ask">每次访问先确认</SelectItem>
+                </SelectList>
+              </SelectPopup>
+            </Select>
+          </SettingsRow>
+          <div className="grid gap-4 xl:grid-cols-2">
+            <div
+              className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/50 p-4"
+              data-testid="permissions_website_allowlist_panel"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-[var(--theme-text)]">
+                    允许站点
+                  </h3>
+                  <p className="mt-1 text-xs text-[var(--theme-muted)]">
+                    这些站点可由智能体执行检索、读取或约定范围内的自动化操作。
+                  </p>
+                </div>
+                <span className="rounded-full bg-[var(--theme-panel)] px-2.5 py-1 text-xs text-[var(--theme-muted)]">
+                  {allowedDomains.length} 项
+                </span>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {allowedDomains.length === 0 ? (
+                  <span className="text-xs text-[var(--theme-muted)]">
+                    尚未添加允许站点
+                  </span>
+                ) : (
+                  allowedDomains.map((item) => (
+                    <span
+                      key={item}
+                      className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card)] px-2.5 py-1 font-mono text-xs font-medium text-[var(--theme-text)]"
+                    >
+                      {item}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void saveConfig({
+                            config: {
+                              security: {
+                                website_access: {
+                                  allowed_domains: allowedDomains.filter(
+                                    (domain) => domain !== item,
+                                  ),
+                                },
+                              },
+                            },
+                          })
+                        }
+                        className="text-[var(--theme-muted)] transition-colors hover:text-[var(--theme-danger)]"
+                        aria-label={`移除允许站点 ${item}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
+              <div className="mt-4 flex gap-2">
+                <Input
+                  value={newAllowedDomain}
+                  onChange={(e) => setNewAllowedDomain(e.target.value)}
+                  placeholder="例如：oa.lawfirm.com"
+                  data-testid="permissions_website_allowlist_input"
+                />
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    addWebsiteRule(
+                      'allowed_domains',
+                      newAllowedDomain,
+                      setNewAllowedDomain,
+                    )
+                  }
+                  disabled={!newAllowedDomain.trim()}
+                  data-testid="permissions_website_allowlist_add"
+                >
+                  添加
+                </Button>
+              </div>
+            </div>
+
+            <div
+              className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/50 p-4"
+              data-testid="permissions_website_blocklist_panel"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-[var(--theme-text)]">
+                    禁止站点
+                  </h3>
+                  <p className="mt-1 text-xs text-[var(--theme-muted)]">
+                    这些站点不能被自动读取、点击、上传、下载或提交。
+                  </p>
+                </div>
+                <span className="rounded-full bg-[var(--theme-panel)] px-2.5 py-1 text-xs text-[var(--theme-muted)]">
+                  {blockedDomains.length} 项
+                </span>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {blockedDomains.length === 0 ? (
+                  <span className="text-xs text-[var(--theme-muted)]">
+                    尚未添加禁止站点
+                  </span>
+                ) : (
+                  blockedDomains.map((item) => (
+                    <span
+                      key={item}
+                      className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card)] px-2.5 py-1 font-mono text-xs font-medium text-[var(--theme-text)]"
+                    >
+                      {item}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextBlocked = blockedDomains.filter(
+                            (domain) => domain !== item,
+                          )
+                          void saveConfig({
+                            config: {
+                              security: {
+                                website_access: {
+                                  blocked_domains: nextBlocked,
+                                },
+                                website_blocklist: {
+                                  domains: nextBlocked,
+                                },
+                              },
+                            },
+                          })
+                        }}
+                        className="text-[var(--theme-muted)] transition-colors hover:text-[var(--theme-danger)]"
+                        aria-label={`移除禁止站点 ${item}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
+              <div className="mt-4 flex gap-2">
+                <Input
+                  value={newBlockedDomain}
+                  onChange={(e) => setNewBlockedDomain(e.target.value)}
+                  placeholder="例如：mail.qq.com"
+                  data-testid="permissions_website_blocklist_input"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    addWebsiteRule(
+                      'blocked_domains',
+                      newBlockedDomain,
+                      setNewBlockedDomain,
+                    )
+                  }
+                  disabled={!newBlockedDomain.trim()}
+                  data-testid="permissions_website_blocklist_add"
+                >
+                  添加
+                </Button>
+              </div>
+            </div>
+          </div>
+        </SettingsSection>
+            </>
+          )}
+
+          {securityTab === 'risk' && (
+            <>
+              <SettingsSection
+                title="高风险动作"
+                description="危险动作执行前是否需确认。"
+                icon={LockIcon}
+                anchorId="security-risk"
+              >
+          <div
+            className="space-y-3"
+            data-testid="permissions_danger_actions_panel"
+          >
+            {dangerActions.map((item) => (
+              <div
+                key={item.key}
+                className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-panel)]/50 p-4"
+                data-testid={`permissions_danger_action_${item.key}`}
+              >
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="max-w-2xl">
+                    <h3 className="text-sm font-semibold text-[var(--theme-text)]">
+                      {item.label}
+                    </h3>
+                    <p className="mt-1 text-xs text-[var(--theme-muted)]">
+                      {item.description}
+                    </p>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2 xl:min-w-[360px]">
+                    <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 py-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-[var(--theme-text)]">
+                            执行前确认
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--theme-muted)]">
+                            触发时先弹确认层。
+                          </p>
+                        </div>
+                        <Switch
+                          checked={readBoolean(
+                            confirmationRules[item.key],
+                            item.key !== 'download',
+                          )}
+                          onCheckedChange={(checked) =>
+                            void saveConfig({
+                              config: {
+                                security: {
+                                  risk_controls: {
+                                    require_confirmation: {
+                                      [item.key]: checked,
+                                    },
+                                  },
+                                },
+                              },
+                            })
+                          }
+                          data-testid={`permissions_danger_action_${item.key}_confirm`}
+                        />
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-panel)] px-3 py-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-[var(--theme-text)]">
+                            强制审批
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--theme-muted)]">
+                            交由管理员或审批流处理。
+                          </p>
+                        </div>
+                        <Switch
+                          checked={readBoolean(approvalRules[item.key], false)}
+                          onCheckedChange={(checked) =>
+                            void saveConfig({
+                              config: {
+                                security: {
+                                  risk_controls: {
+                                    require_approval: {
+                                      [item.key]: checked,
+                                    },
+                                  },
+                                },
+                              },
+                            })
+                          }
+                          data-testid={`permissions_danger_action_${item.key}_approval`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </SettingsSection>
+
         <SettingsSection
-          title="审批"
-          description="控制 Hermes 如何为危险操作请求审批。"
+          title="审批机制"
+          description="为需人工把关的动作统一审批与超时。"
           icon={LockIcon}
         >
           <SettingsRow
             label="审批模式"
-            description="manual = 提示用户；auto = 自动批准；off = 跳过审批检查。"
+            description="手动需确认；自动放行；关闭跳过。"
           >
-            <select
+            <Select
               value={(approvalsConfig.mode as string) || 'manual'}
-              onChange={(e) =>
+              onValueChange={(value) =>
                 void saveConfig({
-                  config: { approvals: { mode: e.target.value } },
+                  config: { approvals: { mode: value || 'manual' } },
                 })
               }
-              className={selectClassName}
+              aria-label="审批模式"
             >
-              <option value="manual">手动</option>
-              <option value="auto">自动</option>
-              <option value="off">关闭</option>
-            </select>
+              <SelectTrigger
+                className="md:max-w-sm"
+                data-testid="permissions_approval_mode"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectPopup>
+                <SelectList>
+                  <SelectItem value="manual">手动确认</SelectItem>
+                  <SelectItem value="auto">自动批准</SelectItem>
+                  <SelectItem value="off">关闭审批</SelectItem>
+                </SelectList>
+              </SelectPopup>
+            </Select>
           </SettingsRow>
           <SettingsRow
             label="审批超时（秒）"
-            description="自动拒绝前等待用户响应的秒数。"
+            description="超时后自动拒绝。"
           >
             <Input
               type="number"
@@ -3430,18 +5144,58 @@ function HermesConfigSection({
                 saveNumberField('approvals', 'timeout', e.target.value, 60)
               }
               className="md:w-28"
+              data-testid="permissions_approval_timeout"
+            />
+          </SettingsRow>
+        </SettingsSection>
+            </>
+          )}
+
+          {securityTab === 'tools' && (
+            <>
+              <SettingsSection
+                title="安全基线"
+                description="建议保持开启。"
+                icon={LockIcon}
+              >
+                <SettingsRow
+            label="脱敏密钥"
+            description="在日志与界面回显中遮罩密钥。"
+          >
+            <Switch
+              checked={readBoolean(securityConfig.redact_secrets, true)}
+              onCheckedChange={(checked) =>
+                void saveConfig({
+                  config: { security: { redact_secrets: checked } },
+                })
+              }
+              data-testid="permissions_security_redact_secrets"
+            />
+          </SettingsRow>
+          <SettingsRow
+            label="命令安全扫描"
+            description="用规则阻止危险的终端与脚本行为。"
+          >
+            <Switch
+              checked={readBoolean(securityConfig.tirith_enabled, true)}
+              onCheckedChange={(checked) =>
+                void saveConfig({
+                  config: { security: { tirith_enabled: checked } },
+                })
+              }
+              data-testid="permissions_security_tirith_enabled"
             />
           </SettingsRow>
         </SettingsSection>
 
         <SettingsSection
           title="工具集"
-          description="智能体可用的工具集合。更改在网关重启后生效。"
+          description="默认开放给智能体的工具范围。"
           icon={LockIcon}
         >
           <SettingsRow
             label="启用的工具集"
-            description="移除工具集以撤销对该工具组的访问权限。"
+            description="移除以撤销该组访问权限。"
           >
             <div className="flex w-full flex-col gap-2">
               <div className="flex flex-wrap gap-2">
@@ -3496,61 +5250,13 @@ function HermesConfigSection({
         </SettingsSection>
 
         <SettingsSection
-          title="安全"
-          description="Tirith 安全扫描器与密钥脱敏设置。"
-          icon={LockIcon}
-        >
-          <SettingsRow
-            label="脱敏密钥"
-            description="自动从智能体记忆和日志中脱敏 API 密钥与令牌。"
-          >
-            <Switch
-              checked={readBoolean(securityConfig.redact_secrets, true)}
-              onCheckedChange={(checked) =>
-                void saveConfig({
-                  config: { security: { redact_secrets: checked } },
-                })
-              }
-            />
-          </SettingsRow>
-          <SettingsRow
-            label="Tirith 安全扫描器"
-            description="使用 Tirith 策略引擎阻止危险命令。"
-          >
-            <Switch
-              checked={readBoolean(securityConfig.tirith_enabled, true)}
-              onCheckedChange={(checked) =>
-                void saveConfig({
-                  config: { security: { tirith_enabled: checked } },
-                })
-              }
-            />
-          </SettingsRow>
-          <SettingsRow
-            label="网站阻止列表"
-            description="阻止智能体浏览被禁域名。"
-          >
-            <Switch
-              checked={readBoolean(websiteBlocklist.enabled, false)}
-              onCheckedChange={(checked) =>
-                void saveConfig({
-                  config: {
-                    security: { website_blocklist: { enabled: checked } },
-                  },
-                })
-              }
-            />
-          </SettingsRow>
-        </SettingsSection>
-
-        <SettingsSection
           title="代码执行"
-          description="应用于沙箱代码与工具执行的限制。"
+          description="沙箱代码与工具执行限制。"
           icon={LockIcon}
         >
           <SettingsRow
             label="执行超时（秒）"
-            description="单个代码执行块的最大秒数。"
+            description="单块代码最大秒数。"
           >
             <Input
               type="number"
@@ -3565,7 +5271,7 @@ function HermesConfigSection({
           </SettingsRow>
           <SettingsRow
             label="每轮最大工具调用次数"
-            description="每轮智能体工具调用的硬性上限。"
+            description="每轮工具调用上限。"
           >
             <Input
               type="number"
@@ -3587,30 +5293,37 @@ function HermesConfigSection({
 
         <SettingsSection
           title="智能体推理"
-          description="推理强度与详细程度控制。"
+          description="推理强度与详细程度。"
           icon={LockIcon}
         >
           <SettingsRow
             label="推理强度"
-            description="智能体在回复前用于思考的时间。"
+            description="回复前思考时间。"
           >
-            <select
+            <Select
               value={(agentConfig.reasoning_effort as string) || 'medium'}
-              onChange={(e) =>
+              onValueChange={(value) =>
                 void saveConfig({
-                  config: { agent: { reasoning_effort: e.target.value } },
+                  config: { agent: { reasoning_effort: value || 'medium' } },
                 })
               }
-              className={selectClassName}
+              aria-label="推理强度"
             >
-              <option value="low">低</option>
-              <option value="medium">中</option>
-              <option value="high">高</option>
-            </select>
+              <SelectTrigger className="md:max-w-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectPopup>
+                <SelectList>
+                  <SelectItem value="low">低</SelectItem>
+                  <SelectItem value="medium">中</SelectItem>
+                  <SelectItem value="high">高</SelectItem>
+                </SelectList>
+              </SelectPopup>
+            </Select>
           </SettingsRow>
           <SettingsRow
             label="详细模式"
-            description="显示详细的工具输出与智能体内部步骤。"
+            description="显示工具输出与内部步骤。"
           >
             <Switch
               checked={readBoolean(agentConfig.verbose, false)}
@@ -3624,12 +5337,12 @@ function HermesConfigSection({
         {/* ── Command Allowlist ──────────────────────────────────── */}
         <SettingsSection
           title="命令白名单"
-          description="绕过 Tirith 安全扫描器且永不要求审批的 Shell 命令。"
+          description="绕过安全扫描且永不要求审批的命令。"
           icon={LockIcon}
         >
           <SettingsRow
             label="允许的命令"
-            description="添加准确的命令名称（例如 git、npm）。不支持通配符。"
+            description="准确命令名，如 git、npm。不支持通配符。"
           >
             <div className="flex w-full flex-col gap-2">
               <div className="flex flex-wrap gap-2">
@@ -3705,115 +5418,15 @@ function HermesConfigSection({
           </SettingsRow>
         </SettingsSection>
 
-        {/* ── Website Blocklist Domains ──────────────────────────── */}
-        {readBoolean(websiteBlocklist.enabled, false) && (
-          <SettingsSection
-            title="阻止的域名"
-            description="智能体无法访问的域名。由于上方已启用网站阻止列表，此功能生效中。"
-            icon={LockIcon}
-          >
-            <SettingsRow
-              label="阻止的域名"
-              description="每个条目输入一个域名（例如 example.com）。包含子域名。"
-            >
-              <div className="flex w-full flex-col gap-2">
-                <div className="flex flex-wrap gap-2">
-                  {blocklistDomains.length === 0 ? (
-                    <span className="text-xs text-[var(--theme-muted)]">
-                      尚未阻止任何域名
-                    </span>
-                  ) : (
-                    blocklistDomains.map((domain) => (
-                      <span
-                        key={domain}
-                        className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card)] px-2.5 py-1 font-mono text-xs font-medium text-[var(--theme-text)]"
-                      >
-                        {domain}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void saveConfig({
-                              config: {
-                                security: {
-                                  website_blocklist: {
-                                    domains: blocklistDomains.filter(
-                                      (d) => d !== domain,
-                                    ),
-                                  },
-                                },
-                              },
-                            })
-                          }
-                          className="ml-0.5 text-[var(--theme-muted)] hover:text-[var(--theme-danger)] transition-colors"
-                          aria-label={`移除 ${domain}`}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    value={newBlocklistDomain}
-                    onChange={(e) => setNewBlocklistDomain(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        const trimmed = newBlocklistDomain.trim().toLowerCase()
-                        if (!trimmed || blocklistDomains.includes(trimmed)) return
-                        void saveConfig({
-                          config: {
-                            security: {
-                              website_blocklist: {
-                                domains: [...blocklistDomains, trimmed],
-                              },
-                            },
-                          },
-                        })
-                        setNewBlocklistDomain('')
-                      }
-                    }}
-                    placeholder="example.com"
-                    className="flex-1 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-input)] px-3 py-1.5 font-mono text-xs text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-accent)] md:max-w-xs"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const trimmed = newBlocklistDomain.trim().toLowerCase()
-                      if (!trimmed || blocklistDomains.includes(trimmed)) return
-                      void saveConfig({
-                        config: {
-                          security: {
-                            website_blocklist: {
-                              domains: [...blocklistDomains, trimmed],
-                            },
-                          },
-                        },
-                      })
-                      setNewBlocklistDomain('')
-                    }}
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-                    style={{ background: 'var(--theme-accent)' }}
-                    disabled={!newBlocklistDomain.trim()}
-                  >
-                    添加
-                  </button>
-                </div>
-              </div>
-            </SettingsRow>
-          </SettingsSection>
-        )}
-
         {/* ── Quick Commands ─────────────────────────────────────── */}
         <SettingsSection
           title="快捷命令"
-          description="自定义斜杠命令快捷方式。在会话中输入 /key 即可展开为完整内容。"
+          description="输入 /key 展开为完整内容。"
           icon={LockIcon}
         >
           <SettingsRow
             label="快捷方式"
-            description="键：斜杠命令名称（不带斜杠）。值：展开后的文本。"
+            description="键为命令名（不带斜杠），值为展开文本。"
           >
             <div className="flex w-full flex-col gap-2">
               {Object.keys(quickCommands).length === 0 ? (
@@ -3905,7 +5518,11 @@ function HermesConfigSection({
               </div>
             </div>
           </SettingsRow>
-        </SettingsSection>
+          </SettingsSection>
+            </>
+          )}
+          </div>
+        )}
       </>
     )
   }
@@ -3913,12 +5530,11 @@ function HermesConfigSection({
   const renderSmartRouting = () => (
     <SettingsSection
       title="智能模型路由"
-      description="自动将简单查询路由到更便宜的模型。"
+      description="简单查询走更便宜模型。"
       icon={SparklesIcon}
     >
       <SettingsRow
         label="启用智能路由"
-        description="自动将简单查询路由到更便宜的模型。"
       >
         <Switch
           checked={readBoolean(smartRouting.enabled, false)}
@@ -3933,22 +5549,29 @@ function HermesConfigSection({
         label="经济型模型"
         description="用于简单查询的模型。"
       >
-        <select
-          value={(smartRouting.cheap_model as string) || ''}
-          onChange={(e) =>
+        <Select
+          value={(smartRouting.cheap_model as string) || null}
+          onValueChange={(value) =>
             void saveConfig({
-              config: { smart_model_routing: { cheap_model: e.target.value } },
+              config: { smart_model_routing: { cheap_model: value || '' } },
             })
           }
-          className={selectClassName}
+          aria-label="经济型模型"
         >
-          <option value="">选择模型</option>
-          {availableModels.map((model) => (
-            <option key={model.id} value={model.id}>
-              {model.id}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="md:max-w-sm">
+            <SelectValue placeholder="选择模型" />
+          </SelectTrigger>
+          <SelectPopup>
+            <SelectList>
+              <SelectItem value={null}>选择模型</SelectItem>
+              {availableModels.map((model) => (
+                <SelectItem key={model.id} value={model.id}>
+                  {model.id}
+                </SelectItem>
+              ))}
+            </SelectList>
+          </SelectPopup>
+        </Select>
       </SettingsRow>
       <SettingsRow
         label="简单查询最大字符数"
@@ -3995,25 +5618,34 @@ function HermesConfigSection({
     <div className="space-y-4">
       <SettingsSection
         title="文本转语音"
-        description="配置智能体回复的语音输出。"
+        description="智能体语音输出。"
         icon={VolumeHighIcon}
       >
         <SettingsRow
           label="TTS 服务提供方"
-          description="使用哪个 TTS 引擎。"
+          description="TTS 引擎。"
         >
-          <select
+          <Select
             value={ttsProvider}
-            onChange={(e) =>
-              void saveConfig({ config: { tts: { provider: e.target.value } } })
+            onValueChange={(value) =>
+              void saveConfig({
+                config: { tts: { provider: value || 'edge' } },
+              })
             }
-            className={selectClassName}
+            aria-label="TTS 服务提供方"
           >
-            <option value="edge">Edge TTS（免费）</option>
-            <option value="elevenlabs">ElevenLabs</option>
-            <option value="openai">OpenAI TTS</option>
-            <option value="neutts">NeuTTS</option>
-          </select>
+            <SelectTrigger className="md:max-w-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectPopup>
+              <SelectList>
+                <SelectItem value="edge">Edge TTS（免费）</SelectItem>
+                <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
+                <SelectItem value="openai">OpenAI TTS</SelectItem>
+                <SelectItem value="neutts">NeuTTS</SelectItem>
+              </SelectList>
+            </SelectPopup>
+          </Select>
         </SettingsRow>
 
         {ttsProvider === 'edge' && (
@@ -4066,23 +5698,30 @@ function HermesConfigSection({
               label="语音"
               description="alloy, echo, fable, onyx, nova, shimmer"
             >
-              <select
+              <Select
                 value={(ttsOpenAi.voice as string) || 'alloy'}
-                onChange={(e) =>
+                onValueChange={(value) =>
                   void saveConfig({
-                    config: { tts: { openai: { voice: e.target.value } } },
+                    config: { tts: { openai: { voice: value || 'alloy' } } },
                   })
                 }
-                className={selectClassName}
+                aria-label="OpenAI TTS 语音"
               >
-                {['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'].map(
-                  (voice) => (
-                    <option key={voice} value={voice}>
-                      {voice}
-                    </option>
-                  ),
-                )}
-              </select>
+                <SelectTrigger className="md:max-w-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectPopup>
+                  <SelectList>
+                    {['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'].map(
+                      (voice) => (
+                        <SelectItem key={voice} value={voice}>
+                          {voice}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectList>
+                </SelectPopup>
+              </Select>
             </SettingsRow>
             <SettingsRow label="模型" description="OpenAI TTS 模型。">
               <Input
@@ -4102,7 +5741,7 @@ function HermesConfigSection({
 
       <SettingsSection
         title="语音转文本"
-        description="配置语音输入识别。"
+        description="语音输入识别。"
         icon={Mic01Icon}
       >
         <SettingsRow label="启用 STT" description="开启语音输入。">
@@ -4115,39 +5754,55 @@ function HermesConfigSection({
         </SettingsRow>
         <SettingsRow
           label="STT 服务提供方"
-          description="使用哪个语音引擎。"
+          description="语音引擎。"
         >
-          <select
+          <Select
             value={sttProvider}
-            onChange={(e) =>
-              void saveConfig({ config: { stt: { provider: e.target.value } } })
+            onValueChange={(value) =>
+              void saveConfig({
+                config: { stt: { provider: value || 'local' } },
+              })
             }
-            className={selectClassName}
+            aria-label="STT 服务提供方"
           >
-            <option value="local">本地（Whisper）</option>
-            <option value="openai">OpenAI Whisper API</option>
-          </select>
+            <SelectTrigger className="md:max-w-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectPopup>
+              <SelectList>
+                <SelectItem value="local">本地（Whisper）</SelectItem>
+                <SelectItem value="openai">OpenAI Whisper API</SelectItem>
+              </SelectList>
+            </SelectPopup>
+          </Select>
         </SettingsRow>
         {sttProvider === 'local' && (
           <SettingsRow
             label="模型大小"
             description="tiny, base, small, medium, large"
           >
-            <select
+            <Select
               value={(sttLocal.model_size as string) || 'base'}
-              onChange={(e) =>
+              onValueChange={(value) =>
                 void saveConfig({
-                  config: { stt: { local: { model_size: e.target.value } } },
+                  config: { stt: { local: { model_size: value || 'base' } } },
                 })
               }
-              className={selectClassName}
+              aria-label="模型大小"
             >
-              {['tiny', 'base', 'small', 'medium', 'large'].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="md:max-w-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectPopup>
+                <SelectList>
+                  {['tiny', 'base', 'small', 'medium', 'large'].map((size) => (
+                    <SelectItem key={size} value={size}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectList>
+              </SelectPopup>
+            </Select>
           </SettingsRow>
         )}
       </SettingsSection>
@@ -4157,29 +5812,36 @@ function HermesConfigSection({
   const renderDisplay = () => (
     <SettingsSection
       title="显示"
-      description="反映在智能体 UI 中的 CLI 显示偏好。"
+      description="CLI 显示偏好。"
       icon={PaintBoardIcon}
     >
-      <SettingsRow label="个性" description="智能体回复风格。">
-        <select
+      <SettingsRow label="个性" description="回复风格。">
+        <Select
           value={(displayConfig.personality as string) || 'default'}
-          onChange={(e) =>
+          onValueChange={(value) =>
             void saveConfig({
-              config: { display: { personality: e.target.value } },
+              config: { display: { personality: value || 'default' } },
             })
           }
-          className={selectClassName}
+          aria-label="个性"
         >
-          {['default', 'concise', 'verbose', 'creative'].map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="md:max-w-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectPopup>
+            <SelectList>
+              {['default', 'concise', 'verbose', 'creative'].map((value) => (
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectList>
+          </SelectPopup>
+        </Select>
       </SettingsRow>
       <SettingsRow
         label="流式输出"
-        description="逐 token 流式输出。"
+        description="逐 token 输出。"
       >
         <Switch
           checked={readBoolean(displayConfig.streaming, true)}
@@ -4190,7 +5852,7 @@ function HermesConfigSection({
       </SettingsRow>
       <SettingsRow
         label="状态消息"
-        description="运行过程中显示自然的中途助手状态消息。"
+        description="显示中途状态消息。"
       >
         <Switch
           checked={readBoolean(displayConfig.interim_assistant_messages, true)}
@@ -4203,7 +5865,7 @@ function HermesConfigSection({
       </SettingsRow>
       <SettingsRow
         label="显示推理"
-        description="在 UI 中展示模型推理块。"
+        description="展示模型推理块。"
       >
         <Switch
           checked={readBoolean(displayConfig.show_reasoning, false)}
@@ -4214,7 +5876,7 @@ function HermesConfigSection({
           }
         />
       </SettingsRow>
-      <SettingsRow label="显示费用" description="显示用量费用元数据。">
+      <SettingsRow label="显示费用" description="显示费用元数据。">
         <Switch
           checked={readBoolean(displayConfig.show_cost, false)}
           onCheckedChange={(checked) =>
@@ -4222,7 +5884,7 @@ function HermesConfigSection({
           }
         />
       </SettingsRow>
-      <SettingsRow label="紧凑模式" description="使用更紧凑的显示布局。">
+      <SettingsRow label="紧凑模式" description="更紧凑的布局。">
         <Switch
           checked={readBoolean(displayConfig.compact, false)}
           onCheckedChange={(checked) =>
@@ -4240,7 +5902,7 @@ function HermesConfigSection({
       </SettingsRow>
       <SettingsRow
         label="按平台工具进度"
-        description="为特定消息平台覆盖工具进度显示。"
+        description="按平台覆盖工具进度显示。"
       >
         <div className="flex flex-col gap-2">
           {Object.entries(platformOverrides).map(([platform, overrides]) => (
@@ -4250,22 +5912,32 @@ function HermesConfigSection({
               >
                 {platform}
               </span>
-              <select
+              <Select
                 value={(overrides.tool_progress) || 'all'}
-                onChange={(e) => {
+                onValueChange={(value) => {
                   const updated = {
                     ...platformOverrides,
-                    [platform]: { ...overrides, tool_progress: e.target.value },
+                    [platform]: {
+                      ...overrides,
+                      tool_progress: value || 'all',
+                    },
                   }
                   void saveConfig({ config: { display: { platforms: updated } } })
                 }}
-                className={selectClassName}
+                aria-label={`${platform} 工具进度`}
               >
-                <option value="all">全部</option>
-                <option value="new">仅新消息</option>
-                <option value="verbose">详细</option>
-                <option value="off">关闭</option>
-              </select>
+                <SelectTrigger className="md:max-w-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectPopup>
+                  <SelectList>
+                    <SelectItem value="all">全部</SelectItem>
+                    <SelectItem value="new">仅新消息</SelectItem>
+                    <SelectItem value="verbose">详细</SelectItem>
+                    <SelectItem value="off">关闭</SelectItem>
+                  </SelectList>
+                </SelectPopup>
+              </Select>
               <button
                 onClick={() => {
                   const updated = { ...platformOverrides }
@@ -4305,19 +5977,6 @@ function HermesConfigSection({
 
   return (
     <>
-      {saveMessage && (
-        <div
-          className="rounded-lg px-3 py-2 text-sm font-medium"
-          style={{
-            backgroundColor: saveMessage.includes('失败') || saveMessage.includes('Failed')
-              ? 'rgba(239,68,68,0.15)'
-              : 'rgba(34,197,94,0.15)',
-            color: saveMessage.includes('失败') || saveMessage.includes('Failed') ? '#ef4444' : '#22c55e',
-          }}
-        >
-          {saveMessage}
-        </div>
-      )}
       {sectionContent[activeView]}
     </>
   )

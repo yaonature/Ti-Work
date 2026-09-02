@@ -15,6 +15,14 @@ import {
   UserIcon,
 } from '@hugeicons/core-free-icons'
 import { cn } from '@/lib/utils'
+import {
+  Select,
+  SelectItem,
+  SelectList,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -302,7 +310,11 @@ function EventCard({ event }: { event: AuditEvent }) {
 
 const PAGE_SIZE = 50
 
-export function AuditTrailScreen() {
+export function AuditTrailScreen({
+  embedded = false,
+}: {
+  embedded?: boolean
+}) {
   const [selectedSession, setSelectedSession] = useState<string>('')
   const [selectedTypes, setSelectedTypes] = useState<Array<string>>(ALL_TYPES)
   const [dateRangeIdx, setDateRangeIdx] = useState(4) // All time
@@ -340,85 +352,151 @@ export function AuditTrailScreen() {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="shrink-0 border-b border-[var(--theme-border)] px-6 py-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-semibold text-[var(--theme-text)]">审计记录</h1>
-            <p className="mt-0.5 text-xs text-[var(--theme-muted)]">
-              所有会话中智能体与工具操作的完整时间线
-            </p>
-          </div>
-          {total > 0 && (
-            <div className="flex items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-1 text-xs text-[var(--theme-muted)]">
-              <HugeiconsIcon icon={Clock01Icon} size={12} />
-              {total.toLocaleString()} 个事件
+      {!embedded && (
+        <div className="shrink-0 border-b border-[var(--theme-border)] px-6 py-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-lg font-semibold text-[var(--theme-text)]">权限与安全</h1>
+              <p className="mt-0.5 text-xs text-[var(--theme-muted)]">
+                查看授权边界、风险动作和关键执行记录
+              </p>
             </div>
-          )}
-        </div>
-
-        {/* Filters */}
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          {/* Session filter */}
-          <div className="flex items-center gap-1.5">
-            <HugeiconsIcon icon={FilterIcon} size={13} className="text-[var(--theme-muted)]" />
-            <select
-              value={selectedSession}
-              onChange={(e) => {
-                setSelectedSession(e.target.value)
-                setPage(0)
-              }}
-              className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] px-2.5 py-1 text-xs text-[var(--theme-text)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-accent)]"
-            >
-              <option value="">所有会话</option>
-              {sessions.map((s) => (
-                <option key={s} value={s}>
-                  {shortSession(s)}
-                </option>
-              ))}
-            </select>
+            {total > 0 && (
+              <div className="flex items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-1 text-xs text-[var(--theme-muted)]">
+                <HugeiconsIcon icon={Clock01Icon} size={12} />
+                {total.toLocaleString()} 个事件
+              </div>
+            )}
           </div>
 
-          {/* Event type toggles */}
-          <div className="flex items-center gap-1">
-            {ALL_TYPES.map((t) => (
-              <button
-                key={t}
-                onClick={() => toggleType(t)}
-                className={cn(
-                  'rounded-full px-3 py-1 text-xs font-medium transition-colors border',
-                  selectedTypes.includes(t)
-                    ? 'bg-[var(--theme-accent)] text-white border-transparent'
-                    : 'border-[var(--theme-border)] text-[var(--theme-muted)] hover:border-[var(--theme-accent)]/40 hover:text-[var(--theme-text)]',
-                )}
-              >
-                {EVENT_TYPE_LABELS[t] ?? t}
-              </button>
-            ))}
-          </div>
-
-          {/* Date range */}
-          <div className="flex items-center gap-1">
-            {DATE_RANGES.map((r, i) => (
-              <button
-                key={r.label}
-                onClick={() => {
-                  setDateRangeIdx(i)
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <HugeiconsIcon icon={FilterIcon} size={13} className="text-[var(--theme-muted)]" />
+              <Select
+                value={selectedSession || null}
+                onValueChange={(value) => {
+                  setSelectedSession(value || '')
                   setPage(0)
                 }}
-                className={cn(
-                  'rounded-full px-3 py-1 text-xs font-medium transition-colors border',
-                  dateRangeIdx === i
-                    ? 'bg-[var(--theme-card2)] text-[var(--theme-text)] border-[var(--theme-border)]'
-                    : 'border-transparent text-[var(--theme-muted)] hover:text-[var(--theme-text)]',
-                )}
               >
-                {r.label}
-              </button>
-            ))}
+                <SelectTrigger>
+                  <SelectValue placeholder="所有会话" />
+                </SelectTrigger>
+                <SelectPopup>
+                  <SelectList>
+                    <SelectItem value={null}>所有会话</SelectItem>
+                    {sessions.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {shortSession(s)}
+                      </SelectItem>
+                    ))}
+                  </SelectList>
+                </SelectPopup>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-1">
+              {ALL_TYPES.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => toggleType(t)}
+                  className={cn(
+                    'rounded-full px-3 py-1 text-xs font-medium transition-colors border',
+                    selectedTypes.includes(t)
+                      ? 'bg-[var(--theme-accent)] text-white border-transparent'
+                      : 'border-[var(--theme-border)] text-[var(--theme-muted)] hover:border-[var(--theme-accent)]/40 hover:text-[var(--theme-text)]',
+                  )}
+                >
+                  {EVENT_TYPE_LABELS[t] ?? t}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1">
+              {DATE_RANGES.map((r, i) => (
+                <button
+                  key={r.label}
+                  onClick={() => {
+                    setDateRangeIdx(i)
+                    setPage(0)
+                  }}
+                  className={cn(
+                    'rounded-full px-3 py-1 text-xs font-medium transition-colors border',
+                    dateRangeIdx === i
+                      ? 'bg-[var(--theme-card2)] text-[var(--theme-text)] border-[var(--theme-border)]'
+                      : 'border-transparent text-[var(--theme-muted)] hover:text-[var(--theme-text)]',
+                  )}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {embedded && (
+        <div className="shrink-0 space-y-3 border-b border-[var(--theme-border)] px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--theme-text)]">审计记录</h2>
+              <p className="mt-0.5 text-xs text-[var(--theme-muted)]">
+                统一查看工具调用、审批事件和关键执行轨迹。
+              </p>
+            </div>
+            {total > 0 && (
+              <div className="flex items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-card)] px-3 py-1 text-xs text-[var(--theme-muted)]">
+                <HugeiconsIcon icon={Clock01Icon} size={12} />
+                {total.toLocaleString()} 个事件
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <HugeiconsIcon icon={FilterIcon} size={13} className="text-[var(--theme-muted)]" />
+              <Select
+                value={selectedSession || null}
+                onValueChange={(value) => {
+                  setSelectedSession(value || '')
+                  setPage(0)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="所有会话" />
+                </SelectTrigger>
+                <SelectPopup>
+                  <SelectList>
+                    <SelectItem value={null}>所有会话</SelectItem>
+                    {sessions.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {shortSession(s)}
+                      </SelectItem>
+                    ))}
+                  </SelectList>
+                </SelectPopup>
+              </Select>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1">
+              {ALL_TYPES.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => toggleType(t)}
+                  className={cn(
+                    'rounded-full px-3 py-1 text-xs font-medium transition-colors border',
+                    selectedTypes.includes(t)
+                      ? 'bg-[var(--theme-accent)] text-white border-transparent'
+                      : 'border-[var(--theme-border)] text-[var(--theme-muted)] hover:border-[var(--theme-accent)]/40 hover:text-[var(--theme-text)]',
+                  )}
+                >
+                  {EVENT_TYPE_LABELS[t] ?? t}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Events list */}
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
