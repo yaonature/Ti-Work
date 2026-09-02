@@ -2,6 +2,15 @@ import { createFileRoute } from '@tanstack/react-router'
 import { requireLocalOrAuth } from '../../server/auth-middleware'
 import { createTerminalSession } from '../../server/terminal-sessions'
 import {
+  AuthorizationGuardError,
+  enforceTerminalAccess,
+  readDesktopSecurityPolicy,
+} from '../../server/authorization-guard'
+import {
+  consumeRiskApprovalGrant,
+  createRiskApprovalRequest,
+} from '../../server/risk-approval'
+import {
   getClientIp,
   rateLimit,
   rateLimitResponse,
@@ -47,6 +56,77 @@ export const Route = createFileRoute('/api/terminal-stream')({
         const command = Array.isArray(body.command)
           ? body.command.slice(0, 32).map((part) => String(part).slice(0, 2000))
           : undefined
+        const riskApprovalToken =
+          typeof body.riskApprovalToken === 'string' &&
+          body.riskApprovalToken.trim()
+            ? body.riskApprovalToken.trim()
+            : undefined
+
+        // ── 高风险动作门禁（终端打开 = execute_shell）──────────────────────────
+        // 命中「需要确认 / 需要审批」时：
+        //   - 未携带放行凭据 → 创建待审批请求并以 JSON 返回，前端据此展示确认面板；
+        //   - 携带放行凭据 → 校验通过则继续创建会话，否则拒绝（防重放/过期）。
+        const terminalSubject = `打开终端（${cwd ?? '默认目录'}）`
+        try {
+          enforceTerminalAccess({
+            action: 'execute_shell',
+            command: terminalSubject,
+            profileName: null,
+          })
+        } catch (error) {
+          if (
+            error instanceof AuthorizationGuardError &&
+            (error.code === 'terminal_requires_confirmation' ||
+              error.code === 'terminal_requires_approval')
+          ) {
+            if (riskApprovalToken) {
+              const grantOk = consumeRiskApprovalGrant(
+                riskApprovalToken,
+                'execute_shell',
+              )
+              if (grantOk) {
+                // 凭据有效：放行，继续创建会话
+              } else {
+                return Response.json(
+                  {
+                    ok: false,
+                    error: '审批凭据无效或已过期，请重新发起终端操作。',
+                    code: 'risk_grant_invalid',
+                  },
+                  { status: 403 },
+                )
+              }
+            } else {
+              const policy = readDesktopSecurityPolicy()
+              const riskRequest = createRiskApprovalRequest({
+                action: 'execute_shell',
+                subject: terminalSubject,
+                decision:
+                  error.code === 'terminal_requires_approval'
+                    ? 'needs_approval'
+                    : 'needs_confirmation',
+                profileName: null,
+                ttlMs: Math.max(15_000, policy.approvals.timeout * 1000),
+              })
+              return Response.json(
+                {
+                  ok: false,
+                  code: error.code,
+                  requestId: riskRequest.id,
+                  action: 'execute_shell',
+                  subject: riskRequest.subject,
+                  decision: riskRequest.decision,
+                },
+                { status: 403 },
+              )
+            }
+          } else {
+            return Response.json(
+              { ok: false, error: '终端操作被安全策略拦截。' },
+              { status: 403 },
+            )
+          }
+        }
 
         const encoder = new TextEncoder()
         const stream = new ReadableStream({

@@ -17,8 +17,15 @@ import type * as XtermModule from 'xterm'
 import type * as WebLinksAddonModule from 'xterm-addon-web-links'
 import type { DebugAnalysis } from '@/components/terminal/debug-panel'
 import type { TerminalTab } from '@/stores/terminal-panel-store'
+import type {RiskApprovalPayload, RiskApprovalResolve} from '@/components/terminal/risk-approval-panel';
 import { DebugPanel } from '@/components/terminal/debug-panel'
+import {
+  RiskApprovalPanel
+  
+  
+} from '@/components/terminal/risk-approval-panel'
 import { Button } from '@/components/ui/button'
+import { TextInputDialog } from '@/components/ui/text-input-dialog'
 import { EmojiIcon } from '@/components/emoji-icon'
 import { cn } from '@/lib/utils'
 import { useTerminalPanelStore } from '@/stores/terminal-panel-store'
@@ -65,6 +72,8 @@ type TerminalSessionResponse = {
 
 const DEFAULT_TERMINAL_CWD = '~/.hermes'
 const TERMINAL_BG = '#0d0d0d'
+/** 「本次会话允许」放行凭据的 sessionStorage 存储键（按风险动作区分）。 */
+const RISK_GRANT_STORAGE_KEY = 'ti.riskGrant.execute_shell'
 
 function toDebugAnalysis(value: unknown): DebugAnalysis | null {
   if (!value || typeof value !== 'object') return null
@@ -136,6 +145,9 @@ export function TerminalWorkspace({
   const [debugAnalysis, setDebugAnalysis] = useState<DebugAnalysis | null>(null)
   const [debugLoading, setDebugLoading] = useState(false)
   const [showDebugPanel, setShowDebugPanel] = useState(false)
+  const [renameTargetTab, setRenameTargetTab] = useState<TerminalTab | null>(null)
+  const [riskApprovalRequest, setRiskApprovalRequest] =
+    useState<RiskApprovalPayload | null>(null)
 
   const containerMapRef = useRef(new Map<string, HTMLDivElement>())
   const terminalMapRef = useRef(new Map<string, Terminal>())
@@ -144,6 +156,10 @@ export function TerminalWorkspace({
     new Map<string, ReadableStreamDefaultReader<Uint8Array>>(),
   )
   const connectedRef = useRef(new Set<string>())
+  /** 「仅本次允许」的一次性放行凭据（仅用于当前这次重试）。 */
+  const oneTimeGrantRef = useRef<string | null>(null)
+  /** 正在等待确认/审批的终端标签页（面板全局唯一，记录来源标签页）。 */
+  const riskApprovalTabIdRef = useRef<string | null>(null)
 
   const activeTab = useMemo(
     function activeTabMemo() {
@@ -308,6 +324,10 @@ export function TerminalWorkspace({
 
   const handleCloseTab = useCallback(
     function handleCloseTab(tab: TerminalTab) {
+      if (riskApprovalTabIdRef.current === tab.id) {
+        riskApprovalTabIdRef.current = null
+        setRiskApprovalRequest(null)
+      }
       void closeTabResources(tab.id, tab.sessionId)
       closeTab(tab.id)
     },
@@ -321,6 +341,8 @@ export function TerminalWorkspace({
         void closeTabResources(tab.id, tab.sessionId)
       }
       closeAllTabs()
+      riskApprovalTabIdRef.current = null
+      setRiskApprovalRequest(null)
       setShowDebugPanel(false)
       if (onClosePanel) onClosePanel()
     },
@@ -336,6 +358,14 @@ export function TerminalWorkspace({
       connectedRef.current.add(tab.id)
       setTabStatus(tab.id, 'active')
 
+      // 放行凭据：「仅本次允许」优先（一次性），否则读取会话内凭据
+      const storedGrantToken =
+        typeof window !== 'undefined'
+          ? window.sessionStorage.getItem(RISK_GRANT_STORAGE_KEY)
+          : null
+      const grantToken = oneTimeGrantRef.current ?? storedGrantToken ?? undefined
+      oneTimeGrantRef.current = null
+
       const response = await fetch('/api/terminal-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -344,12 +374,41 @@ export function TerminalWorkspace({
           // Let the server pick the shell from $SHELL
           cols: terminal.cols,
           rows: terminal.rows,
+          ...(grantToken ? { riskApprovalToken: grantToken } : {}),
         }),
       }).catch(function handleError() {
         return null
       })
 
       if (!response || !response.ok || !response.body) {
+        // 高风险动作拦截：若命中确认/审批要求，弹出确认面板等待用户决策
+        if (response) {
+          const payload = (await response.json().catch(function noPayload() {
+            return null
+          })) as Partial<RiskApprovalPayload> | null
+          if (
+            payload &&
+            typeof payload.requestId === 'string' &&
+            typeof payload.subject === 'string' &&
+            (payload.code === 'terminal_requires_confirmation' ||
+              payload.code === 'terminal_requires_approval')
+          ) {
+            connectedRef.current.delete(tab.id)
+            setTabStatus(tab.id, 'idle')
+            riskApprovalTabIdRef.current = tab.id
+            setRiskApprovalRequest({
+              code: payload.code,
+              requestId: payload.requestId,
+              action: payload.action ?? 'execute_shell',
+              subject: payload.subject,
+              decision:
+                payload.code === 'terminal_requires_approval'
+                  ? 'needs_approval'
+                  : 'needs_confirmation',
+            })
+            return
+          }
+        }
         terminal.writeln('\r\n[terminal] failed to connect\r\n')
         connectedRef.current.delete(tab.id)
         setTabStatus(tab.id, 'idle')
@@ -478,6 +537,65 @@ export function TerminalWorkspace({
       // No auto-reconnect — user can create a new tab if needed
     },
     [renameTab, setTabSessionId, setTabStatus],
+  )
+
+  const handleResolveRiskApproval = useCallback(
+    async function handleResolveRiskApproval(resolve: RiskApprovalResolve) {
+      const request = riskApprovalRequest
+      if (!request) return
+
+      const approved = resolve !== 'denied'
+      const scope = approved ? resolve : null
+
+      try {
+        const response = await fetch(
+          `/api/risk-approvals/${request.requestId}/resolve`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(
+              approved
+                ? { decision: 'approved', scope }
+                : { decision: 'denied' },
+            ),
+          },
+        )
+        const payload = (await response.json().catch(function noPayload() {
+          return null
+        })) as { ok?: boolean } | null
+        if (!response.ok || !payload?.ok) {
+          // 凭据失效（已过期/已处理）：关闭面板，由用户重新发起终端操作
+          riskApprovalTabIdRef.current = null
+          setRiskApprovalRequest(null)
+          return
+        }
+
+        // 会话级/永久放行凭据写入 sessionStorage，后续终端操作自动放行
+        if (approved && (scope === 'session' || scope === 'always')) {
+          window.sessionStorage.setItem(RISK_GRANT_STORAGE_KEY, request.requestId)
+        }
+        // 「仅本次允许」不落存储，仅注入当前这次重试
+        if (approved && scope === 'once') {
+          oneTimeGrantRef.current = request.requestId
+        }
+
+        setRiskApprovalRequest(null)
+
+        // 放行成功后重试建立终端会话（优先重试来源标签页，其次当前活动页）
+        const tabId = riskApprovalTabIdRef.current
+        riskApprovalTabIdRef.current = null
+        const tabToRetry = tabId
+          ? useTerminalPanelStore.getState().tabs.find((t) => t.id === tabId)
+          : null
+        const retryTab = tabToRetry ?? activeTab
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime safety
+        if (retryTab) void connectTab(retryTab)
+      } catch {
+        riskApprovalTabIdRef.current = null
+        setRiskApprovalRequest(null)
+      }
+    },
+    [activeTab, connectTab, riskApprovalRequest],
   )
 
   const ensureTerminalForTab = useCallback(
@@ -862,6 +980,19 @@ export function TerminalWorkspace({
 
       {/* Mobile input bar moved to WorkspaceShell as a sibling to prevent re-render freeze */}
 
+      {riskApprovalRequest ? (
+        <div className="absolute inset-x-3 bottom-3 z-20">
+          <RiskApprovalPanel
+            request={riskApprovalRequest}
+            onResolve={handleResolveRiskApproval}
+            onDismiss={function dismiss() {
+              riskApprovalTabIdRef.current = null
+              setRiskApprovalRequest(null)
+            }}
+          />
+        </div>
+      ) : null}
+
       {showDebugPanel ? (
         <DebugPanel
           analysis={debugAnalysis}
@@ -886,15 +1017,10 @@ export function TerminalWorkspace({
               const menuTab = tabs.find((tab) => tab.id === contextMenu.tabId)
               setContextMenu(null)
               if (!menuTab) return
-              const nextName = window.prompt(
-                '重命名终端标签页',
-                menuTab.title,
-              )
-              if (!nextName) return
-              renameTab(menuTab.id, nextName)
+              setRenameTargetTab(menuTab)
             }}
           >
-            Rename
+            重命名
           </button>
           <button
             type="button"
@@ -910,6 +1036,23 @@ export function TerminalWorkspace({
           </button>
         </div>
       ) : null}
+
+      <TextInputDialog
+        open={renameTargetTab !== null}
+        onOpenChange={(open) => {
+          if (!open) setRenameTargetTab(null)
+        }}
+        title="重命名终端标签页"
+        description="更新当前终端标签页名称，方便区分不同会话。"
+        defaultValue={renameTargetTab?.title ?? ''}
+        placeholder="请输入标签页名称"
+        confirmLabel="保存名称"
+        onConfirm={(value) => {
+          if (!renameTargetTab) return
+          renameTab(renameTargetTab.id, value)
+          setRenameTargetTab(null)
+        }}
+      />
     </div>
   )
 }
