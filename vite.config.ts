@@ -394,6 +394,9 @@ const config = defineConfig(({ mode, command }) => {
         'playwright-core',
         'playwright-extra',
         'puppeteer-extra-plugin-stealth',
+        // monaco-editor 仅供客户端使用（src/lib/monaco.ts 动态 import），
+        // 内联进 SSR bundle 会白白加大服务端产物体积，故标记为 external。
+        'monaco-editor',
       ],
       // 其余依赖全部内联进 SSR bundle，避免产物依赖开发机 node_modules
       // 的绝对路径 import（桌面打包后脱离项目目录会双实例/找不到模块）。

@@ -3,6 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { FloppyDiskIcon, LockIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { useMonacoReady } from '@/lib/monaco'
 
 type SaveState = 'saved' | 'saving' | 'unsaved' | 'error'
 
@@ -56,6 +57,7 @@ function MemoryEditor({
   onToggleReadOnly,
 }: MemoryEditorProps) {
   const disabled = !path || loading || Boolean(error)
+  const { ready: monacoReady } = useMonacoReady()
 
   return (
     <section className="flex min-h-0 flex-1 flex-col border-primary-200 bg-primary-50/40 lg:border-r">
@@ -100,7 +102,7 @@ function MemoryEditor({
           <div className="flex h-full items-center justify-center px-5 text-sm text-red-700 text-pretty">
             {error}
           </div>
-        ) : (
+        ) : monacoReady ? (
           <Editor
             height="100%"
             theme={theme === 'dark' ? 'vs-dark' : 'vs-light'}
@@ -119,6 +121,10 @@ function MemoryEditor({
               lineNumbersMinChars: 3,
             }}
           />
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm text-primary-600 text-pretty">
+            正在加载编辑器...
+          </div>
         )}
       </div>
     </section>
