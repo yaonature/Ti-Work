@@ -102,13 +102,35 @@ export async function findAvailablePort(
   )
 }
 
-/** 真实端口占用探测（node:net 监听回环地址） */
-export async function isPortInUse(port: number): Promise<boolean> {
+/** 单个地址族的绑定探测结果：可绑定 / 已被占用 / 该地址族不可用 */
+type BindProbeResult = 'free' | 'busy' | 'unsupported'
+
+function probeBind(port: number, host: string): Promise<BindProbeResult> {
   return new Promise((resolve) => {
     const server = createServer()
-    server.once('error', () => resolve(true))
-    server.listen({ port, host: '127.0.0.1' }, () => {
-      server.close(() => resolve(false))
+    server.once('error', (err: NodeJS.ErrnoException) => {
+      // EADDRINUSE 代表该地址族上端口已被占用；其余（如本机无 IPv6）视为不可用，不算占用
+      if (err.code === 'EADDRINUSE') resolve('busy')
+      else resolve('unsupported')
+    })
+    server.listen({ port, host }, () => {
+      server.close(() => resolve('free'))
     })
   })
+}
+
+/**
+ * 真实端口占用探测（node:net 绑定探测）。
+ *
+ * 仅探测 127.0.0.1 会漏判绑定 IPv6 双栈通配（::）或 0.0.0.0 的外部服务：
+ * 本机端口实际被他人占用时仍会被判定为"空闲"，进而把自家后端指向被他人拿走的端口，
+ * 出现窗口加载到其它项目页面的"串台"。因此同时对 IPv4/IPv6 的单播与通配地址做绑定探测，
+ * 任一地址族返回 EADDRINUSE 即视为占用；地址族不可用（如无 IPv6）不算占用。
+ */
+export async function isPortInUse(port: number): Promise<boolean> {
+  const candidates = ['127.0.0.1', '::1', '0.0.0.0', '::']
+  for (const host of candidates) {
+    if ((await probeBind(port, host)) === 'busy') return true
+  }
+  return false
 }

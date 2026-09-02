@@ -193,4 +193,27 @@ describe('findAvailablePort / isPortInUse', () => {
     await new Promise<void>((resolve) => server.close(() => resolve()))
     await expect(isPortInUse(port)).resolves.toBe(false)
   })
+
+  it('real net integration: an IPv6 dual-stack wildcard listener is also detected', async () => {
+    const server = createServer()
+    try {
+      await new Promise<void>((resolve, reject) => {
+        server.once('error', reject)
+        server.listen(0, '::', resolve)
+      })
+    } catch {
+      // 平台无 IPv6 时跳过，避免影响其它断言
+      server.close()
+      return
+    }
+    const address = server.address()
+    if (address === null || typeof address === 'string') {
+      server.close()
+      throw new Error('failed to bind dual-stack test server')
+    }
+    const port = address.port
+    await expect(isPortInUse(port)).resolves.toBe(true)
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+    await expect(isPortInUse(port)).resolves.toBe(false)
+  })
 })
