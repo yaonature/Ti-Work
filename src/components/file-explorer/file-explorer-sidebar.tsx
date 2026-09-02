@@ -158,6 +158,7 @@ export function FileExplorerSidebar({
   profileName,
   rootScope,
 }: FileExplorerSidebarProps) {
+  const navigate = useNavigate()
   const rootLabel =
     profileName && profileName !== 'default'
       ? profileName.charAt(0).toUpperCase() + profileName.slice(1)

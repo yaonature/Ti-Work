@@ -58,7 +58,7 @@ function FilesRoute() {
   usePageTitle('执行中心')
   const { settings } = useSettings()
   const navigate = useNavigate()
-  const search = useSearch({ strict: false })
+  const search: { view?: string } = useSearch({ strict: false })
   const [isMobile, setIsMobile] = useState(false)
   const [fileExplorerCollapsed, setFileExplorerCollapsed] = useState(false)
   const [editorValue, setEditorValue] = useState(INITIAL_EDITOR_VALUE)

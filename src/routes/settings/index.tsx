@@ -476,7 +476,7 @@ function SettingsRoute() {
   }, [])
 
   // 支持外部升级 CTA 跳转：/settings?section=account|hub → 定位对应板块
-  const search = useSearch({ strict: false })
+  const search: { section?: string } = useSearch({ strict: false })
   const requestedSection = search?.section
 
   const [activeSection, setActiveSection] = useState<SettingsSectionId>(() => {

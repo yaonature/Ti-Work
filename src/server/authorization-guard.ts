@@ -543,7 +543,7 @@ export function assertTerminalAccess(
       result: 'needs_approval',
       reason: 'requires_approval',
       action,
-      command: command ?? null,
+      command,
       profileName: profileName ?? null,
     })
     throw new AuthorizationGuardError('该终端命令需要管理员审批后才能执行。', {
@@ -560,7 +560,7 @@ export function assertTerminalAccess(
       result: 'needs_confirmation',
       reason: 'requires_confirmation',
       action,
-      command: command ?? null,
+      command,
       profileName: profileName ?? null,
     })
     throw new AuthorizationGuardError('该终端命令需要您确认后再执行。', {
@@ -576,7 +576,7 @@ export function assertTerminalAccess(
     result: 'allowed',
     reason: 'no_risk_control',
     action,
-    command: command ?? null,
+    command,
     profileName: profileName ?? null,
   })
 }

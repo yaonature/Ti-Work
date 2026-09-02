@@ -503,10 +503,16 @@ function setupIpc(): void {
   })
   // 原生目录选择对话框：供权限页“选择目录”使用，返回绝对路径或 null（取消）。
   ipcMain.handle('dialog:select-directory', async () => {
-    const result = await dialog.showOpenDialog(mainWindow ?? undefined, {
+    const options = {
       title: '选择目录',
-      properties: ['openDirectory', 'createDirectory'],
-    })
+      properties: ['openDirectory', 'createDirectory'] as Array<
+        'openDirectory' | 'createDirectory'
+      >,
+    }
+    const result =
+      mainWindow !== null && !mainWindow.isDestroyed()
+        ? await dialog.showOpenDialog(mainWindow, options)
+        : await dialog.showOpenDialog(options)
     if (result.canceled || result.filePaths.length === 0) return null
     return result.filePaths[0]
   })
