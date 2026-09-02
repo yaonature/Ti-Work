@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { EmojiIcon } from '@/components/emoji-icon'
 import {
   ArrowLeft01Icon,
   BarChartIcon,
@@ -20,6 +19,7 @@ import { DispatchDialog } from './components/dispatch-dialog'
 import { WorkflowBuilder } from './components/workflow-builder'
 import { CostPanel } from './components/cost-panel'
 import type { Crew, CrewMember, CrewMemberStatus } from '@/lib/crews-api'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs'
 import { AgentGrid } from '@/screens/operations/components/agent-grid'
 import { fetchOperationsOverview } from '@/lib/operations-api'
@@ -160,7 +160,7 @@ function ActivityFeed({ entries }: { entries: Array<ActivityEntry> }) {
             <p className="text-xs text-[var(--theme-text)] break-words">
               {(() => {
                 const firstChar = Array.from(entry.text)[0] ?? ''
-                // eslint-disable-next-line no-misleading-character-class
+                 
                 if (/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{25A0}-\u{25FF}]/u.test(firstChar)) {
                   return (
                     <span className="inline-flex items-center gap-1">

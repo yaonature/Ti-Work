@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { EmojiIcon } from '@/components/emoji-icon'
 import type { AuthStatus } from '@/lib/hermes-auth'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { writeTextToClipboard } from '@/lib/clipboard'
 import { fetchHermesAuthStatus } from '@/lib/hermes-auth'
 
@@ -31,9 +31,9 @@ function getSetupSteps(
       note: '便携对话支持任意提供 /v1/chat/completions 接口的后端（Ollama、LiteLLM、vLLM 等）',
     },
     {
-      title: '可选：在本地运行 Hermes 执行引擎（网关）',
+      title: '可选：在本地运行 Ti Work 执行引擎（网关）',
       command: 'git clone https://github.com/outsourc-e/hermes-agent.git',
-      note: 'Hermes 执行引擎（网关）API 将自动解锁会话、技能、记忆等工作区增强功能',
+      note: 'Ti Work 执行引擎（网关）API 将自动解锁会话、技能、记忆等工作区增强功能',
     },
     {
       title: '安装网关',
@@ -222,7 +222,7 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
               欢迎！连接你的后端
             </p>
             <p className="mt-2 text-sm leading-6 text-white/60">
-              Ti Work 兼容任意 OpenAI 接口的后端。接入 Hermes
+              Ti Work 兼容任意 OpenAI 接口的后端。接入 Ti Work
               网关后，增强功能将自动解锁。
             </p>
 
@@ -245,7 +245,7 @@ export function ConnectionStartupScreen({ onConnected }: Props) {
                     正在检测...
                   </span>
                 ) : (
-                  '自动启动 Hermes 执行引擎（网关）'
+                  '自动启动 Ti Work 执行引擎（网关）'
                 )}
               </button>
 

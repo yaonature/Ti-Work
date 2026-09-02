@@ -1,16 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router'
 import {
+  HERMES_API,
   getGatewayOfflineMessage,
   getHermesApiToken,
-  HERMES_API,
 } from '../../../server/gateway-capabilities'
 import { isAuthenticated } from '../../../server/auth-middleware'
 import { getLiveBootstrapState } from '../../../server/hermes-bootstrap'
 import {
-  getEnvConfiguredModels,
-  type EnvModelEntry,
+  
+  getEnvConfiguredModels
 } from '../../../server/env-models'
 import { applyEnterpriseModelAllowlist } from '../../../server/enterprise-models'
+import type {EnvModelEntry} from '../../../server/env-models';
 
 /**
  * 网关不可达时的错误文案：感知自举安装状态（安装中/启动中/失败），

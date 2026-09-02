@@ -3,7 +3,6 @@ import { useNavigate } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   BrainIcon,
-  ComputerTerminal01Icon,
   File01Icon,
   MessageMultiple01Icon,
   PuzzleIcon,
@@ -19,8 +18,7 @@ type OverflowItem = {
 }
 
 const SYSTEM_ITEMS: Array<OverflowItem> = [
-  { icon: File01Icon, label: '文件', to: '/files' },
-  { icon: ComputerTerminal01Icon, label: '终端', to: '/terminal' },
+  { icon: File01Icon, label: '执行中心', to: '/files' },
   { icon: BrainIcon, label: '记忆', to: '/memory' },
 ]
 
@@ -111,7 +109,7 @@ export function DashboardOverflowPanel({ open, onClose }: Props) {
             onSelect={handleSelect}
           />
           <OverflowGrid
-            title="Hermes"
+            title="Ti Work"
             items={HERMES_ITEMS}
             onSelect={handleSelect}
           />

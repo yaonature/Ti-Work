@@ -54,7 +54,7 @@ export function CyclingStatus({
         {(() => {
           const current = steps[step] ?? ''
           const firstChar = Array.from(current)[0] ?? ''
-          // eslint-disable-next-line no-misleading-character-class
+           
           if (/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(firstChar)) {
             return (
               <span className="inline-flex items-center gap-1">

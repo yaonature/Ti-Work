@@ -88,8 +88,7 @@ const PROVIDERS: Array<Provider> = [
   {
     id: 'anthropic',
     name: 'Anthropic (Claude)',
-    description:
-      '适合复杂推理、长文本写作和高精度指令场景',
+    description: '复杂推理与长文本',
     badge: '推荐',
     logo: <AnthropicLogo className="size-8" />,
     placeholder: 'sk-ant-...',
@@ -99,8 +98,7 @@ const PROVIDERS: Array<Provider> = [
   {
     id: 'openrouter',
     name: 'OpenRouter',
-    description:
-      '通过一个 API 访问 200+ AI 模型，适合灵活试验和多模型切换',
+    description: '一个 API 访问 200+ 模型',
     badge: '热门',
     logo: <OpenRouterLogo className="size-8" />,
     placeholder: 'sk-or-v1-...',
@@ -110,7 +108,7 @@ const PROVIDERS: Array<Provider> = [
   {
     id: 'google',
     name: 'Google (Gemini)',
-    description: '擅长图像、文档和超长上下文处理',
+    description: '图像、文档与超长上下文',
     logo: <GoogleLogo className="size-8" />,
     placeholder: 'AI...',
     helpUrl: 'https://aistudio.google.com/apikey',
@@ -119,7 +117,7 @@ const PROVIDERS: Array<Provider> = [
   {
     id: 'openai',
     name: 'OpenAI (GPT)',
-    description: '适合会话、编码与日常工作任务的全能型选择',
+    description: '会话、编码与日常任务',
     logo: <OpenAILogo className="size-8" />,
     placeholder: 'sk-...',
     helpUrl: 'https://platform.openai.com/api-keys',
@@ -232,9 +230,7 @@ export function ProviderSelectStep({
         setSaveStatus('saved')
       } else {
         setSaveStatus('warning')
-        setError(
-          'API Key 已保存，但网关可能尚未加载其模型。可在设置页检查，或重启应用后生效。',
-        )
+        setError('Key 已保存，模型可能尚未加载。')
       }
     } catch {
       setSaveStatus('error')
@@ -272,7 +268,7 @@ export function ProviderSelectStep({
           配置你的 AI 提供方
         </h2>
         <p className="text-sm text-primary-600">
-          选择提供方并粘贴 API Key，保存后即可开始使用。后续可在设置中随时切换或添加。
+          选择提供方并粘贴 API Key。
         </p>
       </div>
 

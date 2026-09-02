@@ -6,10 +6,10 @@ import YAML from 'yaml'
 import { requireAuth, requireRole } from '../../../server/auth-middleware'
 import { requireJsonContentType } from '../../../server/rate-limit'
 import {
-  getHermesApiToken,
   HERMES_API,
   ensureGatewayProbed,
   getCapabilities,
+  getHermesApiToken,
 } from '../../../server/gateway-capabilities'
 import { createCapabilityUnavailablePayload } from '@/lib/feature-gates'
 
@@ -175,7 +175,7 @@ export const Route = createFileRoute('/api/mcp/servers')({
           return Response.json({
             servers: [],
             ok: false,
-            message: '无法访问 Hermes 网关配置端点。',
+            message: '无法访问 Ti Work 网关配置端点。',
           })
         }
       },
@@ -247,7 +247,7 @@ export const Route = createFileRoute('/api/mcp/servers')({
           return Response.json({
             ok: true,
             message:
-              'MCP 服务器已保存到 config.yaml，重启 Hermes 后生效。',
+              'MCP 服务器已保存到 config.yaml，重启 Ti Work 后生效。',
             servers,
           })
         } catch (err) {

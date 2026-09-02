@@ -3,7 +3,7 @@
  * Ensures Studio is compatible with the running Hermes gateway version.
  */
 
-import { getHermesApiToken, HERMES_API } from './gateway-capabilities'
+import { HERMES_API, getHermesApiToken } from './gateway-capabilities'
 
 export interface VersionInfo {
   version?: string

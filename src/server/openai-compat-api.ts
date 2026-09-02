@@ -1,4 +1,4 @@
-import { getHermesApiToken, HERMES_API } from './gateway-capabilities'
+import { HERMES_API, getHermesApiToken } from './gateway-capabilities'
 
 /** Cached first available model from /v1/models — used as fallback when no model is specified. */
 let _cachedDefaultModel: string | null = null

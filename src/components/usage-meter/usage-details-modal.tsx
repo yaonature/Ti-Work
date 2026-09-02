@@ -428,7 +428,7 @@ export function UsageDetailsModal({
         <div>
           <DialogTitle>用量概览</DialogTitle>
           <DialogDescription>
-            展示当前 Hermes 会话及已连接提供方的实时用量。
+            展示当前 Ti Work 会话及已连接提供方的实时用量。
           </DialogDescription>
         </div>
         <DialogClose className="text-primary-700">关闭</DialogClose>

@@ -33,7 +33,7 @@ export const ONBOARDING_STEPS: Array<OnboardingStep> = [
   {
     id: 'welcome',
     title: '欢迎使用 Ti Work',
-    description: '由 Hermes Agent 驱动的 AI 工作空间',
+    description: '由 Ti Work 驱动的 AI 工作空间',
     icon: Home01Icon,
     iconBg: 'bg-orange-500',
     nextLabel: '开始设置',
@@ -41,7 +41,7 @@ export const ONBOARDING_STEPS: Array<OnboardingStep> = [
   {
     id: 'connection-check',
     title: '连接检查',
-    description: '开始之前，先确认 Hermes Agent 已正常运行。',
+    description: '确认 Ti Work 正常运行。',
     icon: Plug01Icon,
     iconBg: 'bg-emerald-500',
     component: ConnectionCheckStep,
@@ -50,7 +50,7 @@ export const ONBOARDING_STEPS: Array<OnboardingStep> = [
   {
     id: 'model-configuration',
     title: '模型配置',
-    description: '检查当前使用的模型提供方与模型设置。',
+    description: '检查模型提供方与设置。',
     icon: Settings01Icon,
     iconBg: 'bg-cyan-500',
     component: ModelConfigurationStep,
@@ -58,8 +58,7 @@ export const ONBOARDING_STEPS: Array<OnboardingStep> = [
   {
     id: 'ready',
     title: '配置完成',
-    description:
-      '现在就可以开始和 Hermes 协作了。你可以让它帮你写代码、做调研，或处理其他工作任务。',
+    description: '可以开始和 Hermes 协作。',
     icon: CheckmarkCircle02Icon,
     iconBg: 'bg-emerald-500',
     completeLabel: '开始对话',

@@ -6,8 +6,8 @@ import {
   ensureGatewayProbed,
   getGatewayCapabilities,
   getGatewayOfflineMessage,
-  isGatewayReachable,
   getSession,
+  isGatewayReachable,
   toSessionSummary,
 } from '../../../server/hermes-api'
 

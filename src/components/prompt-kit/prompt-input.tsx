@@ -156,13 +156,16 @@ function PromptInput({
           onClick={handleClick}
           onPointerDown={handlePointerDown}
           className={cn(
-            'cursor-text rounded-3xl py-3 gap-3 flex flex-col touch-manipulation mb-2',
+            // 桌面端给首行文字与卡片上边框之间留出上间距（md:pt-3，移动端由外层容器接管不带内边距）
+            'cursor-text rounded-3xl md:pt-3 pb-3 gap-3 flex flex-col touch-manipulation mb-2',
             disabled && 'cursor-not-allowed opacity-60',
             className,
           )}
           style={{
             background: 'var(--composer-bg)',
             border: '1px solid var(--composer-border)',
+            // 隐藏卡片底部边框线：保留顶部/两侧边框与圆角，底部仅显示背景色
+            borderBottom: 'none',
             boxShadow: 'var(--theme-shadow-1)',
           }}
           {...props}
@@ -303,7 +306,7 @@ function PromptInputTextarea({
       onPaste={handlePaste}
       onPointerDown={handlePointerDown}
       className={cn(
-        'text-primary-950 min-h-[28px] w-full resize-none border-none bg-transparent shadow-none outline-none focus-visible:ring-0 pl-4 pr-1 py-2 md:py-0 text-base placeholder:text-primary-500',
+        'min-h-[28px] w-full resize-none border-none bg-transparent shadow-none outline-none focus-visible:ring-0 px-3 md:py-0 text-base placeholder:text-[var(--theme-muted)]/70',
         className,
       )}
       rows={1}

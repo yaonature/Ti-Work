@@ -7,8 +7,8 @@
  */
 import { createFileRoute } from '@tanstack/react-router'
 import {
-  getHermesApiToken,
   HERMES_API,
+  getHermesApiToken,
 } from '../../server/gateway-capabilities'
 import { isAuthenticated } from '../../server/auth-middleware'
 

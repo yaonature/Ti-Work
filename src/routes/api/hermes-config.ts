@@ -285,7 +285,7 @@ export const Route = createFileRoute('/api/hermes-config')({
 
         return Response.json({
           ok: true,
-          message: '配置已更新，重启 Hermes 后生效。',
+          message: '配置已更新，重启 Ti Work 后生效。',
         })
       },
     },

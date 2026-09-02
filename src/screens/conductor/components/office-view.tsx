@@ -202,7 +202,7 @@ const LAYOUT_TEMPLATE_OPTIONS: Array<{
 function splitTrailingEmoji(text: string): { emoji: string | null; text: string } {
   if (!text) return { emoji: null, text }
   const lastChar = Array.from(text).at(-1) ?? ''
-  // eslint-disable-next-line no-misleading-character-class
+   
   if (/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{25A0}-\u{25FF}]/u.test(lastChar)) {
     return { emoji: lastChar, text: text.slice(0, text.length - lastChar.length).trimEnd() }
   }
@@ -720,7 +720,7 @@ export function OfficeView({
                 >
                   {(() => {
                     const firstChar = Array.from(opt.label)[0] ?? ''
-                    // eslint-disable-next-line no-misleading-character-class
+                     
                     if (/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{25A0}-\u{25FF}]/u.test(firstChar)) {
                       return (
                         <span className="inline-flex items-center gap-1">

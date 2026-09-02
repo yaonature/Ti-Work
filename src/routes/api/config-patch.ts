@@ -14,10 +14,10 @@ import os from 'node:os'
 import { createFileRoute } from '@tanstack/react-router'
 import YAML from 'yaml'
 import { requireRole } from '../../server/auth-middleware'
-import { getHermesApiToken, HERMES_API } from '../../server/gateway-capabilities'
+import { HERMES_API, getHermesApiToken } from '../../server/gateway-capabilities'
 import { reloadGatewayConfig } from '../../server/gateway-reload'
-import type { ReloadResult } from '../../server/gateway-reload'
 import { getHermesConfigPath, getHermesEnvPath } from '../../server/env-models'
+import type { ReloadResult } from '../../server/gateway-reload'
 
 const CONFIG_PATH = getHermesConfigPath()
 const ENV_PATH = getHermesEnvPath()

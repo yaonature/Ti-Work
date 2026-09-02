@@ -15,7 +15,6 @@ import {
   toSessionSummary,
   updateSession,
 } from '../../server/hermes-api'
-import type { HermesSession } from '../../server/hermes-api'
 import {
   canAccessLocalSession,
   deleteLocalSession,
@@ -24,6 +23,7 @@ import {
   toLocalSessionSummary,
   updateLocalSessionTitle,
 } from '../../server/local-session-store'
+import type { HermesSession } from '../../server/hermes-api'
 import { createCapabilityUnavailablePayload } from '@/lib/feature-gates'
 
 export const Route = createFileRoute('/api/sessions')({

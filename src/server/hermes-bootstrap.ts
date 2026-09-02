@@ -1,5 +1,4 @@
 import { spawn, spawnSync } from 'node:child_process'
-import type { ChildProcess } from 'node:child_process'
 import {
   appendFileSync,
   cpSync,
@@ -9,7 +8,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
 import { randomBytes } from 'node:crypto'
 import { request } from 'node:http'
@@ -20,6 +19,7 @@ import {
   readEnvValueWithFallback,
   writeEnvValue,
 } from './env-models'
+import type { ChildProcess } from 'node:child_process'
 
 /**
  * Hermes 执行引擎 Windows 自举安装（Bootstrap）。
@@ -73,7 +73,7 @@ export type BootstrapStageInfo = {
 export type BootstrapState = {
   phase: BootstrapPhase
   hermesHome: string
-  stages: BootstrapStageInfo[]
+  stages: Array<BootstrapStageInfo>
   stageIndex: number
   message: string
   error: string | null
@@ -450,7 +450,7 @@ async function isGatewayHealthy(): Promise<boolean> {
 
 function runProcess(
   command: string,
-  args: string[],
+  args: Array<string>,
   opts: { env?: Record<string, string>; timeoutMs?: number } = {},
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolvePromise) => {
@@ -508,8 +508,8 @@ function powershellArgs(
   installerPath: string,
   hermesHome: string,
   installDir: string,
-  extra: string[],
-): string[] {
+  extra: Array<string>,
+): Array<string> {
   return [
     '-NoProfile',
     '-ExecutionPolicy',
@@ -565,7 +565,7 @@ async function fetchStageManifest(
   installerPath: string,
   hermesHome: string,
   installDir: string,
-): Promise<BootstrapStageInfo[]> {
+): Promise<Array<BootstrapStageInfo>> {
   traceBootstrap(
     `[manifest] start installer=${installerPath} hermesHome=${hermesHome} installDir=${installDir}`,
   )
@@ -850,7 +850,7 @@ async function doRun(): Promise<BootstrapState> {
     if (!installerPath) {
       state.phase = 'failed'
       state.error =
-        '未找到 Hermes 安装器（install.ps1）。请检查安装包完整性，或联网后重试。'
+        '未找到 Ti Work 安装器（install.ps1）。请检查安装包完整性，或联网后重试。'
       state.failureCategory = 'install-failed'
       state.finishedAt = Date.now()
       saveState(state)
@@ -862,7 +862,7 @@ async function doRun(): Promise<BootstrapState> {
     const bundledSource = resolveBundledSourceSnapshotPath()
     if (!bundledSource) {
       state.phase = 'failed'
-      state.message = '未找到安装包内置的 Hermes 固定版本源码'
+      state.message = '未找到安装包内置的 Ti Work 固定版本源码'
       state.error =
         '未找到 hermes-agent-source。当前安装包不完整，无法保证按固定版本安装执行引擎。'
       state.failureCategory = 'install-failed'
@@ -878,7 +878,7 @@ async function doRun(): Promise<BootstrapState> {
     state.message = '正在读取安装清单…'
     saveState(state)
     traceBootstrap('[doRun] before fetchStageManifest')
-    let stages: BootstrapStageInfo[]
+    let stages: Array<BootstrapStageInfo>
     try {
       stages = await fetchStageManifest(installerPath, hermesHome, installDir)
       traceBootstrap(`[doRun] fetched manifest stages=${stages.length}`)

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { requireAuth } from '../../../server/auth-middleware'
-import { getHermesApiToken, HERMES_API } from '../../../server/gateway-capabilities'
+import { HERMES_API, getHermesApiToken } from '../../../server/gateway-capabilities'
 
 function authHeaders(): Record<string, string> {
   const token = getHermesApiToken()

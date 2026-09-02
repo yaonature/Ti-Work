@@ -6,11 +6,12 @@
  * 呈现升级 CTA；企业中枢接入后按下发 featureSet 实时解锁。
  */
 import { useCallback, useEffect, useState } from 'react'
+import type {FeatureId, PlanId} from '@/lib/feature-set';
 import {
+  
+  
   canUsePlan,
-  derivePlanFromFeatureSet,
-  type FeatureId,
-  type PlanId,
+  derivePlanFromFeatureSet
 } from '@/lib/feature-set'
 
 export interface FeatureGateState {

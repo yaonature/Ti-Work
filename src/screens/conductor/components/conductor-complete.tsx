@@ -8,9 +8,9 @@
 import { useMemo, useState } from 'react'
 import { CostTracker,  estimateTokenCost, formatUsd } from './cost-tracker'
 import { getAgentPersona } from './agent-avatar'
-import { EmojiIcon } from '@/components/emoji-icon'
 import type {CostWorker} from './cost-tracker';
 import type { useConductorGateway } from '../hooks/use-conductor-gateway'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { Button } from '@/components/ui/button'
 import { Markdown } from '@/components/prompt-kit/markdown'
 import { cn } from '@/lib/utils'

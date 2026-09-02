@@ -7,6 +7,6 @@ export const Route = createFileRoute('/agents')({
 })
 
 function AgentsRoute() {
-  usePageTitle('任务助手')
+  usePageTitle('数字员工')
   return <AgentLibraryScreen />
 }

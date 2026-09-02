@@ -81,7 +81,7 @@ export function MobileSetupModal({ isOpen, onClose }: MobileSetupModalProps) {
       showTailscaleIcon: false,
       action: (
         <div className="rounded-lg border border-primary-700 bg-primary-950 px-4 py-3 text-sm text-primary-200">
-          Hermes 网关增强 API 不是必须项。如果桌面端核心会话已经可用，移动端能否访问主要取决于网络可达性。
+          Ti Work 网关增强 API 不是必须项。如果桌面端核心会话已经可用，移动端能否访问主要取决于网络可达性。
         </div>
       ),
     },

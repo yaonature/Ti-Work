@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../../server/auth-middleware'
-import { getHermesApiToken, HERMES_API } from '../../../server/gateway-capabilities'
+import { HERMES_API, getHermesApiToken } from '../../../server/gateway-capabilities'
 import { readSkillsSettings } from './settings'
 
 export type HubSkillSource = 'skillsmp' | 'installed-fallback'

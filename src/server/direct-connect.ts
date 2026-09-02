@@ -11,7 +11,7 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { readEnvValue, getHermesEnvPath } from './env-models'
+import { getHermesEnvPath, readEnvValue } from './env-models'
 
 export type DirectConnectTarget = {
   providerId: string
@@ -187,7 +187,7 @@ function parseTopLevelScalars(raw: string): Record<string, string | object> {
     const eqIdx = trimmed.indexOf(':')
     if (eqIdx <= 0) continue
     const key = trimmed.slice(0, eqIdx).trim()
-    let value = trimmed.slice(eqIdx + 1).trim()
+    const value = trimmed.slice(eqIdx + 1).trim()
     if (!value) continue
     if (value.startsWith('{') && value.endsWith('}')) {
       // model: { default: "...", provider: "..." } 内联对象

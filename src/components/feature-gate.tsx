@@ -3,9 +3,9 @@
  * 商业授权失败时呈现 FeatureLockedCard；技术失败（网关离线）由各页面自行提示。
  */
 import type * as React from 'react'
+import type { FeatureId } from '@/lib/feature-set'
 import { useFeatureGate } from '@/hooks/use-feature-gate'
 import { FeatureLockedCard } from '@/components/feature-locked-card'
-import type { FeatureId } from '@/lib/feature-set'
 
 export function FeatureGate({
   feature,

@@ -5,7 +5,6 @@ import {
   Robot01Icon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { EmojiIcon } from '@/components/emoji-icon'
 import {
   getMessageTimestamp,
   getToolCallsFromMessage,
@@ -16,6 +15,7 @@ import { ScrollToBottomButton } from './scroll-to-bottom-button'
 import { ResearchCard } from './research-card'
 import type { ChatMessage } from '../types'
 import type { UseResearchCardResult } from '@/hooks/use-research-card'
+import { EmojiIcon } from '@/components/emoji-icon'
 import {
   ChatContainerContent,
   ChatContainerRoot,

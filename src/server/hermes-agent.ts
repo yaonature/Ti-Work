@@ -1,11 +1,11 @@
 import { spawn } from 'node:child_process'
-import type { ChildProcess } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import {
   resolveHermesHome,
   triggerBootstrap,
 } from './hermes-bootstrap'
+import type { ChildProcess } from 'node:child_process'
 
 const HERMES_HEALTH_TIMEOUT_MS = 2_000
 const HERMES_START_PORT = 8642
@@ -185,7 +185,7 @@ export async function startHermesAgent(): Promise<StartHermesAgentResult> {
         return {
           ok: false,
           error:
-            '未检测到 Hermes 执行引擎。请先安装执行引擎（hermes），或将 hermes-agent 项目放在本应用同级目录后重启。',
+            '未检测到 Ti Work 执行引擎。请先安装执行引擎（hermes），或将 hermes-agent 项目放在本应用同级目录后重启。',
         }
       }
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { getMode, getTheme, setMode, setTheme, type ThemeMode } from '@/lib/theme'
+import type {ThemeMode} from '@/lib/theme';
+import {  getMode, getTheme, setMode, setTheme } from '@/lib/theme'
 
 export type SettingsThemeMode = 'system' | 'dark' | 'light'
 export type AccentColor = 'orange' | 'purple' | 'blue' | 'green'

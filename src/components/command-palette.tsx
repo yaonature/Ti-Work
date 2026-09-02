@@ -171,8 +171,8 @@ export function CommandPalette({ pathname, sessions }: CommandPaletteProps) {
       {
         id: 'screen-files',
         group: '页面',
-        label: '文件',
-        keywords: 'workspace editor browser files',
+        label: '执行中心',
+        keywords: 'workspace editor browser files execution center',
         shortcut: '前往',
         icon: File01Icon,
         onSelect: () => void navigate({ to: '/files' }),
@@ -180,11 +180,12 @@ export function CommandPalette({ pathname, sessions }: CommandPaletteProps) {
       {
         id: 'screen-terminal',
         group: '页面',
-        label: '终端',
-        keywords: 'console shell command line terminal',
+        label: '执行终端',
+        keywords: 'console shell command line terminal execution center',
         shortcut: '前往',
         icon: CommandLineIcon,
-        onSelect: () => void navigate({ to: '/terminal' }),
+        onSelect: () =>
+          void navigate({ to: '/files', search: { view: 'terminal' } }),
       },
       {
         id: 'screen-memory',

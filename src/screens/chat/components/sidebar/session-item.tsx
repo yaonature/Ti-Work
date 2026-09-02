@@ -88,11 +88,6 @@ function getSessionDisplayTitle(
   return shortId ? `会话 ${shortId}` : '会话'
 }
 
-function getFriendlyIdLabel(friendlyId: string): string {
-  if (!isUuidLike(friendlyId)) return friendlyId
-  return `ID ${friendlyId.slice(0, 8)}`
-}
-
 function SessionItemComponent({
   session,
   active,
@@ -119,7 +114,6 @@ function SessionItemComponent({
     const parts: Array<string> = []
     const formatted = formatSessionTimestamp(updatedAt)
     if (formatted) parts.push(formatted)
-    if (session.friendlyId) parts.push(getFriendlyIdLabel(session.friendlyId))
     return parts.join(' • ')
   }, [isError, session.friendlyId, session.titleError, updatedAt])
 

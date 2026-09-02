@@ -67,6 +67,8 @@ releases/
 .electron-cache/
 .electron-user-data/
 .e2e-hermes/
+.e2e-electron-data/
+.e2e-electron-userdata/
 
 # Wrangler (Cloudflare Workers)
 .wrangler

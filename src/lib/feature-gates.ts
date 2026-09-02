@@ -46,7 +46,7 @@ export function getFeatureLabel(feature: EnhancedFeature | string): string {
 export function getUnavailableReason(
   feature: EnhancedFeature | string,
 ): string {
-  return `${getFeatureLabel(feature)}需要连接支持增强 API 的 Hermes 网关。`
+  return `${getFeatureLabel(feature)}需要连接支持增强 API 的 Ti Work 网关。`
 }
 
 export function createCapabilityUnavailablePayload(

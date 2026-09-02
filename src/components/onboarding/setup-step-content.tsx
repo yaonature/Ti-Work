@@ -10,8 +10,8 @@ import {
   RefreshIcon,
   Settings01Icon,
 } from '@hugeicons/core-free-icons'
-import type { OnboardingStepComponentProps } from './onboarding-steps'
 import { ProviderSelectStep } from './provider-select-step'
+import type { OnboardingStepComponentProps } from './onboarding-steps'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -58,8 +58,8 @@ export function ConnectionCheckStep({
       if (!connected) {
         setLastError(
           data.error === 'server_timeout'
-            ? 'Hermes Agent 响应超时。'
-            : '暂时无法连接到 Hermes Agent。',
+            ? 'Ti Work 响应超时。'
+            : '暂时无法连接到 Ti Work。',
         )
       }
     } catch (error) {
@@ -109,21 +109,21 @@ export function ConnectionCheckStep({
 
       <p className="mb-6 max-w-md text-base leading-relaxed text-primary-600">
         {status === 'connected'
-          ? '后端已可访问，可以继续完成设置。'
+          ? '后端可用，可继续。'
           : status === 'checking'
-            ? '正在检查是否存在可用的 OpenAI 兼容后端...'
-            : '当前还没有检测到可用的兼容后端。'}
+            ? '正在检查后端...'
+            : '未检测到兼容后端。'}
       </p>
 
       {status === 'disconnected' && (
         <div className="mb-6 w-full rounded-2xl border border-red-200 bg-red-50 p-4 text-left">
           <p className="mb-3 text-sm font-medium text-red-700">
-            请先确认 Hermes HTTP API 服务已启用：
+            启用 Hermes HTTP API：
           </p>
           <div className="space-y-2">
             <div>
               <p className="text-xs font-medium text-red-700 mb-1">
-                1. 在 <code>~/.hermes/.env</code> 中启用 API 服务：
+                1. 在 <code>~/.hermes/.env</code> 启用 API 服务：
               </p>
               <code className="block overflow-x-auto rounded-lg bg-red-100 px-3 py-2 text-xs text-red-900">
                 API_SERVER_ENABLED=true
@@ -139,8 +139,7 @@ export function ConnectionCheckStep({
             </div>
           </div>
           <p className="mt-3 text-xs text-red-700">
-            或者将 <code>HERMES_API_URL</code> 指向任意 OpenAI 兼容后端
-            （如 Ollama、LiteLLM、vLLM 等）。
+            或将 <code>HERMES_API_URL</code> 指向兼容后端。
           </p>
           {lastError && (
             <p className="mt-3 text-xs text-red-700">{lastError}</p>
@@ -245,8 +244,7 @@ export function ModelConfigurationStep({
       </h2>
 
       <p className="mb-6 max-w-md text-base leading-relaxed text-primary-600">
-        核心会话能力可对接任意 OpenAI 兼容后端。通过 Hermes 网关 API，
-        你可以直接在工作空间内调整提供方和模型设置。
+        兼容任意 OpenAI 后端，可在工作空间内调整。
       </p>
 
       <div className="mb-6 w-full rounded-2xl border border-primary-200 bg-primary-100/70 p-4 text-left">
@@ -263,8 +261,7 @@ export function ModelConfigurationStep({
               className="mt-0.5 size-5 shrink-0"
             />
             <p className="text-sm">
-              当前暂时无法读取可编辑的后端配置。如果聊天功能已可用，你仍可继续，
-              并到后端自身的配置位置完成调整。
+              无法读取后端配置；聊天可用即可继续。
             </p>
           </div>
         )}
@@ -283,8 +280,7 @@ export function ModelConfigurationStep({
               className="mt-0.5 size-5 shrink-0"
             />
             <p className="text-sm">
-              当前尚未检测到模型信息。如果你的后端在外部管理模型，请先在那里完成设置，
-              再通过聊天测试确认连接是否正常。
+              未检测到模型信息；请先在后端配置。
             </p>
           </div>
         )}

@@ -8,9 +8,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import { requireRole } from '../../server/auth-middleware'
 import { requireJsonContentType } from '../../server/rate-limit'
 import {
-  getHermesApiToken,
   HERMES_API,
   ensureGatewayProbed,
+  getHermesApiToken,
 } from '../../server/gateway-capabilities'
 
 let cachedSkill: string | null = null

@@ -273,7 +273,7 @@ export async function readError(res: Response): Promise<string> {
 }
 
 export const missingAuthMessage =
-  'Hermes Agent connection failed. Make sure Hermes is running on localhost:8642.'
+  'Ti Work connection failed. Make sure Ti Work is running on localhost:8642.'
 
 export function isMissingAuth(message: string): boolean {
   return message.includes(missingAuthMessage)

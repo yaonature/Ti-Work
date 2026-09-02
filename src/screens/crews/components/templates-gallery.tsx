@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { EmojiIcon } from '@/components/emoji-icon'
 import {
   Add01Icon,
   Cancel01Icon,
@@ -11,6 +10,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import type { CrewTemplate, CrewTemplateCategory } from '@/lib/templates-api'
 import type { AgentDefinition } from '@/types/agent'
+import { EmojiIcon } from '@/components/emoji-icon'
 import {
   deleteUserTemplate,
   fetchTemplates,

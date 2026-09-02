@@ -252,7 +252,7 @@ export function HermesReconnectBanner({
         message?: string
       }
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || 'Hermes 智能体启动失败')
+        throw new Error(payload.error || 'Ti Work 智能体启动失败')
       }
 
       setMessage(
@@ -338,7 +338,7 @@ export function HermesReconnectBanner({
             </p>
             {isDisconnected && !message ? (
               <p className="text-xs opacity-70">
-                Ti Work 需要连接执行引擎（Hermes 网关）才能对话与使用增强功能。启动后端后点击「重试」。
+                Ti Work 需要连接执行引擎（Ti Work 网关）才能对话与使用增强功能。启动后端后点击「重试」。
               </p>
             ) : message ? (
               <p className="truncate text-xs opacity-80">{message}</p>

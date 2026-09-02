@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { EmojiIcon } from '@/components/emoji-icon'
 import {
   Add01Icon,
   Copy01Icon,
@@ -15,12 +14,14 @@ import {
 } from '@hugeicons/core-free-icons'
 import { AgentEditorDialog } from './agent-editor-dialog'
 import type { AgentDefinition, CreateAgentInput } from '@/types/agent'
+import { EmojiIcon } from '@/components/emoji-icon'
 import {
   createAgent,
   deleteAgent,
   fetchAgents,
   updateAgent,
 } from '@/lib/agents-api'
+import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
 import { toast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
@@ -149,6 +150,7 @@ export function AgentLibraryScreen() {
   const [filter, setFilter] = useState<Filter>('all')
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingAgent, setEditingAgent] = useState<AgentDefinition | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AgentDefinition | null>(null)
 
   const { data: agents = [], isLoading } = useQuery({
     queryKey: QUERY_KEY,
@@ -194,8 +196,14 @@ export function AgentLibraryScreen() {
   }
 
   function handleDelete(agent: AgentDefinition) {
-    if (!confirm(`确定要删除智能体“${agent.name}”吗？此操作无法撤销。`)) return
-    deleteMutation.mutate(agent.id)
+    setDeleteTarget(agent)
+  }
+
+  function confirmDelete() {
+    if (!deleteTarget) return
+    const targetId = deleteTarget.id
+    setDeleteTarget(null)
+    deleteMutation.mutate(targetId)
   }
 
   function handleDuplicate(agent: AgentDefinition) {
@@ -242,9 +250,9 @@ export function AgentLibraryScreen() {
       <div className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)] px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-[var(--theme-text)]">智能体库</h1>
+            <h1 className="text-lg font-semibold text-[var(--theme-text)]">数字员工</h1>
             <p className="text-xs text-[var(--theme-muted)] mt-0.5">
-              {builtInCount} 个内置 · {customCount} 个自定义
+              {builtInCount} 个内置模板 · {customCount} 个自定义员工
             </p>
           </div>
           <button
@@ -255,7 +263,7 @@ export function AgentLibraryScreen() {
             className="flex items-center gap-1.5 rounded-lg bg-[var(--theme-accent)] px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
             <HugeiconsIcon icon={Add01Icon} size={15} />
-            新建智能体
+            新建数字员工
           </button>
         </div>
 
@@ -271,7 +279,7 @@ export function AgentLibraryScreen() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="搜索智能体…"
+              placeholder="搜索数字员工…"
               className="w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card)] py-2 pl-8 pr-3 text-sm text-[var(--theme-text)] placeholder:text-[var(--theme-muted)] focus:border-[var(--theme-accent)] focus:outline-none"
             />
           </div>
@@ -304,7 +312,7 @@ export function AgentLibraryScreen() {
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <HugeiconsIcon icon={UserMultiple02Icon} size={40} className="text-[var(--theme-muted)]" />
             <p className="text-sm text-[var(--theme-muted)]">
-              {search ? '没有匹配当前搜索的智能体。' : '还没有智能体，先创建第一个吧。'}
+              {search ? '没有匹配当前搜索的数字员工。' : '还没有数字员工，先创建第一个吧。'}
             </p>
             {!search && (
               <button
@@ -314,7 +322,7 @@ export function AgentLibraryScreen() {
                 }}
                 className="text-sm text-[var(--theme-accent)] hover:underline"
               >
-                + 创建智能体
+                + 创建数字员工
               </button>
             )}
           </div>
@@ -340,6 +348,22 @@ export function AgentLibraryScreen() {
         isSubmitting={createMutation.isPending || updateMutation.isPending}
         onOpenChange={setEditorOpen}
         onSubmit={handleSubmit}
+      />
+
+      <ConfirmActionDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+        title="删除智能体"
+        description={
+          deleteTarget
+            ? `确定要删除智能体“${deleteTarget.name}”吗？此操作无法撤销。`
+            : ''
+        }
+        confirmLabel="确认删除"
+        confirmVariant="destructive"
+        onConfirm={confirmDelete}
       />
     </div>
   )

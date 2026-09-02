@@ -28,9 +28,8 @@ import {
   writeHubConfig,
   writeHubState,
 } from './hub-state'
-import type { HubConfig, HubLicenseSnapshot, HubState } from './hub-state'
-import type { EnterpriseConfig } from './hub-state'
 import { getHermesEnvPath, writeEnvValue } from './env-models'
+import type { EnterpriseConfig, HubConfig, HubLicenseSnapshot, HubState  } from './hub-state'
 
 const _require = createRequire(import.meta.url)
 type SqliteDb = import('better-sqlite3').Database

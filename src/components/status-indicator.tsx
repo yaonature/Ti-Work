@@ -84,7 +84,7 @@ function buildTooltip(
     if (!data.modelConfigured) parts.push('尚未选择模型')
   }
   if (data.status === 'enhanced') {
-    parts.push('已检测到 Hermes 网关增强能力')
+    parts.push('已检测到 Ti Work 网关增强能力')
   }
   if (data.activeModel) parts.push(`模型：${data.activeModel}`)
   return parts.join(' · ')

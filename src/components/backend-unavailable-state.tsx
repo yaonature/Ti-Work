@@ -20,7 +20,7 @@ export function BackendUnavailableState({ feature, description }: Props) {
         <div className="mt-4 space-y-2">
           <h2 className="text-lg font-semibold text-[var(--theme-text)]">{feature}</h2>
           <p className="text-sm leading-6 text-[var(--theme-muted)]">
-            当前后端不支持该功能。连接 Hermes 网关即可解锁{' '}
+            当前后端不支持该功能。连接 Ti Work 网关即可解锁{' '}
             {feature}。
           </p>
           {description ? (
@@ -33,7 +33,7 @@ export function BackendUnavailableState({ feature, description }: Props) {
               className="inline-flex items-center gap-2 rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-600"
             >
               <HugeiconsIcon icon={LinkSquare02Icon} size={16} strokeWidth={2} />
-              连接 Hermes 网关
+              连接 Ti Work 网关
             </button>
             <p className="mt-3 text-xs leading-5 text-[var(--theme-muted)]">
               无需配置：跟随引导连接后端，即可解锁增强功能。

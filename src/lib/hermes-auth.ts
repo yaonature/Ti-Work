@@ -32,7 +32,7 @@ export async function fetchHermesAuthStatus(
 
     throw error instanceof Error
       ? error
-      : new Error('Failed to connect to Hermes Agent')
+      : new Error('Failed to connect to Ti Work')
   } finally {
     globalThis.clearTimeout(timeout)
   }

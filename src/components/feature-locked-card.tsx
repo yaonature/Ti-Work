@@ -5,12 +5,13 @@
  */
 import { HugeiconsIcon } from '@hugeicons/react'
 import { LockIcon, SparklesIcon } from '@hugeicons/core-free-icons'
+import type {FeatureId} from '@/lib/feature-set';
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
   FEATURE_LABELS,
-  PLAN_META,
-  type FeatureId,
+  
+  PLAN_META
 } from '@/lib/feature-set'
 
 export function FeatureLockedCard({

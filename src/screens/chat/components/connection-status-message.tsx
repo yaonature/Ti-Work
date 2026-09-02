@@ -25,8 +25,8 @@ function classifyConnectionError(
   if (!normalizedError && !status) {
     return {
       title: '未连接',
-      description: 'Ti Work 当前无法连接到 Hermes。',
-      action: '请确认 Hermes 已启动，然后再试一次。',
+      description: '无法连接到 Hermes。',
+      action: '确认 Hermes 已启动。',
     }
   }
 
@@ -38,8 +38,8 @@ function classifyConnectionError(
   ) {
     return {
       title: '需要身份认证',
-      description: 'Hermes 拒绝了当前连接令牌。',
-      action: '请点击顶部横幅「一键连接」重试，或在设置中检查执行引擎配置。',
+      description: '连接令牌被拒绝。',
+      action: '「一键连接」重试，或检查执行引擎配置。',
     }
   }
 
@@ -50,16 +50,16 @@ function classifyConnectionError(
   ) {
     return {
       title: '需要先完成配对',
-      description: '当前设备尚未与 Hermes 完成配对。',
-      action: '请检查 Hermes Agent 连接状态。',
+      description: '此设备未完成配对。',
+      action: '检查 Ti Work 连接状态。',
     }
   }
 
   if (lower.includes('econnrefused') && lower.includes('8642')) {
     return {
-      title: 'Hermes WebAPI 未启动',
-      description: '8642 端口上的 Hermes WebAPI 服务尚未运行。',
-      action: '请执行：cd hermes-agent && pip install -e . && hermes-webapi',
+      title: 'Ti Work WebAPI 未启动',
+      description: '8642 端口服务未运行。',
+      action: '运行 hermes-webapi。',
     }
   }
 
@@ -72,15 +72,15 @@ function classifyConnectionError(
   ) {
     return {
       title: '无法连接 Hermes',
-      description: '无法访问当前配置的 Hermes 地址。',
-      action: '请确认 Hermes 正在运行，且 URL 配置正确。',
+      description: '无法访问配置的地址。',
+      action: '确认 Hermes 已运行且 URL 正确。',
     }
   }
 
   return {
     title: '连接异常',
-    description: normalizedError || '出现了一点问题。',
-    action: '请点击顶部横幅「一键连接」重试；如果网关已就绪，请在设置中检查模型配置。',
+    description: normalizedError || '连接出错。',
+    action: '「一键连接」重试，或检查模型配置。',
   }
 }
 

@@ -77,8 +77,8 @@ export const Route = createFileRoute('/api/connection-status')({
           status = 'enhanced'
           label = '增强模式'
           detail = modelConfigured
-            ? '核心会话可用，Hermes 网关 API 已就绪。'
-            : 'Hermes 网关 API 已就绪。选择模型即可开始会话。'
+            ? '核心会话可用，Ti Work 网关 API 已就绪。'
+            : 'Ti Work 网关 API 已就绪。选择模型即可开始会话。'
         } else if (chatReady && modelConfigured) {
           status = 'connected'
           label = '已连接'
@@ -92,7 +92,7 @@ export const Route = createFileRoute('/api/connection-status')({
             detail = '后端已连接。请选择服务提供方和模型以测试会话。'
           } else {
             detail =
-              '核心会话可用。增强的 Hermes 网关 API 为可选能力，可用时将自动解锁。'
+              '核心会话可用。增强的 Ti Work 网关 API 为可选能力，可用时将自动解锁。'
           }
         }
 

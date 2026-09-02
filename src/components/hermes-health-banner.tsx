@@ -56,7 +56,7 @@ export function HermesHealthBanner({
       }}
     >
       <span className="inline-block h-2 w-2 rounded-full bg-white/60 animate-pulse" />
-      <span>Hermes 智能体不可达{lastError ? ` — ${lastError}` : ''}</span>
+      <span>Ti Work 智能体不可达{lastError ? ` — ${lastError}` : ''}</span>
       <button
         type="button"
         onClick={() => {

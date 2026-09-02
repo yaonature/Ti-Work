@@ -6,9 +6,10 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { EmojiIcon } from '@/components/emoji-icon'
 import type { ConductorSettings } from '@/types/conductor'
+import { EmojiIcon } from '@/components/emoji-icon'
 import { cn } from '@/lib/utils'
+import { getProviderDisplayName } from '@/lib/provider-catalog'
 
 type AvailableModel = {
   id?: string
@@ -24,11 +25,7 @@ function getModelDisplayName(model: AvailableModel | undefined, modelId: string 
 function getProviderLabel(provider: string | null | undefined): string {
   const raw = provider?.trim()
   if (!raw) return '未知'
-  return raw
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(' ')
+  return getProviderDisplayName(raw)
 }
 
 function groupModelsByProvider(models: Array<AvailableModel>) {
