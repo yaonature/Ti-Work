@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
+import { DeliverySelector } from './delivery-selector'
 import { EmojiIcon } from '@/components/emoji-icon'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 const SCHEDULE_PRESETS = [
   { label: '每 15 分钟', value: 'every 15m' },
@@ -14,8 +17,6 @@ const SCHEDULE_PRESETS = [
   { label: '每天', value: '0 9 * * *' },
   { label: '每周', value: '0 9 * * 1' },
 ] as const
-
-const DELIVERY_OPTIONS = ['local', 'telegram', 'discord'] as const
 
 type CreateJobDialogProps = {
   open: boolean
@@ -75,19 +76,6 @@ export function CreateJobDialog({
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [open, onOpenChange])
-
-  function toggleDelivery(target: string) {
-    setForm((current) => {
-      const nextDeliver = current.deliver.includes(target)
-        ? current.deliver.filter((item) => item !== target)
-        : [...current.deliver, target]
-
-      return {
-        ...current,
-        deliver: nextDeliver,
-      }
-    })
-  }
 
   function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -154,7 +142,7 @@ export function CreateJobDialog({
                   className="mt-1 text-sm"
                   style={{ color: 'var(--theme-muted)' }}
                 >
-                  使用预设调度选项创建 Hermes 定时任务。
+                  使用预设调度选项创建定时任务。
                 </p>
               </div>
               <button
@@ -171,7 +159,7 @@ export function CreateJobDialog({
             <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
               <section className="space-y-2">
                 <label className="text-sm font-medium">名称</label>
-                <input
+                <Input
                   value={form.name}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -181,13 +169,7 @@ export function CreateJobDialog({
                   }
                   placeholder="例如：每日研究报告"
                   required
-                  className="w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1"
-                  style={{
-                    background: 'var(--theme-input)',
-                    borderColor: 'var(--theme-border)',
-                    color: 'var(--theme-text)',
-                    boxShadow: '0 0 0 0 transparent',
-                  }}
+                  className="w-full"
                 />
               </section>
 
@@ -232,7 +214,7 @@ export function CreateJobDialog({
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">自定义调度</label>
-                  <input
+                  <Input
                     value={form.schedule}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -242,12 +224,7 @@ export function CreateJobDialog({
                     }
                     placeholder="例如：every 30m 或 0 9 * * *"
                     required
-                    className="w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1"
-                    style={{
-                      background: 'var(--theme-input)',
-                      borderColor: 'var(--theme-border)',
-                      color: 'var(--theme-text)',
-                    }}
+                    className="w-full"
                   />
                   <p
                     className="text-xs"
@@ -260,7 +237,7 @@ export function CreateJobDialog({
 
               <section className="space-y-2">
                 <label className="text-sm font-medium">提示词</label>
-                <textarea
+                <Textarea
                   value={form.prompt}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -268,15 +245,10 @@ export function CreateJobDialog({
                       prompt: event.target.value,
                     }))
                   }
-                  placeholder="Hermes 应该做什么？"
+                  placeholder="描述这个定时任务要做什么？"
                   required
                   rows={5}
-                  className="w-full resize-none rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1"
-                  style={{
-                    background: 'var(--theme-input)',
-                    borderColor: 'var(--theme-border)',
-                    color: 'var(--theme-text)',
-                  }}
+                  className="w-full resize-none"
                 />
               </section>
 
@@ -293,7 +265,7 @@ export function CreateJobDialog({
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">技能</label>
-                  <input
+                  <Input
                     value={form.skillsInput}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -302,12 +274,7 @@ export function CreateJobDialog({
                       }))
                     }
                     placeholder="例如：research、writing、synthesis"
-                    className="w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1"
-                    style={{
-                      background: 'var(--theme-input)',
-                      borderColor: 'var(--theme-border)',
-                      color: 'var(--theme-text)',
-                    }}
+                    className="w-full"
                   />
                   <p
                     className="text-xs"
@@ -317,44 +284,15 @@ export function CreateJobDialog({
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">投递到</label>
-                  <div className="flex flex-wrap gap-2">
-                    {DELIVERY_OPTIONS.map((option) => {
-                      const isActive = form.deliver.includes(option)
-                      const needsGateway =
-                        option === 'telegram' || option === 'discord'
-                      return (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() => toggleDelivery(option)}
-                          title={
-                            needsGateway
-                              ? `需要为 ${option} 配置 Hermes 执行引擎（网关）`
-                              : undefined
-                          }
-                          className="rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition-colors"
-                          style={{
-                            background: isActive
-                              ? 'var(--theme-accent)'
-                              : 'var(--theme-card)',
-                            borderColor: isActive
-                              ? 'var(--theme-accent)'
-                              : 'var(--theme-border)',
-                            color: isActive
-                              ? '#fff'
-                              : needsGateway
-                                ? 'var(--theme-muted)'
-                                : 'var(--theme-text)',
-                          }}
-                        >
-                          {option} {needsGateway ? <EmojiIcon emoji="⚡" size={12} /> : null}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
+                <DeliverySelector
+                  value={form.deliver}
+                  onChange={(next) =>
+                    setForm((current) => ({
+                      ...current,
+                      deliver: next,
+                    }))
+                  }
+                />
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">重复</label>
@@ -413,7 +351,7 @@ export function CreateJobDialog({
                     </button>
                   </div>
                   {form.repeatMode === 'limited' ? (
-                    <input
+                    <Input
                       type="number"
                       min={1}
                       step={1}
@@ -424,12 +362,7 @@ export function CreateJobDialog({
                           repeatCount: event.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-1"
-                      style={{
-                        background: 'var(--theme-input)',
-                        borderColor: 'var(--theme-border)',
-                        color: 'var(--theme-text)',
-                      }}
+                      className="w-full"
                     />
                   ) : null}
                 </div>
@@ -465,7 +398,7 @@ export function CreateJobDialog({
                       <p className="text-xs" style={{ color: 'var(--theme-muted)' }}>
                         Shell script to run before the agent prompt — useful for change detection or data collection.
                       </p>
-                      <textarea
+                      <Textarea
                         value={form.preRunScript}
                         onChange={(event) =>
                           setForm((current) => ({
@@ -475,13 +408,7 @@ export function CreateJobDialog({
                         }
                         rows={4}
                         placeholder="#!/bin/bash&#10;echo 'pre-run data'"
-                        className="w-full rounded-xl border px-3 py-2.5 font-mono text-xs focus:outline-none focus:ring-1"
-                        style={{
-                          background: 'var(--theme-input)',
-                          borderColor: 'var(--theme-border)',
-                          color: 'var(--theme-text)',
-                          resize: 'vertical',
-                        }}
+                        className="w-full font-mono text-xs"
                       />
                     </div>
                   )}
