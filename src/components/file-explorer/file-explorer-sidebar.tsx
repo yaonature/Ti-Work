@@ -12,6 +12,7 @@ import {
   RefreshIcon,
   Upload01Icon,
 } from '@hugeicons/core-free-icons'
+import { useNavigate } from '@tanstack/react-router'
 import FilePreviewDialog from './file-preview-dialog'
 import { cn } from '@/lib/utils'
 import {
@@ -46,6 +47,12 @@ type FileExplorerSidebarProps = {
   className?: string
   /** When set, scopes the file explorer to this profile's workspace directory */
   profileName?: string
+  /**
+   * When 'authorized', roots the browser in the user's authorized workspace
+   * (权限与安全 → 目录访问) instead of `~/.hermes`. Used by the 执行中心 so the
+   * default browsing root never exposes the agent's own config directory.
+   */
+  rootScope?: 'authorized'
 }
 
 type ContextMenuState = {
@@ -89,13 +96,36 @@ function buildReference(pathValue: string) {
   return `See file: workspace/${normalized}`
 }
 
-async function fetchFileTree(profileName?: string): Promise<Array<FileEntry>> {
+type FileTreeResult =
+  | { ok: true; entries: Array<FileEntry> }
+  | { ok: false; notConfigured: boolean }
+
+async function fetchFileTree(
+  profileName?: string,
+  rootScope?: 'authorized',
+): Promise<FileTreeResult> {
   const params = new URLSearchParams({ action: 'list' })
   if (profileName) params.set('profile', profileName)
+  if (rootScope) params.set('root', rootScope)
   const res = await fetch(`/api/files?${params.toString()}`)
-  if (!res.ok) throw new Error('加载文件失败')
-  const data = (await res.json()) as { entries?: Array<FileEntry> }
-  return Array.isArray(data.entries) ? data.entries : []
+  if (res.ok) {
+    const data = (await res.json()) as { entries?: Array<FileEntry> }
+    return {
+      ok: true,
+      entries: Array.isArray(data.entries) ? data.entries : [],
+    }
+  }
+  // Distinguish "workspace not configured yet" (403) from real errors so the
+  // UI can guide the user to 权限与安全 instead of showing a generic failure.
+  let notConfigured = false
+  try {
+    const data = (await res.json()) as { code?: string }
+    notConfigured = data.code === 'workspace_not_configured'
+  } catch {
+    // ignore JSON parse failure — handled as a generic error below
+  }
+  if (notConfigured) return { ok: false, notConfigured: true }
+  throw new Error('加载文件失败')
 }
 
 function filterTree(entries: Array<FileEntry>, term: string): Array<FileEntry> {
@@ -126,6 +156,7 @@ export function FileExplorerSidebar({
   hidden = false,
   className,
   profileName,
+  rootScope,
 }: FileExplorerSidebarProps) {
   const rootLabel =
     profileName && profileName !== 'default'
@@ -142,21 +173,28 @@ export function FileExplorerSidebar({
   const [promptValue, setPromptValue] = useState('')
   const [previewPath, setPreviewPath] = useState<string | null>(null)
   const [pendingDeleteEntry, setPendingDeleteEntry] = useState<FileEntry | null>(null)
+  const [workspaceNotConfigured, setWorkspaceNotConfigured] = useState(false)
   const uploadTargetRef = useRef<string>('')
   const uploadInputRef = useRef<HTMLInputElement | null>(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setWorkspaceNotConfigured(false)
     try {
-      const nextEntries = await fetchFileTree(profileName)
-      setEntries(nextEntries)
+      const result = await fetchFileTree(profileName, rootScope)
+      if (!result.ok) {
+        setEntries([])
+        setWorkspaceNotConfigured(result.notConfigured)
+        return
+      }
+      setEntries(result.entries)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
     }
-  }, [profileName])
+  }, [profileName, rootScope])
 
   useEffect(() => {
     void refresh()
@@ -233,11 +271,12 @@ export function FileExplorerSidebar({
           action: 'delete',
           path: entry.path,
           ...(profileName ? { profile: profileName } : {}),
+          ...(rootScope ? { root: rootScope } : {}),
         }),
       })
       await refresh()
     },
-    [refresh, profileName],
+    [refresh, profileName, rootScope],
   )
 
   const handleDownload = useCallback(
@@ -247,6 +286,7 @@ export function FileExplorerSidebar({
         path: entry.path,
       })
       if (profileName) params.set('profile', profileName)
+      if (rootScope) params.set('root', rootScope)
       const res = await fetch(`/api/files?${params.toString()}`)
       if (!res.ok) return
       const blob = await res.blob()
@@ -257,7 +297,7 @@ export function FileExplorerSidebar({
       anchor.click()
       URL.revokeObjectURL(url)
     },
-    [profileName],
+    [profileName, rootScope],
   )
 
   const handleUploadClick = useCallback((targetPath: string) => {
@@ -275,12 +315,13 @@ export function FileExplorerSidebar({
         form.append('path', uploadTargetRef.current || '')
         form.append('file', file)
         if (profileName) form.append('profile', profileName)
+        if (rootScope) form.append('root', rootScope)
         await fetch('/api/files', { method: 'POST', body: form })
       }
       event.target.value = ''
       await refresh()
     },
-    [refresh, profileName],
+    [refresh, profileName, rootScope],
   )
 
   const handlePromptSubmit = useCallback(async () => {
@@ -288,6 +329,8 @@ export function FileExplorerSidebar({
     const value = promptValue.trim()
     if (!value) return
     const profilePayload = profileName ? { profile: profileName } : {}
+    const rootPayload = rootScope ? { root: rootScope } : {}
+    const basePayload = { ...profilePayload, ...rootPayload }
 
     if (promptState.mode === 'rename') {
       const parent = getParentPath(promptState.targetPath)
@@ -299,7 +342,7 @@ export function FileExplorerSidebar({
           action: 'rename',
           from: promptState.targetPath,
           to: nextPath,
-          ...profilePayload,
+          ...basePayload,
         }),
       })
     } else if (promptState.mode === 'new-folder') {
@@ -309,7 +352,7 @@ export function FileExplorerSidebar({
       await fetch('/api/files', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'mkdir', path: nextPath, ...profilePayload }),
+        body: JSON.stringify({ action: 'mkdir', path: nextPath, ...basePayload }),
       })
     } else {
       const nextPath = promptState.targetPath
@@ -322,7 +365,7 @@ export function FileExplorerSidebar({
           action: 'write',
           path: nextPath,
           content: '',
-          ...profilePayload,
+          ...basePayload,
         }),
       })
     }
@@ -330,7 +373,7 @@ export function FileExplorerSidebar({
     setPromptState(null)
     setPromptValue('')
     await refresh()
-  }, [promptState, promptValue, refresh, profileName])
+  }, [promptState, promptValue, refresh, profileName, rootScope])
 
   const handleFileClick = useCallback(
     (entry: FileEntry) => {
@@ -450,7 +493,35 @@ export function FileExplorerSidebar({
 
       <ScrollAreaRoot className="flex-1 min-h-0">
         <ScrollAreaViewport className="px-1">
-          {loading ? (
+          {workspaceNotConfigured ? (
+            <div className="flex flex-col items-center justify-center gap-3 px-4 py-8 text-center">
+              <div className="flex size-10 items-center justify-center rounded-xl border border-primary-200 bg-primary-100/60">
+                <HugeiconsIcon
+                  icon={Folder01Icon}
+                  size={20}
+                  strokeWidth={1.5}
+                  className="text-primary-500"
+                />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-primary-800">
+                  尚未配置工作区
+                </p>
+                <p className="mt-1 text-xs text-primary-500 text-pretty">
+                  请先在权限与安全中为智能体授权可访问的目录。
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void navigate({ to: '/audit' })}
+                className="mt-1"
+              >
+                <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
+                前往权限与安全
+              </Button>
+            </div>
+          ) : loading ? (
             <div className="px-3 py-2 text-xs text-primary-500">加载中…</div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center gap-3 px-4 py-8 text-center">
@@ -648,6 +719,7 @@ export function FileExplorerSidebar({
         onClose={() => setPreviewPath(null)}
         onSaved={refresh}
         profileName={profileName}
+        rootScope={rootScope}
       />
 
       <ConfirmActionDialog

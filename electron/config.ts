@@ -95,7 +95,7 @@ export function buildTrayMenuTemplate(state: TrayMenuState): Array<TrayMenuItem>
     },
     {
       id: 'restart-engine',
-      label: '重启 Hermes 执行引擎',
+      label: '重启 Ti Work 执行引擎',
       enabled: state.engineRunning,
       action: 'restart-engine',
     },

@@ -21,6 +21,7 @@ import {
   Notification,
   Tray,
   app,
+  dialog,
   ipcMain,
   nativeImage,
 } from 'electron'
@@ -45,13 +46,13 @@ import {
 } from './config'
 import { TRAY_ICON_DATA_URL } from './tray-icon'
 import { EngineManager } from './hermes-engine'
-import type { EngineStatusInfo } from './hermes-engine'
 import { fetchUpdateManifest } from './update-check'
 import { isNewerVersion, nextUpdateState, shouldCheckForUpdates } from './updater'
+import { errorLine, logLine } from './safe-log'
+import type { EngineStatusInfo } from './hermes-engine'
 import type { TrayMenuAction } from './config'
 import type { UpdateManifest } from './update-check'
 import type { UpdateState } from './updater'
-import { errorLine, logLine } from './safe-log'
 
 const CHILD_STOP_TIMEOUT_MS = 5_000
 
@@ -500,6 +501,15 @@ function setupIpc(): void {
     await engineManager.ensure()
     return engineManager.info
   })
+  // 原生目录选择对话框：供权限页“选择目录”使用，返回绝对路径或 null（取消）。
+  ipcMain.handle('dialog:select-directory', async () => {
+    const result = await dialog.showOpenDialog(mainWindow ?? undefined, {
+      title: '选择目录',
+      properties: ['openDirectory', 'createDirectory'],
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths[0]
+  })
 }
 
 async function runUpdateCheck(): Promise<void> {
@@ -585,8 +595,8 @@ async function bootstrap(): Promise<void> {
         process.platform === 'win32' && engineError.includes('未找到 Hermes 引擎')
       if (!engineMissing) {
         notify(
-          'Hermes 执行引擎不可用',
-          engineError || '请从托盘菜单尝试重启 Hermes 执行引擎',
+          'Ti Work 执行引擎不可用',
+          engineError || '请从托盘菜单尝试重启 Ti Work 执行引擎',
         )
       }
     }

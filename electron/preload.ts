@@ -37,6 +37,9 @@ export interface AppInfo {
 
 const bridge = {
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke('app:get-info'),
+  // 打开系统目录选择对话框，返回所选目录的绝对路径；取消则返回 null。
+  selectDirectory: (): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:select-directory'),
   setOpenAtLogin: (enabled: boolean): Promise<boolean> =>
     ipcRenderer.invoke('app:set-open-at-login', enabled),
   restartBackend: (): Promise<BackendStatusInfo> =>
