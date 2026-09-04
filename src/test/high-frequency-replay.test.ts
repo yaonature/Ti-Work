@@ -13,8 +13,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   consumeHighFrequencyReplay,
   stashHighFrequencyReplay,
-  type HighFrequencyReplayPayload,
 } from '../screens/chat/high-frequency-replay'
+import type { HighFrequencyReplayPayload } from '../screens/chat/high-frequency-replay'
 
 const BASE_PAYLOAD: HighFrequencyReplayPayload = {
   message: '修复 src/index.ts 的报错并跑一遍测试',

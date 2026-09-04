@@ -5,8 +5,8 @@ import {
   cleanIntentText,
   detectIntentAction,
   detectIntentCategory,
-  type IntentCategory,
 } from './intent-classification'
+import type { IntentCategory } from './intent-classification'
 
 const DEFAULT_MAX_LENGTH = 40
 const DEFAULT_MAX_WORDS = 6
