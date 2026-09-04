@@ -10,7 +10,7 @@
  */
 import { createFileRoute } from '@tanstack/react-router'
 import { requireAuth, requireRole } from '../../server/auth-middleware'
-import { HERMES_API } from '../../server/gateway-capabilities'
+import { HERMES_API, gatewayFetch } from '../../server/agent-hub-client'
 import { reloadGatewayConfig } from '../../server/gateway-reload'
 import {
   getChannelSettings,
@@ -31,8 +31,8 @@ const PROBE_TIMEOUT_MS = 3000
 
 async function gatewayOnline(): Promise<boolean> {
   try {
-    const res = await fetch(`${HERMES_API}/health`, {
-      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    const res = await gatewayFetch('/health', {
+      timeoutMs: PROBE_TIMEOUT_MS,
     })
     return res.ok
   } catch {
@@ -44,15 +44,18 @@ async function reloadAfterWrite(): Promise<{
   status: 'reloaded' | 'reload-failed' | 'gateway-offline'
   detail: string
 }> {
+  // reloadGatewayConfig 回调拿到完整 URL（含 baseUrl），剥离前缀后转交统一客户端
+  const stripBase = (url: string): string =>
+    url.startsWith(HERMES_API) ? url.slice(HERMES_API.length) : url
   const result = await reloadGatewayConfig({
     baseUrl: HERMES_API,
     reloadEndpoints: RELOAD_ENDPOINTS,
     probe: async () => gatewayOnline(),
     reloadRequest: async (url) => {
       try {
-        const res = await fetch(url, {
+        const res = await gatewayFetch(stripBase(url), {
           method: 'POST',
-          signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+          timeoutMs: PROBE_TIMEOUT_MS,
         })
         return { ok: res.ok, status: res.status }
       } catch {

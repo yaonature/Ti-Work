@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../../server/auth-middleware'
-import { HERMES_API, getHermesApiToken } from '../../../server/gateway-capabilities'
+import { gatewayFetch } from '../../../server/agent-hub-client'
 import { readSkillsSettings } from './settings'
 
 export type HubSkillSource = 'skillsmp' | 'installed-fallback'
@@ -35,11 +35,6 @@ function skillsmpHeaders(): HeadersInit {
     Authorization: `Bearer ${key}`,
     'Content-Type': 'application/json',
   }
-}
-
-function hermesAuthHeaders(): Record<string, string> {
-  const token = getHermesApiToken()
-  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 function asRecord(v: unknown): Record<string, unknown> {
@@ -125,10 +120,7 @@ async function searchSkillsmp(
 
 async function fetchInstalledIds(): Promise<Set<string>> {
   try {
-    const res = await fetch(`${HERMES_API}/api/skills`, {
-      headers: hermesAuthHeaders(),
-      signal: AbortSignal.timeout(5_000),
-    })
+    const res = await gatewayFetch('/api/skills', { timeoutMs: 5_000 })
     if (!res.ok) return new Set()
     const data = asRecord(await res.json())
     const items = Array.isArray(data.skills)

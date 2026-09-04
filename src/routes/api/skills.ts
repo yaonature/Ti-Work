@@ -8,6 +8,7 @@ import {
   ensureGatewayProbed,
   getCapabilities,
 } from '../../server/gateway-capabilities'
+import { gatewayFetch } from '../../server/agent-hub-client'
 import { requireJsonContentType } from '../../server/rate-limit'
 
 type SkillsTab = 'installed' | 'marketplace' | 'featured'
@@ -39,8 +40,6 @@ type SkillSummary = {
   featuredGroup?: string
   security: SecurityRisk
 }
-
-const HERMES_API_URL = process.env.HERMES_API_URL || 'http://127.0.0.1:8642'
 
 const KNOWN_CATEGORIES = [
   'All',
@@ -332,7 +331,7 @@ function normalizeSkill(value: unknown): SkillSummary | null {
 }
 
 async function fetchHermesSkills(): Promise<Array<SkillSummary>> {
-  const response = await fetch(`${HERMES_API_URL}/api/skills`)
+  const response = await gatewayFetch('/api/skills')
   if (!response.ok) {
     const body = await response.text().catch(() => '')
     throw new Error(body || `Hermes skills request failed (${response.status})`)

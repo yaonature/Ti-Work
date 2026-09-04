@@ -1,4 +1,5 @@
-import { HERMES_API, getHermesApiToken } from './gateway-capabilities'
+import { gatewayFetch } from './agent-hub-client'
+import { getHermesApiToken } from './gateway-capabilities'
 
 /** Cached first available model from /v1/models — used as fallback when no model is specified. */
 let _cachedDefaultModel: string | null = null
@@ -10,13 +11,7 @@ async function getDefaultModel(): Promise<string> {
     return _cachedDefaultModel
   }
   try {
-    const headers: Record<string, string> = {}
-    const token = getHermesApiToken()
-    if (token) headers['Authorization'] = `Bearer ${token}`
-    const res = await fetch(`${HERMES_API}/v1/models`, {
-      headers,
-      signal: AbortSignal.timeout(3_000),
-    })
+    const res = await gatewayFetch('/v1/models', { timeoutMs: 3_000 })
     if (res.ok) {
       const data = (await res.json()) as { data?: Array<{ id: string }> }
       if (data.data && data.data.length > 0) {
@@ -160,22 +155,32 @@ export async function openaiChat(
   options: OpenAIChatOptions = {},
 ): Promise<string | AsyncGenerator<StreamChunkType, void, void>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  // 直连降级：使用自定义端点与 Key；否则走本地 Hermes 网关
-  const baseUrl = (options.baseUrl || HERMES_API).replace(/\/+$/, '')
   const bearerToken = options.apiKey || getHermesApiToken()
-  if (bearerToken) {
-    headers['Authorization'] = `Bearer ${bearerToken}`
-  }
   if (options.sessionId && !options.baseUrl) {
     headers['X-Hermes-Session-Id'] = options.sessionId
   }
 
-  const response = await fetch(`${baseUrl}/v1/chat/completions`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(await buildRequestBody(messages, options)),
-    signal: options.signal,
-  })
+  const body = JSON.stringify(await buildRequestBody(messages, options))
+  const response: Response = options.baseUrl
+    ? // 直连降级：使用自定义端点与 Key
+      await fetch(`${options.baseUrl.replace(/\/+$/, '')}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          ...(bearerToken
+            ? { Authorization: `Bearer ${bearerToken}` }
+            : {}),
+        },
+        body,
+        signal: options.signal,
+      })
+    : // 走本地网关：统一客户端自动注入网关 Bearer
+      await gatewayFetch('/v1/chat/completions', {
+        method: 'POST',
+        headers,
+        body,
+        signal: options.signal,
+      })
 
   if (!response.ok) {
     const text = await response.text().catch(() => '')

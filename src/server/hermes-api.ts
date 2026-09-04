@@ -11,15 +11,10 @@ import {
   ensureGatewayProbed,
   getCapabilities,
   getGatewayOfflineMessage,
-  getHermesApiToken,
   isGatewayReachable,
   probeGateway,
 } from './gateway-capabilities'
-
-const _authHeaders = (): Record<string, string> => {
-  const token = getHermesApiToken()
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
+import { GatewayError, gatewayFetch, gatewayJson } from './agent-hub-client'
 
 console.log(`[hermes-api] Configured API: ${HERMES_API}`)
 
@@ -64,48 +59,22 @@ export type HermesConfig = {
 // ── Helpers ───────────────────────────────────────────────────────
 
 async function hermesGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${HERMES_API}${path}`, { headers: _authHeaders() })
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new Error(`Hermes API ${path}: ${res.status} ${body}`)
-  }
-  return res.json() as Promise<T>
+  return gatewayJson<T>(path)
 }
 
 async function hermesPost<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${HERMES_API}${path}`, {
-    method: 'POST',
-    headers: { ..._authHeaders(), 'Content-Type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined,
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`Hermes API POST ${path}: ${res.status} ${text}`)
-  }
-  return res.json() as Promise<T>
+  return gatewayJson<T>(path, { method: 'POST', body: body ?? undefined })
 }
 
 async function hermesPatch<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${HERMES_API}${path}`, {
-    method: 'PATCH',
-    headers: { ..._authHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`Hermes API PATCH ${path}: ${res.status} ${text}`)
-  }
-  return res.json() as Promise<T>
+  return gatewayJson<T>(path, { method: 'PATCH', body })
 }
 
 async function hermesDeleteReq(path: string): Promise<void> {
-  const res = await fetch(`${HERMES_API}${path}`, {
-    method: 'DELETE',
-    headers: _authHeaders(),
-  })
+  const res = await gatewayFetch(path, { method: 'DELETE' })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
-    throw new Error(`Hermes API DELETE ${path}: ${res.status} ${text}`)
+    throw new GatewayError('DELETE', path, res.status, text)
   }
 }
 
@@ -329,19 +298,20 @@ export async function streamChat(
   },
   opts: StreamChatOptions,
 ): Promise<void> {
-  const res = await fetch(
-    `${HERMES_API}/api/sessions/${sessionId}/chat/stream`,
-    {
-      method: 'POST',
-      headers: { ..._authHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: opts.signal,
-    },
-  )
+  const res = await gatewayFetch(`/api/sessions/${sessionId}/chat/stream`, {
+    method: 'POST',
+    body,
+    signal: opts.signal,
+  })
 
   if (!res.ok) {
     const text = await res.text().catch(() => '')
-    throw new Error(`Hermes chat stream: ${res.status} ${text}`)
+    throw new GatewayError(
+      'POST',
+      `/api/sessions/${sessionId}/chat/stream`,
+      res.status,
+      text,
+    )
   }
 
   const reader = res.body?.getReader()
@@ -436,8 +406,9 @@ export async function listModels(): Promise<{
 
 export async function isHermesAvailable(): Promise<boolean> {
   try {
-    const res = await fetch(`${HERMES_API}/health`, {
+    const res = await gatewayFetch('/health', {
       signal: AbortSignal.timeout(3000),
+      skipAuth: true,
     })
     if (!res.ok) {
       await probeGateway({ force: true })

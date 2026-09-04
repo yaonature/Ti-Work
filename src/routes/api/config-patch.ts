@@ -14,7 +14,7 @@ import os from 'node:os'
 import { createFileRoute } from '@tanstack/react-router'
 import YAML from 'yaml'
 import { requireRole } from '../../server/auth-middleware'
-import { HERMES_API, getHermesApiToken } from '../../server/gateway-capabilities'
+import { HERMES_API, gatewayFetch } from '../../server/agent-hub-client'
 import { reloadGatewayConfig } from '../../server/gateway-reload'
 import { getHermesConfigPath, getHermesEnvPath } from '../../server/env-models'
 import type { ReloadResult } from '../../server/gateway-reload'
@@ -118,17 +118,18 @@ function applyPathUpdate(
 }
 
 async function tryReloadGateway(): Promise<ReloadResult | null> {
+  // reloadGatewayConfig 的 probe / reloadRequest 回调拿到完整 URL（含 baseUrl），
+  // gatewayFetch 需要相对路径，故剥离 baseUrl 前缀后转交统一客户端。
+  const stripBase = (url: string): string =>
+    url.startsWith(HERMES_API) ? url.slice(HERMES_API.length) : url
   try {
-    const token = getHermesApiToken()
-    const headers = token ? { Authorization: `Bearer ${token}` } : undefined
     return await reloadGatewayConfig({
       baseUrl: HERMES_API,
       reloadEndpoints: RELOAD_ENDPOINTS,
       probe: async (url) => {
         try {
-          const res = await fetch(url, {
-            headers,
-            signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+          const res = await gatewayFetch(stripBase(url), {
+            timeoutMs: PROBE_TIMEOUT_MS,
           })
           return res.ok
         } catch {
@@ -136,10 +137,9 @@ async function tryReloadGateway(): Promise<ReloadResult | null> {
         }
       },
       reloadRequest: async (url) => {
-        const res = await fetch(url, {
+        const res = await gatewayFetch(stripBase(url), {
           method: 'POST',
-          headers,
-          signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+          timeoutMs: PROBE_TIMEOUT_MS,
         })
         return { ok: res.ok, status: res.status }
       },

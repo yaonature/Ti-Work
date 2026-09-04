@@ -3,7 +3,7 @@
  * Ensures Studio is compatible with the running Hermes gateway version.
  */
 
-import { HERMES_API, getHermesApiToken } from './gateway-capabilities'
+import { gatewayFetch } from './agent-hub-client'
 
 export interface VersionInfo {
   version?: string
@@ -23,11 +23,6 @@ const CACHE_TTL_MS = 60_000 // Cache version for 1 minute
  * Tries multiple endpoints for compatibility with different versions.
  */
 async function fetchVersionInfo(): Promise<VersionInfo | null> {
-  const token = getHermesApiToken()
-  const authHeaders: Record<string, string> = token
-    ? { Authorization: `Bearer ${token}` }
-    : {}
-
   // Try different version endpoints for compatibility
   const endpoints = [
     '/version', // Common endpoint
@@ -37,10 +32,7 @@ async function fetchVersionInfo(): Promise<VersionInfo | null> {
 
   for (const endpoint of endpoints) {
     try {
-      const res = await fetch(`${HERMES_API}${endpoint}`, {
-        headers: authHeaders,
-        signal: AbortSignal.timeout(3000),
-      })
+      const res = await gatewayFetch(endpoint, { timeoutMs: 3000 })
 
       if (res.ok) {
         const data = (await res.json()) as unknown

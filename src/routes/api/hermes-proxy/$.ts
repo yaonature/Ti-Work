@@ -1,17 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
-import {
-  HERMES_API,
-  getGatewayOfflineMessage,
-  getHermesApiToken,
-} from '../../../server/gateway-capabilities'
+import { gatewayFetch } from '../../../server/agent-hub-client'
+import { getGatewayOfflineMessage } from '../../../server/gateway-capabilities'
 import { isAuthenticated } from '../../../server/auth-middleware'
 import { getLiveBootstrapState } from '../../../server/hermes-bootstrap'
-import {
-  
-  getEnvConfiguredModels
-} from '../../../server/env-models'
+import { getEnvConfiguredModels } from '../../../server/env-models'
 import { applyEnterpriseModelAllowlist } from '../../../server/enterprise-models'
-import type {EnvModelEntry} from '../../../server/env-models';
+import type {
+  GatewayFetchOptions,
+  GatewayMethod,
+} from '../../../server/agent-hub-client'
+import type { EnvModelEntry } from '../../../server/env-models'
 
 /**
  * 网关不可达时的错误文案：感知自举安装状态（安装中/启动中/失败），
@@ -94,21 +92,20 @@ function buildModelFallbackResponse(targetPath: string): Response | null {
 async function proxyRequest(request: Request, splat: string) {
   const incomingUrl = new URL(request.url)
   const targetPath = splat.startsWith('/') ? splat : `/${splat}`
-  const targetUrl = new URL(`${HERMES_API}${targetPath}`)
-  targetUrl.search = incomingUrl.search
 
-  const headers = new Headers(request.headers)
-  headers.delete('host')
-  headers.delete('content-length')
-  const token = getHermesApiToken()
-  if (token && !headers.has('authorization')) {
-    headers.set('authorization', `Bearer ${token}`)
+  // 透传入站头（host / content-length 交由 fetch 引擎处理），统一客户端会补齐 Bearer
+  const headers: Record<string, string> = {}
+  for (const [key, value] of request.headers.entries()) {
+    const lower = key.toLowerCase()
+    if (lower === 'host' || lower === 'content-length') continue
+    headers[key] = value
   }
 
-  const init: RequestInit = {
-    method: request.method,
+  const init: GatewayFetchOptions = {
+    method: request.method as GatewayMethod,
     headers,
     redirect: 'manual',
+    search: incomingUrl.search,
   }
 
   if (!['GET', 'HEAD'].includes(request.method.toUpperCase())) {
@@ -117,7 +114,7 @@ async function proxyRequest(request: Request, splat: string) {
 
   let upstream: Response
   try {
-    upstream = await fetch(targetUrl, init)
+    upstream = await gatewayFetch(targetPath, init)
   } catch {
     // 网关不可达（未安装 / 未启动）：模型列表类接口降级返回 env 兜底模型
     const fallback = buildModelFallbackResponse(targetPath)

@@ -6,10 +6,7 @@
  * the ProviderUsageEntry format consumed by the usage meter components.
  */
 import { createFileRoute } from '@tanstack/react-router'
-import {
-  HERMES_API,
-  getHermesApiToken,
-} from '../../server/gateway-capabilities'
+import { gatewayFetch } from '../../server/agent-hub-client'
 import { isAuthenticated } from '../../server/auth-middleware'
 
 type UsageLine = {
@@ -181,13 +178,9 @@ function mapEntry(entry: HermesProviderUsage): ProviderUsageEntry {
 }
 
 async function fetchProviderUsage(force: boolean): Promise<Array<ProviderUsageEntry>> {
-  const token = getHermesApiToken()
-  const authHeaders: Record<string, string> = token
-    ? { Authorization: `Bearer ${token}` }
-    : {}
-
-  const url = `${HERMES_API}/api/usage${force ? '?force=1' : ''}`
-  const res = await fetch(url, { headers: authHeaders })
+  const res = await gatewayFetch('/api/usage', {
+    search: force ? 'force=1' : undefined,
+  })
   if (!res.ok) return []
 
   const raw = (await res.json().catch(() => null)) as HermesUsageResponse | null

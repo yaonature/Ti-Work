@@ -6,8 +6,8 @@ import { promisify } from 'node:util'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../../server/auth-middleware'
+import { gatewayFetch } from '../../../server/agent-hub-client'
 import {
-  HERMES_API,
   ensureGatewayProbed,
   getCapabilities,
 } from '../../../server/gateway-capabilities'
@@ -202,11 +202,11 @@ export const Route = createFileRoute('/api/skills/install')({
           await ensureGatewayProbed()
           if (getCapabilities().skills) {
             try {
-              const res = await fetch(`${HERMES_API}/api/skills/install`, {
+              const res = await gatewayFetch('/api/skills/install', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ skillId }),
-                signal: AbortSignal.timeout(30_000),
+                timeoutMs: 30_000,
               })
               if (res.ok) {
                 return json({ ok: true, installed: true, skillId, method: 'gateway' })

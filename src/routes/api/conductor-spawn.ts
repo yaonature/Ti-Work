@@ -7,11 +7,8 @@ import { dirname, resolve } from 'node:path'
 import { createFileRoute } from '@tanstack/react-router'
 import { requireRole } from '../../server/auth-middleware'
 import { requireJsonContentType } from '../../server/rate-limit'
-import {
-  HERMES_API,
-  ensureGatewayProbed,
-  getHermesApiToken,
-} from '../../server/gateway-capabilities'
+import { ensureGatewayProbed } from '../../server/gateway-capabilities'
+import { gatewayFetch } from '../../server/agent-hub-client'
 
 let cachedSkill: string | null = null
 
@@ -122,11 +119,6 @@ function buildOrchestratorPrompt(
   ].join('\n')
 }
 
-function authHeaders(): Record<string, string> {
-  const token = getHermesApiToken()
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
-
 function nowPlusSecondsIso(seconds: number): string {
   const t = new Date(Date.now() + seconds * 1000)
   return t.toISOString().replace(/\.\d{3}Z$/, 'Z')
@@ -145,9 +137,9 @@ async function createHermesJob(payload: {
     deliver: payload.deliver ?? 'local',
   })
   await ensureGatewayProbed()
-  const res = await fetch(`${HERMES_API}/api/jobs`, {
+  const res = await gatewayFetch('/api/jobs', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    headers: { 'Content-Type': 'application/json' },
     body,
   })
   const text = await res.text()

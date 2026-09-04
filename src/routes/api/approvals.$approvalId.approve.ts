@@ -14,8 +14,8 @@ import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '../../server/auth-middleware'
 import { requireJsonContentType } from '../../server/rate-limit'
 import { recordAuthorizationDecision } from '../../server/policy-telemetry'
+import { gatewayFetch } from '../../server/agent-hub-client'
 import {
-  HERMES_API,
   ensureGatewayProbed,
   getGatewayCapabilities,
   sendChat,
@@ -68,13 +68,13 @@ export const Route = createFileRoute('/api/approvals/$approvalId/approve')({
         const caps = getGatewayCapabilities()
         if (caps.sessions) {
           try {
-            const res = await fetch(
-              `${HERMES_API}/api/sessions/${sessionKey}/approve`,
+            const res = await gatewayFetch(
+              `/api/sessions/${sessionKey}/approve`,
               {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ scope }),
-                signal: AbortSignal.timeout(5_000),
+                timeoutMs: 5_000,
               },
             )
             if (res.ok) {

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { isAuthenticated } from '@/server/auth-middleware'
-import { HERMES_API, getHermesApiToken } from '@/server/gateway-capabilities'
+import { gatewayFetch } from '@/server/agent-hub-client'
 
 const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
   'claude-opus-4-6': 200_000,
@@ -37,11 +37,6 @@ function getContextWindow(model: string): number {
   return 200_000
 }
 
-function authHeaders(): Record<string, string> {
-  const token = getHermesApiToken()
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
-
 const CHARS_PER_TOKEN = 3.5
 
 export const Route = createFileRoute('/api/context-usage')({
@@ -61,12 +56,9 @@ export const Route = createFileRoute('/api/context-usage')({
 
           if (sessionId) {
             try {
-              const res = await fetch(
-                `${HERMES_API}/api/sessions/${encodeURIComponent(sessionId)}`,
-                {
-                  headers: authHeaders(),
-                  signal: AbortSignal.timeout(3000),
-                },
+              const res = await gatewayFetch(
+                `/api/sessions/${encodeURIComponent(sessionId)}`,
+                { timeoutMs: 3000 },
               )
               if (res.ok) {
                 const data = (await res.json()) as {
@@ -82,13 +74,10 @@ export const Route = createFileRoute('/api/context-usage')({
           // Fallback: most recent active session
           if (!sessionData) {
             try {
-              const listRes = await fetch(
-                `${HERMES_API}/api/sessions?limit=1`,
-                {
-                  headers: authHeaders(),
-                  signal: AbortSignal.timeout(3000),
-                },
-              )
+              const listRes = await gatewayFetch('/api/sessions', {
+                search: 'limit=1',
+                timeoutMs: 3000,
+              })
               if (listRes.ok) {
                 const listData = (await listRes.json()) as {
                   items?: Array<Record<string, unknown>>
@@ -156,12 +145,9 @@ export const Route = createFileRoute('/api/context-usage')({
             try {
               const targetSessionId = sessionId || String(sessionData.id || '')
               if (targetSessionId) {
-                const msgRes = await fetch(
-                  `${HERMES_API}/api/sessions/${encodeURIComponent(targetSessionId)}/messages`,
-                  {
-                    headers: authHeaders(),
-                    signal: AbortSignal.timeout(5000),
-                  },
+                const msgRes = await gatewayFetch(
+                  `/api/sessions/${encodeURIComponent(targetSessionId)}/messages`,
+                  { timeoutMs: 5000 },
                 )
                 if (msgRes.ok) {
                   const msgData = (await msgRes.json()) as {

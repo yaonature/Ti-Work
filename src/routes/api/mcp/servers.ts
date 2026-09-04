@@ -6,11 +6,10 @@ import YAML from 'yaml'
 import { requireAuth, requireRole } from '../../../server/auth-middleware'
 import { requireJsonContentType } from '../../../server/rate-limit'
 import {
-  HERMES_API,
   ensureGatewayProbed,
   getCapabilities,
-  getHermesApiToken,
 } from '../../../server/gateway-capabilities'
+import { gatewayFetch } from '../../../server/agent-hub-client'
 import { createCapabilityUnavailablePayload } from '@/lib/feature-gates'
 
 // ─── Local config file I/O (mirrors hermes-config.ts) ────────────────────────
@@ -67,11 +66,6 @@ type McpServerRecord = {
   timeout?: number
   connectTimeout?: number
   auth?: unknown
-}
-
-function authHeaders(): Record<string, string> {
-  const token = getHermesApiToken()
-  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 function toStringRecord(value: unknown): Record<string, string> | undefined {
@@ -157,9 +151,7 @@ export const Route = createFileRoute('/api/mcp/servers')({
         }
 
         try {
-          const response = await fetch(`${HERMES_API}/api/config`, {
-            headers: authHeaders(),
-          })
+          const response = await gatewayFetch('/api/config')
 
           if (!response.ok) {
             return Response.json({

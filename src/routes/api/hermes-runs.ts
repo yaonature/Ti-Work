@@ -3,35 +3,23 @@
  * Returns { run_id, status: "started" } immediately (202).
  */
 import { createFileRoute } from '@tanstack/react-router'
-import { isAuthenticated } from '../../server/auth-middleware'
-import {
-  HERMES_API,
-  authHeaders,
-  ensureGatewayProbed,
-  getCapabilities,
-} from '../../server/gateway-capabilities'
+import { isAgentAccessDenied, requireAgentAccess } from '../../server/agent-unified-access'
+import { gatewayFetch } from '../../server/agent-hub-client'
 
 export const Route = createFileRoute('/api/hermes-runs')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!isAuthenticated(request)) {
-          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' },
-          })
-        }
-        await ensureGatewayProbed()
-        if (!getCapabilities().jobs) {
-          return new Response(
-            JSON.stringify({ error: 'Runs API 不可用——网关未连接' }),
-            { status: 503, headers: { 'Content-Type': 'application/json' } },
-          )
-        }
+        const access = await requireAgentAccess(request, {
+          capability: 'jobs',
+          capabilityMessage: 'Runs API 不可用——网关未连接',
+        })
+        if (isAgentAccessDenied(access)) return access
+
         const body = await request.text()
-        const res = await fetch(`${HERMES_API}/v1/runs`, {
+        const res = await gatewayFetch('/v1/runs', {
           method: 'POST',
-          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body,
         })
         return new Response(await res.text(), {
