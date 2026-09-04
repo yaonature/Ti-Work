@@ -5,6 +5,53 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.21.0] — 2026-09-03
+
+> 本版将此前按功能分批提交、但尚未写入变更记录的批次统一补录，并合并本批「Agent Unified Access Layer 首版」，确保 ChangeLog 与提交历史完全对齐。
+
+### feat(gateway): Agent Unified Access Layer 首版（DESK-02）
+
+**新增统一网关访问层，收敛桌面端所有 Agent 网关访问链路：**
+
+- **新增 `src/server/agent-hub-client.ts`** — 统一网关客户端，收敛对 Hermes 网关的全部 HTTP 访问：`gatewayUrl`（URL 拼接）、`gatewayFetch`（自动注入 Bearer、对象 body 自动 stringify 并注入 `content-type`、`timeoutMs` 映射为 `AbortSignal.timeout`）、`gatewayJson`（非 2xx 抛 `GatewayError`），并封装 `ensureAgentGatewayProbed / getAgentCapabilities / isAgentGatewayReachable`
+- **新增 `src/server/agent-unified-access.ts`** — 统一访问层「裁决 + 上下文注入」：`requireAgentAccess` 覆盖双轨鉴权（cookie 用户态 + 角色约束，401/403）、网关能力校验（能力缺失 → 503），并自动生成 `traceId`、携带当前用户/角色/数据归属者；`AgentRequestContext` 预留 `runId / taskId / enterpriseId / brandId` 统一标识字段
+- **全量收敛涉网关 `fetch`（约 46 处）** 至统一客户端，覆盖 `hermes-runs / hermes-jobs / hermes-proxy / approvals / conductor-spawn / skills / hub-search / install / mcp / context-usage / config-patch / provider-usage / integrations / models / version-compatibility / hermes-api / openai-compat-api` 等路由与模块
+- **修复鉴权 Bug**：`hermes-runs.$runId.events.ts` 原先直接 `fetch(...)` 未注入 `authHeaders()`，迁移至 `gatewayFetch` 后一并修复 Bearer 漏注入
+- **新增回归测试 `src/test/agent-unified-access.test.ts`** — 11 个用例覆盖 URL 拼接、Bearer/body 注入、错误归一化、访问裁决（401/403/503/凭证上下文）
+- **说明**：`/api/agent-pause` 语义已梳理，本轮仅记录、不实现；企业/品牌层上下文依赖 OPC 云端注入，当前预留字段不伪造占位
+
+### feat(behavior): P1-B 高频任务识别与工作台一键重放
+
+- **新增 `src/server/high-frequency-tasks.ts`** — 基于行为资产沉淀统计高频任务并输出聚合画像
+- **新增 `src/routes/api/high-frequency-tasks.ts`** — 高频任务查询 API
+- **新增 `src/screens/chat/high-frequency-replay.ts`** — 工作台「一键重放」入口
+- **更新 `src/screens/dashboard/dashboard-screen.tsx` / `chat-screen.tsx` / `chat-composer.tsx`** — 高频任务卡片与重放交互
+- **新增测试** — `high-frequency-tasks.test.ts`、`high-frequency-replay.test.ts`，及 e2e `dashboard_high_frequency_tasks.spec.ts`
+
+### feat(behavior): P1-A 操作序列沉淀（意图分类共享化与双链路径序列落地）
+
+- **新增 `src/server/habit-sequences.ts`** — 双链路径行为序列（意图链 + 动作链）落地与沉淀
+- **新增 `src/server/agent-run-sediment.ts`** — 每次 agent 运行结束后将操作沉淀为序列
+- **新增 `src/utils/intent-classification.ts`** — 意图分类工具共享化；`generate-session-title.ts` 改为复用
+- **更新 `src/routes/api/send-stream.ts` / `policy-telemetry.ts`** — 接入序列沉淀与遥测
+- **新增测试** — `habit-sequences.test.ts`、`agent-run-sediment.test.ts`、`intent-classification.test.ts`
+
+### fix(electron): 后端端口占用量测漏判修复（跨项目串台）
+
+- `electron/backend.ts` 的 `isPortInUse` 由仅探测 `127.0.0.1` 扩展为对绑定 `::`（IPv6 双栈通配）与 `0.0.0.0`（IPv4 通配）的外接服务也能正确判定占用，避免桌面端在已被其他项目占用的 3000 端口启动服务
+- 补充 `electron-backend.test.ts` 回归用例
+
+### fix(types): 一次性修复历史遗留类型错误
+
+- 修复 `electron/main.ts`、`file-explorer-sidebar.tsx`、`routes/files.tsx`、`settings/index.tsx`、`chat-queries.ts`、`authorization-guard.ts` 共 6 个文件中的 13 个历史遗留 TypeScript 类型错误，全量 `tsc --noEmit` 恢复 0 报错
+
+### fix(qa): 测试套件全量修复与测试规范文档
+
+- 全量修复网关/契约/E2E 测试套件（`hermes-bootstrap`、`hermes-engine`、`hub-client`、`integrations`、`identity-contract`、`lineage-analytics`、`electron` 等）
+- 新增测试规范文档与 harness `contract-harness`/`eslint.config.js` 调整
+
+---
+
 ## [1.20.0] — 2026-04-26
 
 ### Conductor V2 — Gateway Port
