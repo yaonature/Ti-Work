@@ -81,6 +81,11 @@ import { SIDEBAR_TOGGLE_EVENT } from '@/hooks/use-global-shortcuts'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { TerminalPanel } from '@/components/terminal-panel'
 import { InspectorPanel } from '@/components/inspector/inspector-panel'
+import {
+  RunLedgerPanel,
+  deriveRunTitle,
+  useRunLedgerStore,
+} from '@/components/run-ledger'
 import { useTerminalPanelStore } from '@/stores/terminal-panel-store'
 import { useModelSuggestions } from '@/hooks/use-model-suggestions'
 import { ModelSuggestionToast } from '@/components/model-suggestion-toast'
@@ -1229,11 +1234,29 @@ export function ChatScreen({
         const normalizedText = text.replace(/\s+/g, ' ')
         const textKey = `${msg.role}:text:${normalizedText}`
         const existingTextMatch = seenByText.get(textKey)
-        if (
-          existingTextMatch &&
-          shouldCollapseTextDuplicate(existingTextMatch, msg)
-        ) {
+        if (existingTextMatch && shouldCollapseTextDuplicate(existingTextMatch, msg)) {
           continue
+        }
+        if (existingTextMatch && !shouldCollapseTextDuplicate(existingTextMatch, msg)) {
+          // DIAGNOSTIC: same display text survives as two bubbles — the
+          // duplicate-collapse condition was not met. Log why so we can confirm
+          // whether the timestamp window / attachment signature is the cause.
+          if (import.meta.env.DEV) {
+            console.warn('[dup] finalDisplayMessages kept a text-clone', {
+              role: msg.role,
+              text: normalizedText.slice(0, 120),
+              existingTs: getMessageTimestampValue(existingTextMatch),
+              candidateTs: getMessageTimestampValue(msg),
+              existingId: getMessageDisplayId(existingTextMatch),
+              candidateId: getMessageDisplayId(msg),
+              existingStatus: (existingTextMatch as any).status,
+              candidateStatus: (msg as any).status,
+              existingOptimistic: (existingTextMatch as any).__optimisticId,
+              candidateOptimistic: (msg as any).__optimisticId,
+              existingSig: getMessageAttachmentSignature(existingTextMatch),
+              candidateSig: getMessageAttachmentSignature(msg),
+            })
+          }
         }
         if (!existingTextMatch) {
           seenByText.set(textKey, msg)
@@ -1721,6 +1744,25 @@ export function ChatScreen({
     ) {
       // Read from ref so we always get the latest value without capturing it in deps
       const currentThinkingLevel = thinkingLevelRef.current
+      if (import.meta.env.DEV) {
+        // DIAGNOSTIC: all send paths funnel through here. Log a call-stack
+        // fingerprint so a duplicated run can be traced to its exact caller
+        // (send() isNewChat / send() normal / pending-send useLayoutEffect /
+        // retryQueuedMessage). Two logged runs with the same clientId but
+        // different stacks means that path fired twice.
+        const stack = new Error().stack?.split('\n').slice(2, 5).join(' | ') || ''
+        console.warn('[send] sendMessage CALLED', {
+          sessionKey,
+          friendlyId,
+          skipOptimistic,
+          existingClientId,
+          fastMode,
+          body: body.slice(0, 60),
+          attc: attachments.length,
+          ts: Date.now(),
+          stack,
+        })
+      }
       setLocalActivity('reading')
       const normalizedAttachments = attachments.map((attachment) => ({
         ...attachment,
@@ -1825,6 +1867,12 @@ export function ChatScreen({
         }
       })
       const history = buildPortableHistory(finalDisplayMessages)
+
+      // 执行账本：发送受理即开启本次会话的新 Run（业务标题取用户输入摘要）
+      useRunLedgerStore.getState().openRun(sessionKey, {
+        title: deriveRunTitle(body),
+        runId: null,
+      })
 
       try {
         streamStart()
@@ -2253,8 +2301,19 @@ export function ChatScreen({
       if (
         sendKey === lastSendKeyRef.current &&
         now - lastSendAtRef.current < 500
-      )
+      ) {
+        // DIAGNOSTIC: the 500ms dedup window rejected this send — if a run
+        // still appears, the second copy came from a PATH that bypasses send().
+        if (import.meta.env.DEV) {
+          console.warn('[send] dedup window HIT (send rejected)', {
+            sendKey,
+            sinceLast: now - lastSendAtRef.current,
+            isNewChat,
+            body: trimmedBody.slice(0, 60),
+          })
+        }
         return false
+      }
       lastSendKeyRef.current = sendKey
       lastSendAtRef.current = now
 
@@ -2409,6 +2468,10 @@ export function ChatScreen({
         }),
       )
     }
+    // 执行账本：用户中止视为失败终态（仅当账本仍处于 active 时生效）
+    if (activeSend?.sessionKey) {
+      useRunLedgerStore.getState().failRun(activeSend.sessionKey, '已中止')
+    }
     activeSendRef.current = null
     cancelStreaming()
     setSending(false)
@@ -2557,6 +2620,16 @@ export function ChatScreen({
     ],
   )
 
+  // 执行账本收账 key：与 sendMessage 开 Run 的 sessionKey 保持同一取值链路
+  const ledgerSessionKey = isPortableMode
+    ? 'main'
+    : forcedSessionKey ||
+      resolvedSessionKey ||
+      activeCanonicalKey ||
+      sessionKeyForHistory ||
+      activeSessionKey ||
+      ''
+
   // Listen for mobile header agent-details tap
   useEffect(() => {
     const handler = () => {
@@ -2582,7 +2655,7 @@ export function ChatScreen({
             ? 'flex min-h-0 w-full flex-col'
             : isMobile
               ? 'flex flex-col'
-              : 'grid grid-cols-[auto_1fr] grid-rows-[minmax(0,1fr)]',
+              : 'grid grid-cols-[auto_1fr_auto] grid-rows-[minmax(0,1fr)]',
         )}
       >
         {hideUi || compact || isFocusMode ? null : isMobile ? null : (
@@ -2731,6 +2804,15 @@ export function ChatScreen({
             />
           ) : null}
         </main>
+
+        {/* 执行账本：仅桌面完整会话页（非 compact / 非聚焦 / 非移动端 / 非跳转态） */}
+        {!compact && !hideUi && !isMobile && !isFocusMode && (
+          <RunLedgerPanel
+            sessionKey={ledgerSessionKey}
+            approvals={displayApprovals}
+            onResolveApproval={resolvePendingApproval}
+          />
+        )}
       </div>
       {!compact && !hideUi && !isMobile && !isFocusMode && <TerminalPanel />}
       <InspectorPanel />

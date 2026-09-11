@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { create } from 'zustand'
-import { useActivityStore } from './activity-store'
-import type { ActivityEvent } from './activity-store'
 import { getUnavailableReason } from '@/lib/feature-gates'
 import { useFeatureAvailable } from '@/hooks/use-feature-available'
 import { cn } from '@/lib/utils'
@@ -23,18 +21,15 @@ export const useInspectorStore = create<InspectorStore>((set) => ({
 
 // ── Tab types ─────────────────────────────────────────────────────────────────
 
-type TabId = 'activity' | 'files' | 'memory' | 'skills' | 'logs'
+type TabId = 'memory' | 'skills'
 
 const TABS: Array<{
   id: TabId
   label: string
-  feature?: 'memory' | 'skills'
+  feature: 'memory' | 'skills'
 }> = [
-  { id: 'activity', label: '活动' },
-  { id: 'files', label: '文件' },
   { id: 'memory', label: '记忆', feature: 'memory' },
   { id: 'skills', label: '技能', feature: 'skills' },
-  { id: 'logs', label: '日志' },
 ]
 
 // ── Shared loading / error ────────────────────────────────────────────────────
@@ -72,96 +67,6 @@ function EmptyState({ text }: { text: string }) {
       <span className="text-xs" style={{ color: 'var(--theme-muted)' }}>
         {text}
       </span>
-    </div>
-  )
-}
-
-// ── Activity Tab ──────────────────────────────────────────────────────────────
-
-function ActivityTab() {
-  const events = useActivityStore((s) => s.events)
-  const scrollRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
-  }, [events.length])
-
-  if (events.length === 0) {
-    return <EmptyState text="还没有活动记录，先开始一段对话吧" />
-  }
-
-  return (
-    <div
-      ref={scrollRef}
-      className="space-y-1 p-3 overflow-auto max-h-[calc(100vh-140px)]"
-    >
-      {events.map((event: ActivityEvent, i: number) => (
-        <div
-          key={i}
-          className="flex items-start gap-2 rounded-md px-2 py-1.5 text-xs"
-          style={{ background: 'var(--theme-card2)' }}
-        >
-          <span
-            style={{ color: 'var(--theme-accent)', fontFamily: 'monospace' }}
-          >
-            {event.time}
-          </span>
-          <span style={{ color: 'var(--theme-muted)' }}>{event.type}</span>
-          <span
-            className="ml-auto truncate"
-            style={{ color: 'var(--theme-text)' }}
-          >
-            {event.text}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ── Files Tab ─────────────────────────────────────────────────────────────────
-
-function FilesTab() {
-  const events = useActivityStore((s) => s.events)
-
-  // Extract file paths from activity events
-  const files = Array.from(
-    new Set(
-      events
-        .filter(
-          (e: ActivityEvent) =>
-            e.type === 'tool_call' ||
-            e.type === 'file_read' ||
-            e.type === 'file_write',
-        )
-        .map((e: ActivityEvent) => e.text)
-        .filter(Boolean),
-    ),
-  )
-
-  if (files.length === 0) {
-    return (
-      <EmptyState text="还没有涉及文件的操作，会在对话过程中显示" />
-    )
-  }
-
-  return (
-    <div className="space-y-1 p-3">
-      <p className="mb-2 text-xs" style={{ color: 'var(--theme-muted)' }}>
-        本会话涉及的文件（{files.length}）
-      </p>
-      {files.map((file: string, i: number) => (
-        <div
-          key={i}
-          className="rounded px-2 py-1 text-xs font-mono truncate"
-          style={{
-            color: 'var(--theme-text)',
-            background: 'var(--theme-card2)',
-          }}
-        >
-          {file}
-        </div>
-      ))}
     </div>
   )
 }
@@ -339,59 +244,21 @@ function SkillsTab() {
   )
 }
 
-// ── Logs Tab ──────────────────────────────────────────────────────────────────
-
-function LogsTab() {
-  const events = useActivityStore((s) => s.events)
-  const scrollRef = useRef<HTMLPreElement>(null)
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
-  }, [events.length])
-
-  if (events.length === 0) {
-    return (
-      <div className="p-3">
-        <p className="text-xs" style={{ color: 'var(--theme-muted)' }}>
-          原始事件流，正在等待活动…
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="p-3">
-      <p className="mb-2 text-xs" style={{ color: 'var(--theme-muted)' }}>
-        原始事件（{events.length}）
-      </p>
-      <pre
-        ref={scrollRef}
-        className="text-xs rounded p-2 overflow-auto max-h-[400px] font-mono"
-        style={{
-          background: 'var(--theme-card2)',
-          color: 'var(--theme-muted)',
-        }}
-      >
-        {events.map((e: ActivityEvent) => JSON.stringify(e)).join('\n')}
-      </pre>
-    </div>
-  )
-}
-
 // ── Panel ─────────────────────────────────────────────────────────────────────
 
 export function InspectorPanel() {
   const isOpen = useInspectorStore((s) => s.isOpen)
   const memoryAvailable = useFeatureAvailable('memory')
   const skillsAvailable = useFeatureAvailable('skills')
-  const [activeTab, setActiveTab] = useState<TabId>('activity')
+  const [activeTab, setActiveTab] = useState<TabId>('memory')
 
+  // 资源浏览口径：当前页签对应资源不可用且另一资源可用时，自动回退
   useEffect(() => {
-    if (activeTab === 'memory' && !memoryAvailable) {
-      setActiveTab('activity')
+    if (activeTab === 'memory' && !memoryAvailable && skillsAvailable) {
+      setActiveTab('skills')
     }
-    if (activeTab === 'skills' && !skillsAvailable) {
-      setActiveTab('activity')
+    if (activeTab === 'skills' && !skillsAvailable && memoryAvailable) {
+      setActiveTab('memory')
     }
   }, [activeTab, memoryAvailable, skillsAvailable])
 
@@ -436,63 +303,57 @@ export function InspectorPanel() {
             className="flex shrink-0 overflow-x-auto"
             style={{ borderBottom: '1px solid var(--theme-border)' }}
           >
-            {TABS.map((tab) =>
-              (() => {
-                const available =
-                  tab.feature === 'memory'
-                    ? memoryAvailable
-                    : tab.feature === 'skills'
-                      ? skillsAvailable
-                      : true
+            {TABS.map((tab) => {
+              const available =
+                tab.feature === 'memory' ? memoryAvailable : skillsAvailable
 
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      if (available) setActiveTab(tab.id)
-                    }}
-                    disabled={!available}
-                    className={cn(
-                      'px-3 py-2 text-xs font-medium shrink-0 transition-colors',
-                      activeTab === tab.id ? 'border-b-2' : 'hover:opacity-80',
-                      !available && 'cursor-not-allowed opacity-50',
-                    )}
-                    style={{
-                      color:
-                        activeTab === tab.id
-                          ? 'var(--theme-accent)'
-                          : 'var(--theme-muted)',
-                      borderBottomColor:
-                        activeTab === tab.id
-                          ? 'var(--theme-accent)'
-                          : 'transparent',
-                    }}
-                    title={
-                      !available && tab.feature
-                        ? getUnavailableReason(tab.feature)
-                        : undefined
-                    }
-                  >
-                    <span>{tab.label}</span>
-                    {!available ? (
-                      <span className="ml-1 rounded-full border border-amber-300 bg-amber-100 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-700">
-                        受限
-                      </span>
-                    ) : null}
-                  </button>
-                )
-              })(),
-            )}
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    if (available) setActiveTab(tab.id)
+                  }}
+                  disabled={!available}
+                  className={cn(
+                    'px-3 py-2 text-xs font-medium shrink-0 transition-colors',
+                    activeTab === tab.id ? 'border-b-2' : 'hover:opacity-80',
+                    !available && 'cursor-not-allowed opacity-50',
+                  )}
+                  style={{
+                    color:
+                      activeTab === tab.id
+                        ? 'var(--theme-accent)'
+                        : 'var(--theme-muted)',
+                    borderBottomColor:
+                      activeTab === tab.id
+                        ? 'var(--theme-accent)'
+                        : 'transparent',
+                  }}
+                  title={
+                    !available
+                      ? getUnavailableReason(tab.feature)
+                      : undefined
+                  }
+                >
+                  <span>{tab.label}</span>
+                  {!available ? (
+                    <span className="ml-1 rounded-full border border-amber-300 bg-amber-100 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-700">
+                      受限
+                    </span>
+                  ) : null}
+                </button>
+              )
+            })}
           </div>
 
           {/* Content */}
           <div className="flex-1 overflow-auto">
-            {activeTab === 'activity' && <ActivityTab />}
-            {activeTab === 'files' && <FilesTab />}
-            {activeTab === 'memory' && <MemoryTab />}
-            {activeTab === 'skills' && <SkillsTab />}
-            {activeTab === 'logs' && <LogsTab />}
+            {activeTab === 'memory' && memoryAvailable && <MemoryTab />}
+            {activeTab === 'skills' && skillsAvailable && <SkillsTab />}
+            {!memoryAvailable && !skillsAvailable && (
+              <EmptyState text="记忆与技能资源均未开通" />
+            )}
           </div>
         </>
       )}

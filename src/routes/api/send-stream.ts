@@ -854,14 +854,19 @@ export const Route = createFileRoute('/api/send-stream')({
                         data.artifact && typeof data.artifact === 'object'
                           ? (data.artifact as Record<string, unknown>)
                           : {}
+                      // 透传产物文件路径（若有），供前端执行账本「打开预览」直通
+                      const artifactPath =
+                        readString(data.path) || readString(artifact.path)
                       const translated = {
                         phase: 'complete',
                         name: readString(data.tool_name) || 'artifact',
                         toolCallId: readString(data.tool_call_id) || undefined,
+                        args: artifactPath
+                          ? { path: artifactPath }
+                          : undefined,
                         result:
                           readString(artifact.title) ||
-                          readString(artifact.path) ||
-                          readString(data.path) ||
+                          artifactPath ||
                           'Artifact created',
                         sessionKey: sessionKeyFromEvent,
                         runId,

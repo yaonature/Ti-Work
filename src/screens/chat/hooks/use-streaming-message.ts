@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatAttachment, ChatMessage } from '../types'
 import { useChatStore } from '@/stores/chat-store'
-import { pushActivity } from '@/components/inspector/activity-store'
+import { useRunLedgerStore } from '@/components/run-ledger/run-ledger-store'
 
 type StreamingState = {
   isStreaming: boolean
@@ -211,6 +211,8 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
       clearHandoffTimer()
       clearSendStreamRun()
       clearStreamingSession(activeSessionKeyRef.current)
+      // 执行账本：失败终态统一收口（幂等：已完成的 Run 不会被二次覆盖）
+      useRunLedgerStore.getState().failRun(activeSessionKeyRef.current, message)
       setState((prev) => ({
         ...prev,
         isStreaming: false,
@@ -360,6 +362,8 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
       lifecyclePhaseRef.current = 'complete'
       clearHandoffTimer()
       clearSendStreamRun()
+      // 执行账本：成功终态统一收口（幂等，markFailed 分支不会走到这里）
+      useRunLedgerStore.getState().completeRun(activeSessionKeyRef.current)
 
       const finalText = fullTextRef.current
       const thinking = thinkingRef.current
@@ -416,12 +420,11 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
             activeRunIdRef.current = runId
             registerSendStreamRun(runId)
           }
+          // 执行账本：started 到达后补挂 runId（账本已在发送时开启）
+          useRunLedgerStore
+            .getState()
+            .attachRunId(activeSessionKeyRef.current, runId ?? null)
           markActivity()
-          pushActivity({
-            type: 'assistant_start',
-            time: new Date().toLocaleTimeString(),
-            text: 'Assistant started',
-          })
           processStoreEvent({
             type: 'chunk',
             text: '',
@@ -491,33 +494,6 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
         }
         case 'tool': {
           markActivity()
-          {
-            const toolName =
-              typeof payload.name === 'string' ? payload.name : 'tool'
-            const phase =
-              typeof payload.phase === 'string' ? payload.phase : 'calling'
-            const isMemory = /memory|remember|recall|save_memory/i.test(
-              toolName,
-            )
-            const isFileWrite = /^(write_file|write|edit|Edit|Write)$/i.test(
-              toolName,
-            )
-            const isFileRead = /^(read_file|read|Read|search_files)$/i.test(
-              toolName,
-            )
-            const eventType = isMemory
-              ? 'memory_write'
-              : isFileWrite
-                ? 'file_write'
-                : isFileRead
-                  ? 'file_read'
-                  : 'tool_call'
-            pushActivity({
-              type: eventType,
-              time: new Date().toLocaleTimeString(),
-              text: `${toolName} (${phase})`,
-            })
-          }
           processStoreEvent({
             type: 'tool',
             phase:
@@ -535,6 +511,22 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
             runId: activeRunIdRef.current ?? undefined,
             sessionKey: activeSessionKeyRef.current,
             transport: 'send-stream',
+          })
+          // 执行账本：结构化工具节点（start/complete/error 三态按 toolCallId 收敛）
+          useRunLedgerStore.getState().appendTool(activeSessionKeyRef.current, {
+            phase:
+              typeof payload.phase === 'string' ? payload.phase : 'calling',
+            name: typeof payload.name === 'string' ? payload.name : 'tool',
+            toolCallId:
+              typeof payload.toolCallId === 'string'
+                ? payload.toolCallId
+                : undefined,
+            args: payload.args,
+            result:
+              typeof payload.result === 'string' ? payload.result : undefined,
+            preview:
+              typeof payload.preview === 'string' ? payload.preview : undefined,
+            runId: activeRunIdRef.current ?? null,
           })
           onTool?.(payload)
           break
@@ -577,11 +569,6 @@ export function useStreamingMessage(options: UseStreamingMessageOptions = {}) {
           const doneState = (payload as { state?: string }).state
           const errorMessage = (payload as { errorMessage?: string })
             .errorMessage
-          pushActivity({
-            type: 'assistant_complete',
-            time: new Date().toLocaleTimeString(),
-            text: doneState === 'error' ? `Error: ${errorMessage}` : 'Complete',
-          })
           processStoreEvent({
             type: 'done',
             state: doneState ?? 'final',
