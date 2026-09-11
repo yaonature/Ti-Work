@@ -3473,6 +3473,8 @@ export function HermesConfigSection({
   const terminalConfig = (data.config.terminal as Record<string, unknown>) || {}
   const displayConfig = (data.config.display as Record<string, unknown>) || {}
   const agentConfig = (data.config.agent as Record<string, unknown>) || {}
+  const compressionConfig =
+    (data.config.compression as Record<string, unknown>) || {}
   const smartRouting =
     (data.config.smart_model_routing as Record<string, unknown>) || {}
   const ttsConfig = (data.config.tts as Record<string, unknown>) || {}
@@ -4052,6 +4054,19 @@ export function HermesConfigSection({
           />
         </SettingsRow>
       )}
+      <SettingsRow
+        label="自动压缩"
+        description="接近上下文上限时自动总结较早消息，释放上下文空间。"
+      >
+        <Switch
+          checked={readBoolean(compressionConfig.enabled, true)}
+          onCheckedChange={(checked) =>
+            void saveConfig({
+              config: { compression: { enabled: checked } },
+            })
+          }
+        />
+      </SettingsRow>
     </SettingsSection>
   )
 
