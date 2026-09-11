@@ -37,6 +37,7 @@ import {
 } from '@/components/prompt-kit/prompt-input'
 import { SlashCommandMenu } from '@/components/slash-command-menu'
 import { useSettings } from '@/hooks/use-settings'
+import { WorkDirectorySelector } from '@/components/work-directory-selector'
 import { MOBILE_TAB_BAR_OFFSET } from '@/components/mobile-tab-bar'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { Button } from '@/components/ui/button'
@@ -1817,6 +1818,12 @@ function ChatComposerComponent({
         className="hidden"
         onChange={handleAttachmentInputChange}
       />
+      {/* 工作目录选择器：位于输入卡片外上方（ZCode「选择项目」对应位，在聊天窗口外而非卡片内） */}
+      {!isMobileViewport ? (
+        <div className="flex items-center px-2 md:px-3 pt-1 pb-2">
+          <WorkDirectorySelector />
+        </div>
+      ) : null}
       <PromptInput
         value={value}
         onValueChange={handleValueChange}

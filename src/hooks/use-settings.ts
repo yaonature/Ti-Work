@@ -29,6 +29,8 @@ export type StudioSettings = {
   cloudSyncEnabled: boolean
   /** 遥测开关（账号中心） */
   telemetryEnabled: boolean
+  /** 工作目录：数字员工的唯一输出空间（用户自选，全局唯一，可切换） */
+  workDirectory: string
 }
 
 type SettingsState = {
@@ -55,6 +57,7 @@ export const defaultStudioSettings: StudioSettings = {
   mobileChatNavMode: 'dock',
   cloudSyncEnabled: false,
   telemetryEnabled: true,
+  workDirectory: '',
 }
 
 export const useSettingsStore = create<SettingsState>()(
